@@ -1,0 +1,10 @@
+build/
+out/
+.qt/
+.vs/
+.vscode/
+CMakeUserPresets.json
+*.user
+*.lfautosave
+*.tmp
+*.log
