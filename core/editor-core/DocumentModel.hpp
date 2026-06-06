@@ -27,16 +27,27 @@ public:
     [[nodiscard]] QVector<Adjustment> adjustments() const;
     [[nodiscard]] QVector<Layer> layers() const;
     [[nodiscard]] QVector<Mask> masks() const;
+    [[nodiscard]] bool canUndo() const;
+    [[nodiscard]] bool canRedo() const;
 
     void setScalarAdjustment(AdjustmentType type, double value);
     [[nodiscard]] double scalarAdjustment(AdjustmentType type) const;
+    void rotateClockwise();
+    void rotateCounterClockwise();
+    void flipHorizontal();
+    void flipVertical();
+    void undo();
+    void redo();
 
 signals:
     void changed();
+    void historyChanged();
 
 private:
     Adjustment* findAdjustment(AdjustmentType type);
     const Adjustment* findAdjustment(AdjustmentType type) const;
+    void pushHistorySnapshot();
+    void restoreAdjustments(const QVector<Adjustment>& adjustments);
 
     QString m_projectId;
     QString m_sourcePath;
@@ -44,6 +55,8 @@ private:
     QVector<Layer> m_layers;
     QVector<Mask> m_masks;
     QVector<Adjustment> m_adjustments;
+    QVector<QVector<Adjustment>> m_undoStack;
+    QVector<QVector<Adjustment>> m_redoStack;
 };
 
 } // namespace lumen

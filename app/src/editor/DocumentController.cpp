@@ -12,6 +12,7 @@ DocumentController::DocumentController(QObject* parent)
         emit documentChanged();
         emit adjustmentsChanged();
     });
+    connect(&m_document, &lumen::DocumentModel::historyChanged, this, &DocumentController::historyChanged);
 }
 
 bool DocumentController::hasDocument() const
@@ -85,6 +86,16 @@ void DocumentController::setTint(double value)
     setAdjustment(lumen::AdjustmentType::Tint, value);
 }
 
+bool DocumentController::canUndo() const
+{
+    return m_document.canUndo();
+}
+
+bool DocumentController::canRedo() const
+{
+    return m_document.canRedo();
+}
+
 bool DocumentController::openImage(const QUrl& url)
 {
     const QString path = localPath(url);
@@ -129,6 +140,36 @@ void DocumentController::resetAdjustments()
     setSaturation(0.0);
     setTemperature(0.0);
     setTint(0.0);
+}
+
+void DocumentController::rotateClockwise()
+{
+    m_document.rotateClockwise();
+}
+
+void DocumentController::rotateCounterClockwise()
+{
+    m_document.rotateCounterClockwise();
+}
+
+void DocumentController::flipHorizontal()
+{
+    m_document.flipHorizontal();
+}
+
+void DocumentController::flipVertical()
+{
+    m_document.flipVertical();
+}
+
+void DocumentController::undo()
+{
+    m_document.undo();
+}
+
+void DocumentController::redo()
+{
+    m_document.redo();
 }
 
 void DocumentController::rebuildPreview()

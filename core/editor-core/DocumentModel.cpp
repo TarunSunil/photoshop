@@ -27,6 +27,9 @@ QString adjustmentTypeToString(AdjustmentType type)
     case AdjustmentType::Vibrance: return "vibrance";
     case AdjustmentType::Temperature: return "temperature";
     case AdjustmentType::Tint: return "tint";
+    case AdjustmentType::RotationDegrees: return "rotationDegrees";
+    case AdjustmentType::FlipHorizontal: return "flipHorizontal";
+    case AdjustmentType::FlipVertical: return "flipVertical";
     }
     return "exposure";
 }
@@ -42,6 +45,9 @@ AdjustmentType adjustmentTypeFromString(const QString& value)
     if (value == "vibrance") return AdjustmentType::Vibrance;
     if (value == "temperature") return AdjustmentType::Temperature;
     if (value == "tint") return AdjustmentType::Tint;
+    if (value == "rotationDegrees") return AdjustmentType::RotationDegrees;
+    if (value == "flipHorizontal") return AdjustmentType::FlipHorizontal;
+    if (value == "flipVertical") return AdjustmentType::FlipVertical;
     return AdjustmentType::Exposure;
 }
 
@@ -81,7 +87,10 @@ void DocumentModel::clear()
     m_layers.clear();
     m_masks.clear();
     m_adjustments.clear();
+    m_undoStack.clear();
+    m_redoStack.clear();
     emit changed();
+    emit historyChanged();
 }
 
 bool DocumentModel::hasDocument() const
@@ -119,8 +128,24 @@ QVector<Mask> DocumentModel::masks() const
     return m_masks;
 }
 
+bool DocumentModel::canUndo() const
+{
+    return !m_undoStack.isEmpty();
+}
+
+bool DocumentModel::canRedo() const
+{
+    return !m_redoStack.isEmpty();
+}
+
 void DocumentModel::setScalarAdjustment(AdjustmentType type, double value)
 {
+    if (qFuzzyCompare(scalarAdjustment(type) + 1.0, value + 1.0)) {
+        return;
+    }
+
+    pushHistorySnapshot();
+
     Adjustment* adjustment = findAdjustment(type);
     if (!adjustment) {
         Adjustment next;
@@ -132,7 +157,9 @@ void DocumentModel::setScalarAdjustment(AdjustmentType type, double value)
     }
 
     adjustment->parameters["value"] = value;
+    m_redoStack.clear();
     emit changed();
+    emit historyChanged();
 }
 
 double DocumentModel::scalarAdjustment(AdjustmentType type) const
@@ -142,6 +169,48 @@ double DocumentModel::scalarAdjustment(AdjustmentType type) const
         return 0.0;
     }
     return adjustment->parameters.value("value").toDouble(0.0);
+}
+
+void DocumentModel::rotateClockwise()
+{
+    const int rotation = static_cast<int>(scalarAdjustment(AdjustmentType::RotationDegrees));
+    setScalarAdjustment(AdjustmentType::RotationDegrees, (rotation + 90) % 360);
+}
+
+void DocumentModel::rotateCounterClockwise()
+{
+    const int rotation = static_cast<int>(scalarAdjustment(AdjustmentType::RotationDegrees));
+    setScalarAdjustment(AdjustmentType::RotationDegrees, (rotation + 270) % 360);
+}
+
+void DocumentModel::flipHorizontal()
+{
+    setScalarAdjustment(AdjustmentType::FlipHorizontal, scalarAdjustment(AdjustmentType::FlipHorizontal) > 0.5 ? 0.0 : 1.0);
+}
+
+void DocumentModel::flipVertical()
+{
+    setScalarAdjustment(AdjustmentType::FlipVertical, scalarAdjustment(AdjustmentType::FlipVertical) > 0.5 ? 0.0 : 1.0);
+}
+
+void DocumentModel::undo()
+{
+    if (!canUndo()) {
+        return;
+    }
+
+    m_redoStack.push_back(m_adjustments);
+    restoreAdjustments(m_undoStack.takeLast());
+}
+
+void DocumentModel::redo()
+{
+    if (!canRedo()) {
+        return;
+    }
+
+    m_undoStack.push_back(m_adjustments);
+    restoreAdjustments(m_redoStack.takeLast());
 }
 
 Adjustment* DocumentModel::findAdjustment(AdjustmentType type)
@@ -162,6 +231,21 @@ const Adjustment* DocumentModel::findAdjustment(AdjustmentType type) const
         }
     }
     return nullptr;
+}
+
+void DocumentModel::pushHistorySnapshot()
+{
+    m_undoStack.push_back(m_adjustments);
+    if (m_undoStack.size() > 100) {
+        m_undoStack.removeFirst();
+    }
+}
+
+void DocumentModel::restoreAdjustments(const QVector<Adjustment>& adjustments)
+{
+    m_adjustments = adjustments;
+    emit changed();
+    emit historyChanged();
 }
 
 } // namespace lumen

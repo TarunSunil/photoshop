@@ -18,6 +18,8 @@ class DocumentController final : public QObject {
     Q_PROPERTY(double saturation READ saturation WRITE setSaturation NOTIFY adjustmentsChanged)
     Q_PROPERTY(double temperature READ temperature WRITE setTemperature NOTIFY adjustmentsChanged)
     Q_PROPERTY(double tint READ tint WRITE setTint NOTIFY adjustmentsChanged)
+    Q_PROPERTY(bool canUndo READ canUndo NOTIFY historyChanged)
+    Q_PROPERTY(bool canRedo READ canRedo NOTIFY historyChanged)
 
 public:
     explicit DocumentController(QObject* parent = nullptr);
@@ -36,17 +38,26 @@ public:
     void setTemperature(double value);
     [[nodiscard]] double tint() const;
     void setTint(double value);
+    [[nodiscard]] bool canUndo() const;
+    [[nodiscard]] bool canRedo() const;
 
     Q_INVOKABLE bool openImage(const QUrl& url);
     Q_INVOKABLE bool saveProject(const QUrl& url);
     Q_INVOKABLE bool loadProject(const QUrl& url);
     Q_INVOKABLE bool exportImage(const QUrl& url);
     Q_INVOKABLE void resetAdjustments();
+    Q_INVOKABLE void rotateClockwise();
+    Q_INVOKABLE void rotateCounterClockwise();
+    Q_INVOKABLE void flipHorizontal();
+    Q_INVOKABLE void flipVertical();
+    Q_INVOKABLE void undo();
+    Q_INVOKABLE void redo();
 
 signals:
     void documentChanged();
     void previewChanged();
     void adjustmentsChanged();
+    void historyChanged();
     void operationFailed(QString message);
 
 private:

@@ -15,7 +15,10 @@ enum class AdjustmentType {
     Saturation,
     Vibrance,
     Temperature,
-    Tint
+    Tint,
+    RotationDegrees,
+    FlipHorizontal,
+    FlipVertical
 };
 
 struct Adjustment {

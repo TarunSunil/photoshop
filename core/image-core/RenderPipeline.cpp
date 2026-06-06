@@ -1,5 +1,6 @@
 #include "image-core/RenderPipeline.hpp"
 
+#include <QTransform>
 #include <QtMath>
 
 namespace lumen {
@@ -39,6 +40,20 @@ QImage RenderPipeline::renderFullResolution(const DocumentModel& document) const
 QImage RenderPipeline::applyAdjustments(QImage image, const DocumentModel& document) const
 {
     image = image.convertToFormat(QImage::Format_RGBA64);
+
+    const int rotation = static_cast<int>(document.scalarAdjustment(AdjustmentType::RotationDegrees)) % 360;
+    const bool flipHorizontal = document.scalarAdjustment(AdjustmentType::FlipHorizontal) > 0.5;
+    const bool flipVertical = document.scalarAdjustment(AdjustmentType::FlipVertical) > 0.5;
+
+    if (flipHorizontal || flipVertical) {
+        image = image.mirrored(flipHorizontal, flipVertical);
+    }
+
+    if (rotation != 0) {
+        QTransform transform;
+        transform.rotate(rotation);
+        image = image.transformed(transform, Qt::SmoothTransformation);
+    }
 
     const double exposureStops = document.scalarAdjustment(AdjustmentType::Exposure);
     const double contrast = document.scalarAdjustment(AdjustmentType::Contrast);

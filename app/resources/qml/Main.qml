@@ -51,6 +51,8 @@ ApplicationWindow {
     Shortcut { sequence: "Ctrl+0"; onActivated: root.zoom = 1.0 }
     Shortcut { sequence: "Ctrl++"; onActivated: root.zoom = Math.min(4.0, root.zoom + 0.1) }
     Shortcut { sequence: "Ctrl+-"; onActivated: root.zoom = Math.max(0.1, root.zoom - 0.1) }
+    Shortcut { sequence: StandardKey.Undo; onActivated: documentController.undo() }
+    Shortcut { sequence: StandardKey.Redo; onActivated: documentController.redo() }
 
     header: ToolBar {
         height: 52
@@ -225,6 +227,72 @@ ApplicationWindow {
                         font.bold: true
                         Layout.leftMargin: 18
                         Layout.topMargin: 18
+                    }
+
+                    Label {
+                        text: "Transform"
+                        color: "#f2f4f7"
+                        font.pixelSize: 16
+                        font.bold: true
+                        Layout.leftMargin: 18
+                    }
+
+                    GridLayout {
+                        Layout.leftMargin: 18
+                        Layout.rightMargin: 18
+                        Layout.fillWidth: true
+                        columns: 2
+                        rowSpacing: 8
+                        columnSpacing: 8
+
+                        Button {
+                            text: "Rotate left"
+                            enabled: documentController.hasDocument
+                            Layout.fillWidth: true
+                            onClicked: documentController.rotateCounterClockwise()
+                        }
+
+                        Button {
+                            text: "Rotate right"
+                            enabled: documentController.hasDocument
+                            Layout.fillWidth: true
+                            onClicked: documentController.rotateClockwise()
+                        }
+
+                        Button {
+                            text: "Flip H"
+                            enabled: documentController.hasDocument
+                            Layout.fillWidth: true
+                            onClicked: documentController.flipHorizontal()
+                        }
+
+                        Button {
+                            text: "Flip V"
+                            enabled: documentController.hasDocument
+                            Layout.fillWidth: true
+                            onClicked: documentController.flipVertical()
+                        }
+                    }
+
+                    RowLayout {
+                        Layout.leftMargin: 18
+                        Layout.rightMargin: 18
+                        Layout.fillWidth: true
+                        spacing: 8
+
+                        Button {
+                            text: "Undo"
+                            enabled: documentController.canUndo
+                            Layout.fillWidth: true
+                            onClicked: documentController.undo()
+                        }
+
+                        Button {
+                            text: "Redo"
+                            enabled: documentController.canRedo
+                            Layout.fillWidth: true
+                            onClicked: documentController.redo()
+                        }
                     }
 
                     AdjustmentSlider {
