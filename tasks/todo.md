@@ -8,7 +8,7 @@
 - [x] Add undo/redo state snapshots.
 - [x] Expose transform and history controls in QML.
 - [x] Run available verification.
-- [ ] Push current work to `TarunSunil/photoshop`.
+- [x] Push current work to `TarunSunil/photoshop`.
 
 ## Notes
 
