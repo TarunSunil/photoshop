@@ -10,7 +10,7 @@
 - [x] Add before/after toggle.
 - [x] Add `quick_start.md`.
 - [x] Run available verification.
-- [ ] Push current work to `TarunSunil/photoshop`.
+- [x] Push current work to `TarunSunil/photoshop`.
 
 ## Notes
 
