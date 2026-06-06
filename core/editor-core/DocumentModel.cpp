@@ -128,6 +128,30 @@ QVector<Mask> DocumentModel::masks() const
     return m_masks;
 }
 
+const QImage& DocumentModel::activeMask() const
+{
+    // For now, return the first mask if any, or a null image
+    if (!m_masks.isEmpty()) {
+        return m_masks.first().mask;
+    }
+    static const QImage nullMask;
+    return nullMask;
+}
+
+void DocumentModel::setActiveMask(const QImage& mask)
+{
+    if (m_masks.isEmpty()) {
+        Mask newMask;
+        newMask.id = makeId();
+        newMask.name = "Active Mask";
+        newMask.mask = mask;
+        m_masks.push_back(newMask);
+    } else {
+        m_masks.first().mask = mask;
+    }
+    emit changed();
+}
+
 bool DocumentModel::canUndo() const
 {
     return !m_undoStack.isEmpty();

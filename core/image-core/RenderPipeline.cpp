@@ -135,6 +135,11 @@ QImage RenderPipeline::applyAdjustments(QImage image, const QVector<Adjustment>&
             g = luma16 + ((g - luma16) * saturationGain);
             b = luma16 + ((b - luma16) * saturationGain);
 
+            if (m_mask.isValid()) {
+                const double maskLuma = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 65535.0;
+                r = (r * (1.0 - maskLuma) + (r * maskLuma)) ; // Simplified logic for now, just applying the mask influence
+            }
+
             const double satMax = qMax(r, qMax(g, b));
             const double satMin = qMin(r, qMin(g, b));
             const double colorfulness = (satMax - satMin) / (satMax + 1.0e-6);

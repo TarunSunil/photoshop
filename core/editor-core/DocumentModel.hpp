@@ -30,6 +30,9 @@ public:
     [[nodiscard]] bool canUndo() const;
     [[nodiscard]] bool canRedo() const;
 
+    void setActiveMask(const QImage& mask);
+    [[nodiscard]] const QImage& activeMask() const;
+
     void setScalarAdjustment(AdjustmentType type, double value);
     [[nodiscard]] double scalarAdjustment(AdjustmentType type) const;
     void rotateClockwise();
