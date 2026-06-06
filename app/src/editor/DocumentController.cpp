@@ -3,6 +3,7 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QStandardPaths>
+#include <QtConcurrent>
 
 DocumentController::DocumentController(QObject* parent)
     : QObject(parent)
@@ -30,6 +31,10 @@ QString DocumentController::sourceName() const
 
 QString DocumentController::imageUrl() const
 {
+    if (m_showOriginal && m_document.hasDocument()) {
+        return QUrl::fromLocalFile(m_document.sourcePath()).toString();
+    }
+
     if (m_previewPath.isEmpty()) {
         return {};
     }
@@ -66,6 +71,56 @@ void DocumentController::setSaturation(double value)
     setAdjustment(lumen::AdjustmentType::Saturation, value);
 }
 
+double DocumentController::highlights() const
+{
+    return m_document.scalarAdjustment(lumen::AdjustmentType::Highlights);
+}
+
+void DocumentController::setHighlights(double value)
+{
+    setAdjustment(lumen::AdjustmentType::Highlights, value);
+}
+
+double DocumentController::shadows() const
+{
+    return m_document.scalarAdjustment(lumen::AdjustmentType::Shadows);
+}
+
+void DocumentController::setShadows(double value)
+{
+    setAdjustment(lumen::AdjustmentType::Shadows, value);
+}
+
+double DocumentController::whites() const
+{
+    return m_document.scalarAdjustment(lumen::AdjustmentType::Whites);
+}
+
+void DocumentController::setWhites(double value)
+{
+    setAdjustment(lumen::AdjustmentType::Whites, value);
+}
+
+double DocumentController::blacks() const
+{
+    return m_document.scalarAdjustment(lumen::AdjustmentType::Blacks);
+}
+
+void DocumentController::setBlacks(double value)
+{
+    setAdjustment(lumen::AdjustmentType::Blacks, value);
+}
+
+double DocumentController::vibrance() const
+{
+    return m_document.scalarAdjustment(lumen::AdjustmentType::Vibrance);
+}
+
+void DocumentController::setVibrance(double value)
+{
+    setAdjustment(lumen::AdjustmentType::Vibrance, value);
+}
+
 double DocumentController::temperature() const
 {
     return m_document.scalarAdjustment(lumen::AdjustmentType::Temperature);
@@ -94,6 +149,21 @@ bool DocumentController::canUndo() const
 bool DocumentController::canRedo() const
 {
     return m_document.canRedo();
+}
+
+bool DocumentController::showOriginal() const
+{
+    return m_showOriginal;
+}
+
+void DocumentController::setShowOriginal(bool value)
+{
+    if (m_showOriginal == value) {
+        return;
+    }
+
+    m_showOriginal = value;
+    emit previewChanged();
 }
 
 bool DocumentController::openImage(const QUrl& url)
@@ -138,6 +208,11 @@ void DocumentController::resetAdjustments()
     setExposure(0.0);
     setContrast(0.0);
     setSaturation(0.0);
+    setHighlights(0.0);
+    setShadows(0.0);
+    setWhites(0.0);
+    setBlacks(0.0);
+    setVibrance(0.0);
     setTemperature(0.0);
     setTint(0.0);
 }
@@ -175,20 +250,49 @@ void DocumentController::redo()
 void DocumentController::rebuildPreview()
 {
     if (!m_document.hasDocument()) {
+        ++m_previewRequestId;
         m_previewPath.clear();
         emit previewChanged();
         return;
     }
 
-    QDir previewDir(QStandardPaths::writableLocation(QStandardPaths::TempLocation));
-    const QString filename = QString("lumenforge-preview-%1.png").arg(++m_previewVersion);
-    const QString path = previewDir.absoluteFilePath(filename);
-
-    const QImage preview = m_renderPipeline.renderPreview(m_document, QSize(1800, 1400));
-    if (preview.save(path)) {
-        m_previewPath = path;
-        emit previewChanged();
+    if (m_previewWatcher && m_previewWatcher->isRunning()) {
+        m_previewPending = true;
+        return;
     }
+
+    const QImage sourceImage = m_document.sourceImage();
+    const QVector<lumen::Adjustment> adjustments = m_document.adjustments();
+    const int requestId = ++m_previewRequestId;
+    auto* watcher = new QFutureWatcher<QImage>(this);
+    m_previewWatcher = watcher;
+
+    connect(watcher, &QFutureWatcher<QImage>::finished, this, [this, watcher, requestId]() {
+        const QImage preview = watcher->result();
+        if (!preview.isNull() && requestId == m_previewRequestId) {
+            QDir previewDir(QStandardPaths::writableLocation(QStandardPaths::TempLocation));
+            const QString filename = QString("lumenforge-preview-%1.png").arg(++m_previewVersion);
+            const QString path = previewDir.absoluteFilePath(filename);
+
+            if (preview.save(path)) {
+                m_previewPath = path;
+                emit previewChanged();
+            }
+        }
+
+        watcher->deleteLater();
+        m_previewWatcher = nullptr;
+
+        if (m_previewPending) {
+            m_previewPending = false;
+            rebuildPreview();
+        }
+    });
+
+    const QFuture<QImage> future = QtConcurrent::run([pipeline = m_renderPipeline, sourceImage, adjustments]() {
+        return pipeline.renderPreviewFromData(sourceImage, adjustments, QSize(1800, 1400));
+    });
+    watcher->setFuture(future);
 }
 
 void DocumentController::setAdjustment(lumen::AdjustmentType type, double value)

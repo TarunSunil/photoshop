@@ -28,6 +28,8 @@ Run the app:
 
 This workspace currently does not have `cmake`, `ninja`, or Qt tools on PATH, so the first verification here is static. A machine with Qt 6 installed should be used for the first compile.
 
+For setup, build, run, and first-use instructions, see [quick_start.md](quick_start.md).
+
 ## Roadmap
 
 1. Complete image viewer ergonomics: accurate fit-to-screen, pan, rotate, crop, and before/after.

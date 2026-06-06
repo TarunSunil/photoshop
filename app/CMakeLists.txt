@@ -16,6 +16,7 @@ target_link_libraries(LumenForge
         lumen_core
         Qt6::Core
         Qt6::Gui
+        Qt6::Concurrent
         Qt6::Quick
         Qt6::QuickControls2
 )

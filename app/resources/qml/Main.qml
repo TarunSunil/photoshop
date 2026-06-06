@@ -13,6 +13,15 @@ ApplicationWindow {
 
     property real zoom: 1.0
 
+    function fitZoom() {
+        if (imagePreview.sourceSize.width <= 0 || imagePreview.sourceSize.height <= 0) {
+            return 1.0;
+        }
+        const scaleW = canvasFlick.width / imagePreview.sourceSize.width;
+        const scaleH = canvasFlick.height / imagePreview.sourceSize.height;
+        return Math.min(scaleW, scaleH) * 0.95;
+    }
+
     FileDialog {
         id: openImageDialog
         title: "Open image"
@@ -53,6 +62,7 @@ ApplicationWindow {
     Shortcut { sequence: "Ctrl+-"; onActivated: root.zoom = Math.max(0.1, root.zoom - 0.1) }
     Shortcut { sequence: StandardKey.Undo; onActivated: documentController.undo() }
     Shortcut { sequence: StandardKey.Redo; onActivated: documentController.redo() }
+    Shortcut { sequence: "\\"; onActivated: documentController.showOriginal = !documentController.showOriginal }
 
     header: ToolBar {
         height: 52
@@ -161,14 +171,22 @@ ApplicationWindow {
             Flickable {
                 id: canvasFlick
                 anchors.fill: parent
-                contentWidth: Math.max(width, imagePreview.width * root.zoom)
-                contentHeight: Math.max(height, imagePreview.height * root.zoom)
+                contentWidth: Math.max(width, imagePreview.width)
+                contentHeight: Math.max(height, imagePreview.height)
                 clip: true
+
+                WheelHandler {
+                    acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+                    onWheel: (event) => {
+                        const delta = event.angleDelta.y > 0 ? 0.1 : -0.1;
+                        root.zoom = Math.min(4.0, Math.max(0.1, root.zoom + delta));
+                    }
+                }
 
                 Rectangle {
                     anchors.centerIn: parent
-                    width: Math.max(360, imagePreview.width * root.zoom + 72)
-                    height: Math.max(260, imagePreview.height * root.zoom + 72)
+                    width: Math.max(360, imagePreview.width + 72)
+                    height: Math.max(260, imagePreview.height + 72)
                     color: "#0c0e11"
                     border.color: "#2d333c"
 
@@ -181,6 +199,7 @@ ApplicationWindow {
                         width: sourceSize.width > 0 ? sourceSize.width * root.zoom : 0
                         height: sourceSize.height > 0 ? sourceSize.height * root.zoom : 0
                         asynchronous: true
+                        onSourceSizeChanged: root.zoom = root.fitZoom()
                     }
 
                     Label {
@@ -199,10 +218,15 @@ ApplicationWindow {
                 anchors.margins: 18
                 spacing: 8
 
-                Button { text: "Fit"; enabled: documentController.hasDocument; onClicked: root.zoom = 0.6 }
+                Button { text: "Fit"; enabled: documentController.hasDocument; onClicked: root.zoom = root.fitZoom() }
                 Button { text: "100%"; enabled: documentController.hasDocument; onClicked: root.zoom = 1.0 }
                 Button { text: "-"; enabled: documentController.hasDocument; onClicked: root.zoom = Math.max(0.1, root.zoom - 0.1) }
                 Button { text: "+"; enabled: documentController.hasDocument; onClicked: root.zoom = Math.min(4.0, root.zoom + 0.1) }
+                Button {
+                    text: documentController.showOriginal ? "After" : "Before / After"
+                    enabled: documentController.hasDocument
+                    onClicked: documentController.showOriginal = !documentController.showOriginal
+                }
             }
         }
 
@@ -317,6 +341,46 @@ ApplicationWindow {
                         to: 100
                         value: documentController.saturation
                         onMoved: (nextValue) => documentController.saturation = nextValue
+                    }
+
+                    AdjustmentSlider {
+                        label: "Highlights"
+                        from: -100
+                        to: 100
+                        value: documentController.highlights
+                        onMoved: (nextValue) => documentController.highlights = nextValue
+                    }
+
+                    AdjustmentSlider {
+                        label: "Shadows"
+                        from: -100
+                        to: 100
+                        value: documentController.shadows
+                        onMoved: (nextValue) => documentController.shadows = nextValue
+                    }
+
+                    AdjustmentSlider {
+                        label: "Whites"
+                        from: -100
+                        to: 100
+                        value: documentController.whites
+                        onMoved: (nextValue) => documentController.whites = nextValue
+                    }
+
+                    AdjustmentSlider {
+                        label: "Blacks"
+                        from: -100
+                        to: 100
+                        value: documentController.blacks
+                        onMoved: (nextValue) => documentController.blacks = nextValue
+                    }
+
+                    AdjustmentSlider {
+                        label: "Vibrance"
+                        from: -100
+                        to: 100
+                        value: documentController.vibrance
+                        onMoved: (nextValue) => documentController.vibrance = nextValue
                     }
 
                     AdjustmentSlider {

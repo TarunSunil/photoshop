@@ -5,6 +5,8 @@
 #include "image-core/RenderPipeline.hpp"
 #include "storage/ProjectStore.hpp"
 
+#include <QFutureWatcher>
+#include <QImage>
 #include <QObject>
 #include <QUrl>
 
@@ -16,10 +18,16 @@ class DocumentController final : public QObject {
     Q_PROPERTY(double exposure READ exposure WRITE setExposure NOTIFY adjustmentsChanged)
     Q_PROPERTY(double contrast READ contrast WRITE setContrast NOTIFY adjustmentsChanged)
     Q_PROPERTY(double saturation READ saturation WRITE setSaturation NOTIFY adjustmentsChanged)
+    Q_PROPERTY(double highlights READ highlights WRITE setHighlights NOTIFY adjustmentsChanged)
+    Q_PROPERTY(double shadows READ shadows WRITE setShadows NOTIFY adjustmentsChanged)
+    Q_PROPERTY(double whites READ whites WRITE setWhites NOTIFY adjustmentsChanged)
+    Q_PROPERTY(double blacks READ blacks WRITE setBlacks NOTIFY adjustmentsChanged)
+    Q_PROPERTY(double vibrance READ vibrance WRITE setVibrance NOTIFY adjustmentsChanged)
     Q_PROPERTY(double temperature READ temperature WRITE setTemperature NOTIFY adjustmentsChanged)
     Q_PROPERTY(double tint READ tint WRITE setTint NOTIFY adjustmentsChanged)
     Q_PROPERTY(bool canUndo READ canUndo NOTIFY historyChanged)
     Q_PROPERTY(bool canRedo READ canRedo NOTIFY historyChanged)
+    Q_PROPERTY(bool showOriginal READ showOriginal WRITE setShowOriginal NOTIFY previewChanged)
 
 public:
     explicit DocumentController(QObject* parent = nullptr);
@@ -34,12 +42,24 @@ public:
     void setContrast(double value);
     [[nodiscard]] double saturation() const;
     void setSaturation(double value);
+    [[nodiscard]] double highlights() const;
+    void setHighlights(double value);
+    [[nodiscard]] double shadows() const;
+    void setShadows(double value);
+    [[nodiscard]] double whites() const;
+    void setWhites(double value);
+    [[nodiscard]] double blacks() const;
+    void setBlacks(double value);
+    [[nodiscard]] double vibrance() const;
+    void setVibrance(double value);
     [[nodiscard]] double temperature() const;
     void setTemperature(double value);
     [[nodiscard]] double tint() const;
     void setTint(double value);
     [[nodiscard]] bool canUndo() const;
     [[nodiscard]] bool canRedo() const;
+    [[nodiscard]] bool showOriginal() const;
+    void setShowOriginal(bool value);
 
     Q_INVOKABLE bool openImage(const QUrl& url);
     Q_INVOKABLE bool saveProject(const QUrl& url);
@@ -71,4 +91,8 @@ private:
     lumen::ProjectStore m_projectStore;
     QString m_previewPath;
     int m_previewVersion = 0;
+    bool m_showOriginal = false;
+    QFutureWatcher<QImage>* m_previewWatcher = nullptr;
+    bool m_previewPending = false;
+    int m_previewRequestId = 0;
 };
