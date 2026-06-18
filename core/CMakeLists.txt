@@ -1,30 +1,19 @@
-add_library(lumen_core STATIC
-    shared-types/Adjustment.hpp
-    shared-types/Layer.hpp
-    shared-types/Mask.hpp
-    editor-core/DocumentModel.cpp
-    editor-core/DocumentModel.hpp
-    image-core/RenderPipeline.cpp
-    image-core/RenderPipeline.hpp
-    mask-core/MaskDocument.cpp
-    mask-core/MaskDocument.hpp
-    ai-core/AiRuntime.cpp
-    ai-core/AiRuntime.hpp
-    export-core/ExportService.cpp
-    export-core/ExportService.hpp
-    storage/ProjectStore.cpp
-    storage/ProjectStore.hpp
-)
+cmake_minimum_required(VERSION 3.24)
 
-target_include_directories(lumen_core
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}
-)
+project(LumenForgeCore VERSION 0.1.0 LANGUAGES CXX)
 
-target_link_libraries(lumen_core
-    PUBLIC
-        Qt6::Core
-        Qt6::Gui
-        Qt6::Sql
-        Qt6::Concurrent
-)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Quick Sql Concurrent)
+
+qt_standard_project_setup(REQUIRES 6.5)
+
+# Add subdirectories in dependency order
+add_subdirectory(shared-types)
+add_subdirectory(mask-core)
+add_subdirectory(editor-core)
+add_subdirectory(export-core)
+add_subdirectory(image-core)
+add_subdirectory(ai-core)
+add_subdirectory(storage)

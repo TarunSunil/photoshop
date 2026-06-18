@@ -1,0 +1,17 @@
+# Build directories
+cmake-build-*/
+build/
+
+# Models (downloaded manually)
+models/*.onnx
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# System files
+.DS_Store
+Thumbs.db

@@ -1,123 +1,91 @@
 #include "mask-core/BrushEngine.hpp"
-
 #include <QPainter>
-#include <QPainterPath>
-#include <QImage>
-#include <QBlurEffect>
-
+#include <QRadialGradient>
+#include <cmath>
 namespace lumen {
-
 BrushEngine::BrushEngine(QSize size)
     : m_mask(size, QImage::Format_ARGB32)
 {
     m_mask.fill(Qt::transparent);
 }
-
 void BrushEngine::paintStroke(QPointF center, double radius, double opacity, bool erase)
 {
-    if (m_mask.isNull()) {
-        return;
-    }
-
+    if (m_mask.isNull()) return;
     QPainter painter(&m_mask);
     painter.setRenderHint(QPainter::Antialiasing, true);
-
-    // Create radial gradient brush
+    painter.setCompositionMode(
+        erase ? QPainter::CompositionMode_Clear
+              : QPainter::CompositionMode_SourceOver);
+    painter.setOpacity(opacity);
     QRadialGradient gradient(center, radius);
-    gradient.setColorAt(0, erase ? Qt::black : Qt::white);
-    gradient.setColorAt(1, erase ? Qt::black : Qt::white);
-    gradient.setColorAt(0.5, erase ? Qt::black : Qt::white);
-    gradient.setOpacity(opacity);
-
-    painter.setBrush(gradient);
+    gradient.setColorAt(0.0, Qt::white);
+    gradient.setColorAt(0.75, Qt::white);
+    gradient.setColorAt(1.0, Qt::transparent);
+    painter.setBrush(QBrush(gradient));
     painter.setPen(Qt::NoPen);
-
-    // Draw the stroke as a circle
-    QPainterPath path;
-    path.addEllipse(center, radius, radius);
-    painter.drawPath(path);
+    painter.drawEllipse(center, radius, radius);
 }
-
 void BrushEngine::feather(double radius)
 {
-    if (m_mask.isNull()) {
-        return;
-    }
-
-    // Apply Gaussian blur using QImage convolution
-    // Create a simple Gaussian kernel
-    const int kernelSize = static_cast<int>(radius * 6) | 1; // Ensure odd
-    const double sigma = radius;
-
-    // Generate Gaussian kernel
+    if (m_mask.isNull() || radius < 1.0) return;
+    const int kernelSize = qMax(3, (static_cast<int>(radius * 6)) | 1);
+    const double sigma   = radius;
+    const int halfSize   = kernelSize / 2;
     QVector<double> kernel(kernelSize);
-    const double sumFactor = 1.0 / (2.0 * M_PI * sigma * sigma);
-    const int halfSize = kernelSize / 2;
-
     double total = 0.0;
     for (int i = 0; i < kernelSize; ++i) {
         const double x = i - halfSize;
         kernel[i] = std::exp(-(x * x) / (2.0 * sigma * sigma));
         total += kernel[i];
     }
-
-    // Normalize kernel
-    for (int i = 0; i < kernelSize; ++i) {
-        kernel[i] /= total;
-    }
-
-    // Apply horizontal blur
-    QImage tempImage(m_mask.size(), QImage::Format_ARGB32);
+    for (int i = 0; i < kernelSize; ++i) kernel[i] /= total;
+    QImage tmp(m_mask.size(), QImage::Format_ARGB32);
+    tmp.fill(Qt::transparent);
     for (int y = 0; y < m_mask.height(); ++y) {
-        const QRgb* srcRow = reinterpret_cast<const QRgb*>(m_mask.constScanLine(y));
-        QRgb* dstRow = reinterpret_cast<QRgb*>(tempImage.scanLine(y));
-
+        const auto* src = reinterpret_cast<const QRgb*>(m_mask.constScanLine(y));
+        auto*       dst = reinterpret_cast<QRgb*>(tmp.scanLine(y));
         for (int x = 0; x < m_mask.width(); ++x) {
             double r = 0, g = 0, b = 0, a = 0;
-
             for (int k = 0; k < kernelSize; ++k) {
-                const int srcX = qBound(0, x + k - halfSize, m_mask.width() - 1);
-                QRgb pixel = srcRow[srcX];
-
-                r += qRed(pixel) * kernel[k];
-                g += qGreen(pixel) * kernel[k];
-                b += qBlue(pixel) * kernel[k];
-                a += qAlpha(pixel) * kernel[k];
+                const int sx = qBound(0, x + k - halfSize, m_mask.width() - 1);
+                const QRgb p = src[sx];
+                r += qRed(p)   * kernel[k];
+                g += qGreen(p) * kernel[k];
+                b += qBlue(p)  * kernel[k];
+                a += qAlpha(p) * kernel[k];
             }
-
-            dstRow[x] = qRgba(static_cast<int>(r), static_cast<int>(g), static_cast<int>(b), static_cast<int>(a));
+            dst[x] = qRgba(int(r), int(g), int(b), int(a));
         }
     }
-
-    // Apply vertical blur
     for (int x = 0; x < m_mask.width(); ++x) {
         for (int y = 0; y < m_mask.height(); ++y) {
             double r = 0, g = 0, b = 0, a = 0;
-
             for (int k = 0; k < kernelSize; ++k) {
-                const int srcY = qBound(0, y + k - halfSize, m_mask.height() - 1);
-                QRgb pixel = *reinterpret_cast<const QRgb*>(tempImage.constScanLine(srcY) + x);
-
-                r += qRed(pixel) * kernel[k];
-                g += qGreen(pixel) * kernel[k];
-                b += qBlue(pixel) * kernel[k];
-                a += qAlpha(pixel) * kernel[k];
+                const int sy = qBound(0, y + k - halfSize, m_mask.height() - 1);
+                const QRgb p = reinterpret_cast<const QRgb*>(tmp.constScanLine(sy))[x];
+                r += qRed(p)   * kernel[k];
+                g += qGreen(p) * kernel[k];
+                b += qBlue(p)  * kernel[k];
+                a += qAlpha(p) * kernel[k];
             }
-
-            QRgb* dstRow = reinterpret_cast<QRgb*>(m_mask.scanLine(y));
-            dstRow[x] = qRgba(static_cast<int>(r), static_cast<int>(g), static_cast<int>(b), static_cast<int>(a));
+            reinterpret_cast<QRgb*>(m_mask.scanLine(y))[x] = qRgba(int(r), int(g), int(b), int(a));
         }
     }
 }
-
-const QImage& BrushEngine::mask() const
+void BrushEngine::clear()
 {
-    return m_mask;
+    m_mask.fill(Qt::transparent);
 }
-
-QImage& BrushEngine::mask()
+void BrushEngine::resize(QSize size)
 {
-    return m_mask;
+    if (m_mask.size() == size) return;
+    QImage next(size, QImage::Format_ARGB32);
+    next.fill(Qt::transparent);
+    QPainter p(&next);
+    p.drawImage(QRect(QPoint(0,0), size),
+                m_mask.scaled(size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
+    m_mask = next;
 }
-
+const QImage& BrushEngine::mask() const { return m_mask; }
+QImage&       BrushEngine::mask()       { return m_mask; }
 } // namespace lumen
