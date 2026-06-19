@@ -1,19 +1,99 @@
-cmake_minimum_required(VERSION 3.24)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
 
-project(LumenForgeCore VERSION 0.1.0 LANGUAGES CXX)
+qt_add_library(lumen_core STATIC
+    shared-types/Adjustment.hpp
+    shared-types/Layer.hpp
+    shared-types/Mask.hpp
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+    editor-core/DocumentModel.cpp
+    editor-core/DocumentModel.hpp
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Quick Sql Concurrent)
+    image-core/RenderPipeline.cpp
+    image-core/RenderPipeline.hpp
+    image-core/BlendModes.hpp
 
-qt_standard_project_setup(REQUIRES 6.5)
+    image-core/RawImporter.cpp
+    image-core/RawImporter.hpp
 
-# Add subdirectories in dependency order
-add_subdirectory(shared-types)
-add_subdirectory(mask-core)
-add_subdirectory(editor-core)
-add_subdirectory(export-core)
-add_subdirectory(image-core)
-add_subdirectory(ai-core)
-add_subdirectory(storage)
+    image-core/ColorManager.cpp
+    image-core/ColorManager.hpp
+
+    mask-core/BrushEngine.cpp
+    mask-core/BrushEngine.hpp
+
+    mask-core/MaskDocument.cpp
+    mask-core/MaskDocument.hpp
+
+    ai-core/AiRuntime.cpp
+    ai-core/AiRuntime.hpp
+
+    ai-core/OnnxSession.cpp
+    ai-core/OnnxSession.hpp
+
+    ai-core/MaskPredictor.cpp
+    ai-core/MaskPredictor.hpp
+
+    ai-core/InpaintEngine.cpp
+    ai-core/InpaintEngine.hpp
+
+    ai-core/UpscaleEngine.cpp
+    ai-core/UpscaleEngine.hpp
+
+    export-core/ExportService.cpp
+    export-core/ExportService.hpp
+
+    storage/ProjectStore.cpp
+    storage/ProjectStore.hpp
+)
+
+target_include_directories(lumen_core
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(lumen_core
+    PUBLIC
+        Qt6::Core
+        Qt6::Gui
+        Qt6::Sql
+        Qt6::Concurrent
+)
+
+find_package(onnxruntime QUIET
+    HINTS "${ONNXRUNTIME_ROOT}/lib/cmake/onnxruntime"
+)
+
+if(onnxruntime_FOUND)
+    message(STATUS "ONNX Runtime found — AI inference enabled")
+    target_compile_definitions(lumen_core PUBLIC HAVE_ONNXRUNTIME)
+    target_link_libraries(lumen_core PUBLIC onnxruntime::onnxruntime)
+else()
+    message(STATUS "ONNX Runtime NOT found — AI features disabled")
+endif()
+
+find_package(LibRaw QUIET)
+
+if(LibRaw_FOUND)
+    message(STATUS "LibRaw found — RAW import enabled")
+else()
+    message(STATUS "LibRaw NOT found — RAW import disabled")
+endif()
+
+find_package(lcms2 QUIET)
+
+if(lcms2_FOUND)
+    message(STATUS "lcms2 found — color management enabled")
+else()
+    message(STATUS "lcms2 NOT found — color profiles disabled")
+endif()
+
+find_package(OpenCV QUIET COMPONENTS core imgproc photo)
+
+if(OpenCV_FOUND)
+    message(STATUS "OpenCV found — NR and sharpening enabled")
+    target_link_libraries(lumen_core PUBLIC ${OpenCV_LIBS})
+else()
+    message(STATUS "OpenCV NOT found — NR/sharpening disabled")
+endif()

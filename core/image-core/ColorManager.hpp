@@ -5,7 +5,7 @@ namespace lumen {
 class ColorManager {
 public:
     ColorManager();
-    \~ColorManager();
+    ~ColorManager();
     bool loadProfiles(const QString& inputProfile, const QString& outputProfile);
     [[nodiscard]] bool hasTransform() const;
     void applyTransform(QImage& image) const;

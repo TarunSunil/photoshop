@@ -4,7 +4,7 @@
 #endif
 namespace lumen {
 ColorManager::ColorManager()  = default;
-ColorManager::\~ColorManager()
+ColorManager::~ColorManager()
 {
 #ifdef HAVE_LCMS2
     if (m_transform)     cmsDeleteTransform(static_cast<cmsHTRANSFORM>(m_transform));
