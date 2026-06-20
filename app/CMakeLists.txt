@@ -31,14 +31,3 @@ install(TARGETS LumenForge
     BUNDLE  DESTINATION .
     RUNTIME DESTINATION bin
 )
-find_program(WINDEPLOYQT windeployqt
-    HINTS "/../../../bin"
-          "{QTDIR}/bin")
-if(WINDEPLOYQT AND WIN32)
-    add_custom_command(TARGET LumenForge POST_BUILD
-        COMMAND 
-            --qmldir "/resources/qml"
-            $<TARGET_FILE:LumenForge>
-        COMMENT "Running windeployqt…"
-        VERBATIM)
-endif()
