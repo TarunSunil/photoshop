@@ -77,6 +77,15 @@ find_package(LibRaw QUIET)
 
 if(LibRaw_FOUND)
     message(STATUS "LibRaw found — RAW import enabled")
+    # Previously: found but never defined HAVE_LIBRAW and never linked.
+    # RawImporter.cpp is entirely wrapped in #ifdef HAVE_LIBRAW, so without
+    # this define RAW files always fell through to image.load(), which
+    # fails for camera RAW formats — RAW import was permanently a no-op
+    # even on machines with LibRaw installed.
+    target_compile_definitions(lumen_core PUBLIC HAVE_LIBRAW)
+    # vcpkg's libraw port exports a lowercase namespace (libraw::raw),
+    # not LibRaw::raw -- verified against vcpkg's own usage docs.
+    target_link_libraries(lumen_core PUBLIC libraw::raw)
 else()
     message(STATUS "LibRaw NOT found — RAW import disabled")
 endif()
@@ -85,6 +94,9 @@ find_package(lcms2 QUIET)
 
 if(lcms2_FOUND)
     message(STATUS "lcms2 found — color management enabled")
+    # Same gap as LibRaw above: found but neither defined nor linked.
+    target_compile_definitions(lumen_core PUBLIC HAVE_LCMS2)
+    target_link_libraries(lumen_core PUBLIC lcms2::lcms2)
 else()
     message(STATUS "lcms2 NOT found — color profiles disabled")
 endif()
@@ -93,6 +105,16 @@ find_package(OpenCV QUIET COMPONENTS core imgproc photo)
 
 if(OpenCV_FOUND)
     message(STATUS "OpenCV found — NR and sharpening enabled")
+    # This is the actual cause of "Detail sliders don't do anything":
+    # RenderPipeline.cpp's noise-reduction/sharpening block is wrapped in
+    # #ifdef HAVE_OPENCV, but that macro was never defined here — only
+    # the libraries were linked. The #ifdef was always false, so that
+    # code never compiled in, regardless of OpenCV being installed.
+    # Also adding the include dirs explicitly: ${OpenCV_LIBS} alone
+    # (the legacy-style variable) does not reliably propagate
+    # OpenCV's headers the way an imported target would.
+    target_compile_definitions(lumen_core PUBLIC HAVE_OPENCV)
+    target_include_directories(lumen_core PUBLIC ${OpenCV_INCLUDE_DIRS})
     target_link_libraries(lumen_core PUBLIC ${OpenCV_LIBS})
 else()
     message(STATUS "OpenCV NOT found — NR/sharpening disabled")
