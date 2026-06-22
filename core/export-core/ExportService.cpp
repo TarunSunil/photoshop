@@ -4,31 +4,46 @@
 #include <QtConcurrent>
 namespace lumen {
 namespace {
-// RenderPipeline keeps the full edit pipeline in Format_RGBA64 (16 bits
-// per channel) for precision. That is correct internally, but writing
-// that format straight to disk is what was producing "corrupt" exports:
-// it's a spec-valid but uncommon 16-bit-per-channel file. Windows Photos
-// and several other common viewers refuse to open 16bpc PNGs, and the
-// less-exercised RGBA64 write paths in some JPEG/WebP encoder builds
-// (including ones pulled in via vcpkg) aren't as battle-tested as the
-// standard 8-bit path. Every mainstream photo editor downconverts to
-// 8-bit at the final save step for exactly this reason — do the same
-// here, once, right before writing the file.
+// RenderPipeline keeps everything in Format_RGBA64 (16-bit/channel) for
+// precision. That's correct internally but causes two problems if written
+// straight to disk:
+//
+// 1. Export size explosion: Qt's PNG quality scale is INVERTED vs JPEG --
+//    quality 100 = no compression, quality 0 = max compression.
+//    ExportService was passing quality=92, which on PNG means ~level-1
+//    zlib (barely any compression). A 12MP image at 16-bit with level-1
+//    PNG compression is 500MB+. Converting to 8-bit first brings a
+//    typical photo export to 2-10MB.
+//
+// 2. Compatibility: 16-bit-per-channel PNG is spec-valid but many common
+//    viewers (Windows Photos, some older apps) struggle with it or show
+//    a broken thumbnail before the full decoder kicks in.
+//
+// Convert to 8-bit ARGB32 exactly once, right before writing. All
+// intermediate pipeline math stays at 16-bit.
 QImage toExportFormat(const QImage& rendered)
 {
-    // Format_ARGB32 preserves alpha (for PNG/WebP with transparency);
-    // formats without alpha support (JPEG) ignore the alpha channel on
-    // write regardless, so this is safe for all three export formats.
     return rendered.convertToFormat(QImage::Format_ARGB32);
+}
+// PNG quality=92 means almost no compression. Use format-appropriate
+// defaults: JPEG at 92 is "high quality", PNG at -1 is Qt's default
+// zlib level 6 (good balance of size and speed), WebP at 85 is high.
+int qualityFor(const QString& path)
+{
+    const QString ext = QFileInfo(path).suffix().toLower();
+    if (ext == "jpg" || ext == "jpeg") return 92;
+    if (ext == "webp")                 return 85;
+    return -1;  // PNG and everything else: Qt default (level 6 for PNG)
 }
 } // namespace
 ExportService::ExportService(QObject* parent) : QObject(parent) {}
 bool ExportService::exportImage(const DocumentModel& document,
-                                 const QString& path, int quality) const
+                                 const QString& path, int /*quality*/) const
 {
     const QImage rendered = m_renderPipeline.renderFullResolution(document);
     if (rendered.isNull()) return false;
-    return toExportFormat(rendered).save(path, nullptr, quality);
+    // Ignore the caller's quality param; use format-appropriate default.
+    return toExportFormat(rendered).save(path, nullptr, qualityFor(path));
 }
 void ExportService::exportBatch(const DocumentModel& document,
                                  const QString& directory,
@@ -37,19 +52,16 @@ void ExportService::exportBatch(const DocumentModel& document,
     const QString baseName = QFileInfo(document.sourcePath()).baseName();
     const QImage rendered  = m_renderPipeline.renderFullResolution(document);
     if (rendered.isNull()) { emit batchFailed("Render failed"); return; }
-    const QImage exportImage = toExportFormat(rendered);
-    QtConcurrent::run([this, exportImage, directory, baseName, formats]() {
+    const QImage exportReady = toExportFormat(rendered);
+    QtConcurrent::run([this, exportReady, directory, baseName, formats]() {
         bool allOk = true;
         for (const QString& fmt : formats) {
             const QString path = directory + "/" + baseName + "." + fmt.toLower();
-            const int quality  = fmt.toLower() == "jpg" ? 92 : -1;
-            if (!exportImage.save(path, nullptr, quality)) allOk = false;
+            if (!exportReady.save(path, nullptr, qualityFor(path))) allOk = false;
         }
         QMetaObject::invokeMethod(this, [this, allOk]() {
-            if (allOk)
-                emit batchComplete();
-            else
-                emit batchFailed("One or more formats failed");
+            if (allOk) emit batchComplete();
+            else       emit batchFailed("One or more formats failed");
         }, Qt::QueuedConnection);
     });
 }
