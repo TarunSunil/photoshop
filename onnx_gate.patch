@@ -1,0 +1,122 @@
+From ed51a3be97271a497d57feb6c9e2a06d6b704460 Mon Sep 17 00:00:00 2001
+From: LumenForge Fix <fix@lumenforge.dev>
+Date: Tue, 23 Jun 2026 19:20:57 +0000
+Subject: [PATCH] Fix pre-main() crash: gate ONNX behind LUMEN_ENABLE_ONNX=OFF
+ by default
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+onnxruntime_cxx_api.h contains a global template static member:
+
+  template <typename T>
+  const OrtApi* Global<T>::api_{ OrtGetApiBase()->GetApi(ORT_API_VERSION) };
+
+This calls OrtGetApiBase() from onnxruntime.dll during C++ static
+initialisation, BEFORE main() runs.  /DELAYLOAD:onnxruntime.dll intercepts
+the call but still tries to load the DLL and all its transitive dependencies
+(abseil_dll, libprotobuf, re2) at that moment.  If any one of those is
+absent the delay-load throws 0xC06D007E and the process dies silently — no
+window, no console output, no MessageBox, nothing.
+
+Fix: wrap the find_package(onnxruntime) block in option(LUMEN_ENABLE_ONNX OFF).
+Without HAVE_ONNXRUNTIME defined, onnxruntime_cxx_api.h is never included,
+the static initialiser never exists, and the process starts cleanly.  AI
+buttons will show 'ONNX Runtime not available in this build' at runtime.
+
+To re-enable once all DLLs + model files are confirmed present:
+  cmake ... -DLUMEN_ENABLE_ONNX=ON
+
+Also gate /DELAYLOAD:onnxruntime.dll on LUMEN_ENABLE_ONNX so it is only
+applied when the DLL is actually in the link graph.
+---
+ app/CMakeLists.txt  | 17 ++++++++---------
+ core/CMakeLists.txt | 43 +++++++++++++++++++++++++++++++++++--------
+ 2 files changed, 43 insertions(+), 17 deletions(-)
+
+diff --git a/app/CMakeLists.txt b/app/CMakeLists.txt
+index de2d05c..af720b2 100644
+--- a/app/CMakeLists.txt
++++ b/app/CMakeLists.txt
+@@ -29,15 +29,14 @@ set_target_properties(LumenForge PROPERTIES
+     WIN32_EXECUTABLE $<CONFIG:Release>
+     MACOSX_BUNDLE TRUE
+ )
+-# Delay-load onnxruntime.dll so it is NOT pulled into the process import table
+-# at startup.  Without this, Windows must resolve onnxruntime.dll and every
+-# transitive dependency (abseil, protobuf, re2 …) the moment LumenForge.exe
+-# launches.  If any one of those DLLs is absent the process silently terminates
+-# before main() even runs.  With delay-load, the DLL is loaded the first time
+-# an ORT API is actually called (i.e. when the user invokes an AI feature),
+-# and any loading failure surfaces as a catchable exception there rather than a
+-# silent startup death.
+-if(MSVC)
++# Delay-load onnxruntime.dll — only relevant when ONNX is actually linked.
++# When LUMEN_ENABLE_ONNX=ON, onnxruntime.dll must NOT be pulled into the
++# process import table at startup because onnxruntime_cxx_api.h has a global
++# static initialiser that calls OrtGetApiBase() before main() runs (see
++# core/CMakeLists.txt for the full explanation).  DELAYLOAD defers the DLL
++# load until the first ORT API call inside the event loop, where we have
++# proper exception handling.
++if(MSVC AND LUMEN_ENABLE_ONNX)
+     target_link_options(LumenForge PRIVATE /DELAYLOAD:onnxruntime.dll)
+     target_link_libraries(LumenForge PRIVATE delayimp)
+ endif()
+diff --git a/core/CMakeLists.txt b/core/CMakeLists.txt
+index 39df4b0..ef76adb 100644
+--- a/core/CMakeLists.txt
++++ b/core/CMakeLists.txt
+@@ -44,15 +44,42 @@ target_link_libraries(lumen_core
+         Qt6::Sql
+         Qt6::Concurrent
+ )
+-find_package(onnxruntime QUIET
+-    HINTS "${ONNXRUNTIME_ROOT}/lib/cmake/onnxruntime"
+-)
+-if(onnxruntime_FOUND)
+-    message(STATUS "ONNX Runtime found - AI inference enabled")
+-    target_compile_definitions(lumen_core PUBLIC HAVE_ONNXRUNTIME)
+-    target_link_libraries(lumen_core PUBLIC onnxruntime::onnxruntime)
++# ── ONNX Runtime (AI features) ────────────────────────────────────────────
++# Disabled by default.
++#
++# Why: onnxruntime_cxx_api.h instantiates a global template static member:
++#
++#   template <typename T>
++#   const OrtApi* Global<T>::api_{ OrtGetApiBase()->GetApi(ORT_API_VERSION) };
++#
++# This calls OrtGetApiBase() — a function inside onnxruntime.dll — during the
++# C++ static-initialisation phase, BEFORE main() runs.  Even with
++# /DELAYLOAD:onnxruntime.dll, Windows must resolve onnxruntime.dll and all its
++# transitive dependencies (abseil_dll, libprotobuf, re2 …) at that point.  If
++# any one of those DLLs is absent or mismatched the delay-load throws
++# 0xC06D007E and the process dies silently before main() is entered — no
++# console output, no MessageBox, nothing visible.
++#
++# To enable AI features once you have confirmed all DLLs are present:
++#   cmake … -DLUMEN_ENABLE_ONNX=ON
++option(LUMEN_ENABLE_ONNX
++    "Enable ONNX Runtime AI inference. Requires onnxruntime vcpkg package, all \
++transitive DLLs present in the output directory, and model .onnx files in models/."
++    OFF)
++
++if(LUMEN_ENABLE_ONNX)
++    find_package(onnxruntime QUIET
++        HINTS "${ONNXRUNTIME_ROOT}/lib/cmake/onnxruntime"
++    )
++    if(onnxruntime_FOUND)
++        message(STATUS "ONNX Runtime found  — AI inference ENABLED")
++        target_compile_definitions(lumen_core PUBLIC HAVE_ONNXRUNTIME)
++        target_link_libraries(lumen_core PUBLIC onnxruntime::onnxruntime)
++    else()
++        message(WARNING "LUMEN_ENABLE_ONNX=ON but onnxruntime package not found — AI disabled")
++    endif()
+ else()
+-    message(STATUS "ONNX Runtime NOT found - AI features disabled")
++    message(STATUS "ONNX Runtime DISABLED (LUMEN_ENABLE_ONNX=OFF) — AI tools will report unavailable at runtime")
+ endif()
+ find_package(libraw CONFIG QUIET)
+ if(libraw_FOUND)
+-- 
+2.43.0
+

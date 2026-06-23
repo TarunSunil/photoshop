@@ -177,7 +177,7 @@ ApplicationWindow {
                     }
                 }
                 Rectangle { width: 42; height: 1; color: "#1e2438"; Layout.alignment: Qt.AlignHCenter }
-                Label { text: "SIZE"; color: "#3a4566"; font.pixelSize: 8; Layout.alignment: Qt.AlignHCenter; letterSpacing: 1 }
+                Label { text: "SIZE"; color: "#3a4566"; font.pixelSize: 8; Layout.alignment: Qt.AlignHCenter }
                 Slider {
                     from: 5; to: 200; value: root.brushRadius
                     orientation: Qt.Vertical; implicitHeight: 88; Layout.alignment: Qt.AlignHCenter
@@ -233,7 +233,7 @@ ApplicationWindow {
                     BusyIndicator { anchors.centerIn: parent
                         visible: documentController.aiBusy; running: documentController.aiBusy }
                     Label { anchors.centerIn: parent
-                        visible: !documentController.hasDocument
+                    	visible: !documentController.hasDocument
                         text: "Open an image to begin"
                         color: "#3a4566"; font.pixelSize: 20 }
                 }
@@ -308,7 +308,7 @@ ApplicationWindow {
                             text: "Adjustments"; color: "#e2e8f0"; font.pixelSize: 17; font.weight: Font.DemiBold } }
                     // Transform
                     Label { text: "TRANSFORM"; color: "#3a4566"; font.pixelSize: 10; font.weight: Font.Medium
-                        Layout.leftMargin: 18; letterSpacing: 1.2 }
+                        Layout.leftMargin: 18 }
                     GridLayout { Layout.leftMargin: 14; Layout.rightMargin: 14; Layout.fillWidth: true
                         columns: 2; rowSpacing: 6; columnSpacing: 6
                         Button { text: "↺ Left";   Layout.fillWidth: true; implicitHeight: 30; enabled: documentController.hasDocument; onClicked: documentController.rotateCounterClockwise()
@@ -333,7 +333,7 @@ ApplicationWindow {
                             contentItem: Label { text: parent.text; color: "#8892a4"; font.pixelSize: 11; horizontalAlignment: Text.AlignHCenter } }
                     }
                     // Light
-                    Label { text: "LIGHT"; color: "#3a4566"; font.pixelSize: 10; font.weight: Font.Medium; Layout.leftMargin: 18; letterSpacing: 1.2 }
+                    Label { text: "LIGHT"; color: "#3a4566"; font.pixelSize: 10; font.weight: Font.Medium; Layout.leftMargin: 18 }
                     AdjustmentSlider { label: "Exposure";   from: -3;   to: 3;   value: documentController.exposure;    onMoved: (v) => documentController.exposure    = v }
                     AdjustmentSlider { label: "Contrast";   from: -100; to: 100; value: documentController.contrast;    onMoved: (v) => documentController.contrast    = v }
                     AdjustmentSlider { label: "Highlights"; from: -100; to: 100; value: documentController.highlights;  onMoved: (v) => documentController.highlights  = v }
@@ -341,13 +341,13 @@ ApplicationWindow {
                     AdjustmentSlider { label: "Whites";     from: -100; to: 100; value: documentController.whites;      onMoved: (v) => documentController.whites      = v }
                     AdjustmentSlider { label: "Blacks";     from: -100; to: 100; value: documentController.blacks;      onMoved: (v) => documentController.blacks      = v }
                     // Color
-                    Label { text: "COLOR"; color: "#3a4566"; font.pixelSize: 10; font.weight: Font.Medium; Layout.leftMargin: 18; letterSpacing: 1.2 }
+                    Label { text: "COLOR"; color: "#3a4566"; font.pixelSize: 10; font.weight: Font.Medium; Layout.leftMargin: 18 }
                     AdjustmentSlider { label: "Saturation";  from: -100; to: 100; value: documentController.saturation;  onMoved: (v) => documentController.saturation  = v }
                     AdjustmentSlider { label: "Vibrance";    from: -100; to: 100; value: documentController.vibrance;    onMoved: (v) => documentController.vibrance    = v }
                     AdjustmentSlider { label: "Temperature"; from: -100; to: 100; value: documentController.temperature; onMoved: (v) => documentController.temperature = v }
                     AdjustmentSlider { label: "Tint";        from: -100; to: 100; value: documentController.tint;        onMoved: (v) => documentController.tint        = v }
                     // Detail
-                    Label { text: "DETAIL"; color: "#3a4566"; font.pixelSize: 10; font.weight: Font.Medium; Layout.leftMargin: 18; letterSpacing: 1.2 }
+                    Label { text: "DETAIL"; color: "#3a4566"; font.pixelSize: 10; font.weight: Font.Medium; Layout.leftMargin: 18}
                     AdjustmentSlider { label: "Noise Reduction"; from: 0; to: 100; value: documentController.noiseReduction; onMoved: (v) => documentController.noiseReduction = v }
                     AdjustmentSlider { label: "Sharpening";      from: 0; to: 100; value: documentController.sharpening;     onMoved: (v) => documentController.sharpening     = v }
                     Button { text: "Reset All"; enabled: documentController.hasDocument; implicitHeight: 30
@@ -356,7 +356,7 @@ ApplicationWindow {
                         background: Rectangle { color: parent.hovered ? "#2a1414" : "#171c2a"; radius: 7; border.color: "#252d45" }
                         contentItem: Label { text: "Reset All"; color: "#f07070"; font.pixelSize: 11; horizontalAlignment: Text.AlignHCenter } }
                     // AI
-                    Label { text: "AI TOOLS"; color: "#3a4566"; font.pixelSize: 10; font.weight: Font.Medium; Layout.leftMargin: 18; letterSpacing: 1.2 }
+                    Label { text: "AI TOOLS"; color: "#3a4566"; font.pixelSize: 10; font.weight: Font.Medium; Layout.leftMargin: 18 }
                     Button { text: "Subject mask"; enabled: documentController.hasDocument && !documentController.aiBusy; implicitHeight: 30
                         Layout.leftMargin: 14; Layout.rightMargin: 14; Layout.fillWidth: true
                         onClicked: documentController.requestAiMask(imagePreview.width/2, imagePreview.height/2)

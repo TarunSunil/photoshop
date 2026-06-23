@@ -44,15 +44,42 @@ target_link_libraries(lumen_core
         Qt6::Sql
         Qt6::Concurrent
 )
-find_package(onnxruntime QUIET
-    HINTS "${ONNXRUNTIME_ROOT}/lib/cmake/onnxruntime"
-)
-if(onnxruntime_FOUND)
-    message(STATUS "ONNX Runtime found - AI inference enabled")
-    target_compile_definitions(lumen_core PUBLIC HAVE_ONNXRUNTIME)
-    target_link_libraries(lumen_core PUBLIC onnxruntime::onnxruntime)
+# ── ONNX Runtime (AI features) ────────────────────────────────────────────
+# Disabled by default.
+#
+# Why: onnxruntime_cxx_api.h instantiates a global template static member:
+#
+#   template <typename T>
+#   const OrtApi* Global<T>::api_{ OrtGetApiBase()->GetApi(ORT_API_VERSION) };
+#
+# This calls OrtGetApiBase() — a function inside onnxruntime.dll — during the
+# C++ static-initialisation phase, BEFORE main() runs.  Even with
+# /DELAYLOAD:onnxruntime.dll, Windows must resolve onnxruntime.dll and all its
+# transitive dependencies (abseil_dll, libprotobuf, re2 …) at that point.  If
+# any one of those DLLs is absent or mismatched the delay-load throws
+# 0xC06D007E and the process dies silently before main() is entered — no
+# console output, no MessageBox, nothing visible.
+#
+# To enable AI features once you have confirmed all DLLs are present:
+#   cmake … -DLUMEN_ENABLE_ONNX=ON
+option(LUMEN_ENABLE_ONNX
+    "Enable ONNX Runtime AI inference. Requires onnxruntime vcpkg package, all \
+transitive DLLs present in the output directory, and model .onnx files in models/."
+    OFF)
+
+if(LUMEN_ENABLE_ONNX)
+    find_package(onnxruntime QUIET
+        HINTS "${ONNXRUNTIME_ROOT}/lib/cmake/onnxruntime"
+    )
+    if(onnxruntime_FOUND)
+        message(STATUS "ONNX Runtime found  — AI inference ENABLED")
+        target_compile_definitions(lumen_core PUBLIC HAVE_ONNXRUNTIME)
+        target_link_libraries(lumen_core PUBLIC onnxruntime::onnxruntime)
+    else()
+        message(WARNING "LUMEN_ENABLE_ONNX=ON but onnxruntime package not found — AI disabled")
+    endif()
 else()
-    message(STATUS "ONNX Runtime NOT found - AI features disabled")
+    message(STATUS "ONNX Runtime DISABLED (LUMEN_ENABLE_ONNX=OFF) — AI tools will report unavailable at runtime")
 endif()
 find_package(libraw CONFIG QUIET)
 if(libraw_FOUND)

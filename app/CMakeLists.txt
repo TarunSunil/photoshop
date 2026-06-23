@@ -29,15 +29,14 @@ set_target_properties(LumenForge PROPERTIES
     WIN32_EXECUTABLE $<CONFIG:Release>
     MACOSX_BUNDLE TRUE
 )
-# Delay-load onnxruntime.dll so it is NOT pulled into the process import table
-# at startup.  Without this, Windows must resolve onnxruntime.dll and every
-# transitive dependency (abseil, protobuf, re2 …) the moment LumenForge.exe
-# launches.  If any one of those DLLs is absent the process silently terminates
-# before main() even runs.  With delay-load, the DLL is loaded the first time
-# an ORT API is actually called (i.e. when the user invokes an AI feature),
-# and any loading failure surfaces as a catchable exception there rather than a
-# silent startup death.
-if(MSVC)
+# Delay-load onnxruntime.dll — only relevant when ONNX is actually linked.
+# When LUMEN_ENABLE_ONNX=ON, onnxruntime.dll must NOT be pulled into the
+# process import table at startup because onnxruntime_cxx_api.h has a global
+# static initialiser that calls OrtGetApiBase() before main() runs (see
+# core/CMakeLists.txt for the full explanation).  DELAYLOAD defers the DLL
+# load until the first ORT API call inside the event loop, where we have
+# proper exception handling.
+if(MSVC AND LUMEN_ENABLE_ONNX)
     target_link_options(LumenForge PRIVATE /DELAYLOAD:onnxruntime.dll)
     target_link_libraries(LumenForge PRIVATE delayimp)
 endif()
