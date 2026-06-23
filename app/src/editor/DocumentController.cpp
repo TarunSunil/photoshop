@@ -360,6 +360,19 @@ void DocumentController::requestAiMask(double x, double y)
 void DocumentController::applyInpaint()
 {
     if (!m_document.hasDocument() || m_document.activeMask().isNull() || m_aiBusy) return;
+    // Create the engine on first use — this is when Ort::Env is first
+    // initialised and onnxruntime.dll is first loaded (via delay-load).
+    if (!m_inpaintEngine) {
+        try {
+            m_inpaintEngine = std::make_unique<lumen::InpaintEngine>();
+        } catch (const std::exception& e) {
+            const QString msg = QString("Failed to initialise inpaint engine: %1")
+                                    .arg(QString::fromUtf8(e.what()));
+            setAiStatus(msg);
+            emit operationFailed(msg);
+            return;
+        }
+    }
     setAiBusy(true);
     setAiStatus("Loading model...");
     const QImage src  = m_document.sourceImage();
@@ -368,7 +381,7 @@ void DocumentController::applyInpaint()
     connect(w, &QFutureWatcher<QImage>::finished, this, [this, w]() {
         m_document.replaceSourceImage(w->result());
         if (m_brushEngine) m_brushEngine->resize(m_document.sourceSize());
-        const QString error = m_inpaintEngine.lastError();
+        const QString error = m_inpaintEngine ? m_inpaintEngine->lastError() : QString();
         if (!error.isEmpty()) { setAiStatus(error); emit operationFailed(error); }
         else setAiStatus("Done");
         setAiBusy(false);
@@ -377,12 +390,24 @@ void DocumentController::applyInpaint()
     });
     w->setFuture(QtConcurrent::run([this, src, mask]() mutable -> QImage {
         QMetaObject::invokeMethod(this, [this]{ setAiStatus("Running inference..."); });
-        return m_inpaintEngine.inpaint(src, mask);
+        return m_inpaintEngine->inpaint(src, mask);
     }));
 }
 void DocumentController::applyUpscale()
 {
     if (!m_document.hasDocument() || m_aiBusy) return;
+    // Create the engine on first use — same lazy-init rationale as applyInpaint.
+    if (!m_upscaleEngine) {
+        try {
+            m_upscaleEngine = std::make_unique<lumen::UpscaleEngine>();
+        } catch (const std::exception& e) {
+            const QString msg = QString("Failed to initialise upscale engine: %1")
+                                    .arg(QString::fromUtf8(e.what()));
+            setAiStatus(msg);
+            emit operationFailed(msg);
+            return;
+        }
+    }
     setAiBusy(true);
     setAiStatus("Loading model...");
     const QImage src = m_document.sourceImage();
@@ -390,7 +415,7 @@ void DocumentController::applyUpscale()
     connect(w, &QFutureWatcher<QImage>::finished, this, [this, w]() {
         m_document.replaceSourceImage(w->result());
         if (m_brushEngine) m_brushEngine->resize(m_document.sourceSize());
-        const QString error = m_upscaleEngine.lastError();
+        const QString error = m_upscaleEngine ? m_upscaleEngine->lastError() : QString();
         setAiStatus(error.isEmpty() ? "Done" : QString("Done (basic resize - %1)").arg(error));
         setAiBusy(false);
         rebuildPreview();
@@ -398,7 +423,7 @@ void DocumentController::applyUpscale()
     });
     w->setFuture(QtConcurrent::run([this, src]() mutable -> QImage {
         QMetaObject::invokeMethod(this, [this]{ setAiStatus("Running inference..."); });
-        return m_upscaleEngine.upscale(src);
+        return m_upscaleEngine->upscale(src);
     }));
 }
 // ── Layers ───────────────────────────────────────────────────────────────────

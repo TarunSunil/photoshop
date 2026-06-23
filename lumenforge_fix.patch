@@ -1,0 +1,283 @@
+From c6391d4020dda34922c5b502cd5a0c840ead1505 Mon Sep 17 00:00:00 2001
+From: LumenForge Fix <fix@lumenforge.dev>
+Date: Tue, 23 Jun 2026 08:22:47 +0000
+Subject: [PATCH] Fix silent launch crash: lazy-init AI engines + DELAYLOAD
+ onnxruntime
+
+Root cause: InpaintEngine and UpscaleEngine were direct value members of
+DocumentController, so their constructors (which call OnnxSession::OnnxSession
+-> std::make_unique<Impl>() -> Ort::Env{...}) ran inside main() before the
+Qt event loop started.  Windows must load onnxruntime.dll and all its
+transitive dependencies (abseil, protobuf, re2...) into the process import
+table at startup.  If any one of those DLLs was absent or failed to
+initialise, the process terminated silently with no window and no console
+output (WIN32_EXECUTABLE suppressed all output).
+
+Three-part fix:
+
+1. app/CMakeLists.txt
+   - WIN32_EXECUTABLE is now $<CONFIG:Release>: Debug builds get a console
+     window so qDebug/qCritical output is visible without a debugger.
+   - /DELAYLOAD:onnxruntime.dll + delayimp (MSVC only): onnxruntime.dll is
+     not loaded at process startup; it is loaded on first ORT API call (i.e.
+     when the user actually invokes an AI feature).  A missing DLL now
+     produces a catchable exception at that point instead of a silent
+     startup death.
+
+2. DocumentController.hpp / .cpp
+   - m_inpaintEngine and m_upscaleEngine changed from value members to
+     std::unique_ptr<>, null-initialised.  Engines are created on first call
+     to applyInpaint() / applyUpscale() inside a try/catch that surfaces the
+     error in the UI status bar rather than crashing.
+
+3. main.cpp
+   - DocumentController constructed inside try/catch.
+   - Fatal errors shown via native Win32 MessageBoxW (no Qt Widgets dep)
+     so they are visible in both console and WIN32 GUI builds.
+   - objectCreationFailed handler reports the QML error explicitly.
+---
+ app/CMakeLists.txt                    | 16 +++++-
+ app/src/editor/DocumentController.cpp | 33 +++++++++++--
+ app/src/editor/DocumentController.hpp | 12 ++++-
+ app/src/main/main.cpp                 | 70 ++++++++++++++++++++++-----
+ 4 files changed, 113 insertions(+), 18 deletions(-)
+
+diff --git a/app/CMakeLists.txt b/app/CMakeLists.txt
+index 2837400..de2d05c 100644
+--- a/app/CMakeLists.txt
++++ b/app/CMakeLists.txt
+@@ -24,9 +24,23 @@ target_include_directories(LumenForge
+         ${CMAKE_CURRENT_SOURCE_DIR}/src
+ )
+ set_target_properties(LumenForge PROPERTIES
+-    WIN32_EXECUTABLE TRUE
++    # Release: proper WIN32 GUI exe (no console window).
++    # Debug: console exe so qDebug/qCritical/stdout are visible in the terminal.
++    WIN32_EXECUTABLE $<CONFIG:Release>
+     MACOSX_BUNDLE TRUE
+ )
++# Delay-load onnxruntime.dll so it is NOT pulled into the process import table
++# at startup.  Without this, Windows must resolve onnxruntime.dll and every
++# transitive dependency (abseil, protobuf, re2 …) the moment LumenForge.exe
++# launches.  If any one of those DLLs is absent the process silently terminates
++# before main() even runs.  With delay-load, the DLL is loaded the first time
++# an ORT API is actually called (i.e. when the user invokes an AI feature),
++# and any loading failure surfaces as a catchable exception there rather than a
++# silent startup death.
++if(MSVC)
++    target_link_options(LumenForge PRIVATE /DELAYLOAD:onnxruntime.dll)
++    target_link_libraries(LumenForge PRIVATE delayimp)
++endif()
+ install(TARGETS LumenForge
+     BUNDLE  DESTINATION .
+     RUNTIME DESTINATION bin
+diff --git a/app/src/editor/DocumentController.cpp b/app/src/editor/DocumentController.cpp
+index bac3323..b8854dc 100644
+--- a/app/src/editor/DocumentController.cpp
++++ b/app/src/editor/DocumentController.cpp
+@@ -360,6 +360,19 @@ void DocumentController::requestAiMask(double x, double y)
+ void DocumentController::applyInpaint()
+ {
+     if (!m_document.hasDocument() || m_document.activeMask().isNull() || m_aiBusy) return;
++    // Create the engine on first use — this is when Ort::Env is first
++    // initialised and onnxruntime.dll is first loaded (via delay-load).
++    if (!m_inpaintEngine) {
++        try {
++            m_inpaintEngine = std::make_unique<lumen::InpaintEngine>();
++        } catch (const std::exception& e) {
++            const QString msg = QString("Failed to initialise inpaint engine: %1")
++                                    .arg(QString::fromUtf8(e.what()));
++            setAiStatus(msg);
++            emit operationFailed(msg);
++            return;
++        }
++    }
+     setAiBusy(true);
+     setAiStatus("Loading model...");
+     const QImage src  = m_document.sourceImage();
+@@ -368,7 +381,7 @@ void DocumentController::applyInpaint()
+     connect(w, &QFutureWatcher<QImage>::finished, this, [this, w]() {
+         m_document.replaceSourceImage(w->result());
+         if (m_brushEngine) m_brushEngine->resize(m_document.sourceSize());
+-        const QString error = m_inpaintEngine.lastError();
++        const QString error = m_inpaintEngine ? m_inpaintEngine->lastError() : QString();
+         if (!error.isEmpty()) { setAiStatus(error); emit operationFailed(error); }
+         else setAiStatus("Done");
+         setAiBusy(false);
+@@ -377,12 +390,24 @@ void DocumentController::applyInpaint()
+     });
+     w->setFuture(QtConcurrent::run([this, src, mask]() mutable -> QImage {
+         QMetaObject::invokeMethod(this, [this]{ setAiStatus("Running inference..."); });
+-        return m_inpaintEngine.inpaint(src, mask);
++        return m_inpaintEngine->inpaint(src, mask);
+     }));
+ }
+ void DocumentController::applyUpscale()
+ {
+     if (!m_document.hasDocument() || m_aiBusy) return;
++    // Create the engine on first use — same lazy-init rationale as applyInpaint.
++    if (!m_upscaleEngine) {
++        try {
++            m_upscaleEngine = std::make_unique<lumen::UpscaleEngine>();
++        } catch (const std::exception& e) {
++            const QString msg = QString("Failed to initialise upscale engine: %1")
++                                    .arg(QString::fromUtf8(e.what()));
++            setAiStatus(msg);
++            emit operationFailed(msg);
++            return;
++        }
++    }
+     setAiBusy(true);
+     setAiStatus("Loading model...");
+     const QImage src = m_document.sourceImage();
+@@ -390,7 +415,7 @@ void DocumentController::applyUpscale()
+     connect(w, &QFutureWatcher<QImage>::finished, this, [this, w]() {
+         m_document.replaceSourceImage(w->result());
+         if (m_brushEngine) m_brushEngine->resize(m_document.sourceSize());
+-        const QString error = m_upscaleEngine.lastError();
++        const QString error = m_upscaleEngine ? m_upscaleEngine->lastError() : QString();
+         setAiStatus(error.isEmpty() ? "Done" : QString("Done (basic resize - %1)").arg(error));
+         setAiBusy(false);
+         rebuildPreview();
+@@ -398,7 +423,7 @@ void DocumentController::applyUpscale()
+     });
+     w->setFuture(QtConcurrent::run([this, src]() mutable -> QImage {
+         QMetaObject::invokeMethod(this, [this]{ setAiStatus("Running inference..."); });
+-        return m_upscaleEngine.upscale(src);
++        return m_upscaleEngine->upscale(src);
+     }));
+ }
+ // ── Layers ───────────────────────────────────────────────────────────────────
+diff --git a/app/src/editor/DocumentController.hpp b/app/src/editor/DocumentController.hpp
+index 3f0fccb..0e60188 100644
+--- a/app/src/editor/DocumentController.hpp
++++ b/app/src/editor/DocumentController.hpp
+@@ -141,8 +141,16 @@ private:
+     lumen::ExportService   m_exportService;
+     lumen::ProjectStore    m_projectStore;
+     lumen::AiRuntime       m_aiRuntime;
+-    lumen::InpaintEngine   m_inpaintEngine;
+-    lumen::UpscaleEngine   m_upscaleEngine;
++    // Held as unique_ptr so the InpaintEngine / UpscaleEngine constructors
++    // (which create an Ort::Env and load the ONNX Runtime) are NOT called at
++    // DocumentController construction time.  Previously these were value
++    // members, meaning two Ort::Env objects were created before main() even
++    // reached QGuiApplication::exec() — if onnxruntime.dll or any transitive
++    // dependency failed to load the process terminated silently.  With
++    // unique_ptr the engines are created on first AI use; by then we are inside
++    // the Qt event loop and can show an error message rather than crashing.
++    std::unique_ptr<lumen::InpaintEngine>  m_inpaintEngine;
++    std::unique_ptr<lumen::UpscaleEngine>  m_upscaleEngine;
+     QString  m_previewPath;
+     int      m_previewVersion    = 0;
+     bool     m_showOriginal      = false;
+diff --git a/app/src/main/main.cpp b/app/src/main/main.cpp
+index 7e708ff..724ae1b 100644
+--- a/app/src/main/main.cpp
++++ b/app/src/main/main.cpp
+@@ -5,42 +5,90 @@
+ #include <QQuickStyle>
+ #include <QDebug>
+ #include <iostream>
++#include <stdexcept>
++#ifdef Q_OS_WIN
++#  include <windows.h>
++#endif
++
++// Show a fatal error in a way that is visible regardless of whether this is
++// a Debug console build or a Release WIN32 GUI build (no console window).
++// Uses the native Win32 MessageBoxW so there is no dependency on Qt Widgets.
++static void fatalError(const QString& title, const QString& text)
++{
++    // Always write to Qt's log (visible in debuggers, Qt Creator output, etc.)
++    qCritical() << title << ":" << text;
++#ifdef Q_OS_WIN
++    // In a WIN32/Release build there is no console window, so qCritical is
++    // invisible.  Pop a native message box so the user can see why it failed.
++    const QString msg = title + "\n\n" + text;
++    MessageBoxW(nullptr,
++                reinterpret_cast<const wchar_t*>(msg.utf16()),
++                reinterpret_cast<const wchar_t*>(title.utf16()),
++                MB_OK | MB_ICONERROR);
++#endif
++}
++
+ int main(int argc, char* argv[])
+ {
+     std::cout << "MAIN STARTED" << std::endl;
++
+     QGuiApplication app(argc, argv);
+     QGuiApplication::setApplicationName("LumenForge");
+     QGuiApplication::setOrganizationName("LumenForge");
+     QGuiApplication::setApplicationVersion("0.1.0");
+     QQuickStyle::setStyle("Fusion");
++
++    // DocumentController is constructed here.  Previously InpaintEngine and
++    // UpscaleEngine were direct members, so their constructors ran here and
++    // tried to initialise Ort::Env — which loads onnxruntime.dll.  If the DLL
++    // or any dependency was missing the process terminated silently.  Those
++    // engines are now unique_ptrs (lazy-initialised on first AI use), so this
++    // constructor is safe.  The try/catch is kept as a safety net.
+     qDebug() << "Creating DocumentController";
+-    DocumentController documentController;
++    DocumentController* docCtrl = nullptr;
++    try {
++        docCtrl = new DocumentController();
++    } catch (const std::exception& e) {
++        fatalError("Startup error",
++                   QString("DocumentController initialisation failed:\n%1")
++                       .arg(QString::fromUtf8(e.what())));
++        return -1;
++    } catch (...) {
++        fatalError("Startup error",
++                   "DocumentController initialisation failed with an unknown exception.");
++        return -1;
++    }
+     qDebug() << "DocumentController created";
+-    qDebug() << "Creating engine";
++
+     QQmlApplicationEngine engine;
+-    qDebug() << "Engine created";
+-    engine.rootContext()->setContextProperty(
+-        "documentController",
+-        &documentController
+-    );
++    engine.rootContext()->setContextProperty("documentController", docCtrl);
++
+     QObject::connect(
+         &engine,
+         &QQmlApplicationEngine::objectCreationFailed,
+         &app,
+-        []() {
+-            qCritical() << "QML object creation failed";
++        [&]() {
++            fatalError("QML error", "Failed to create the root QML object.\n"
++                       "Check the Qt Quick module deployment and QML syntax.");
+             QCoreApplication::exit(-1);
+         },
+         Qt::QueuedConnection
+     );
++
+     qDebug() << "Loading QML module";
+     engine.loadFromModule("LumenForge", "Main");
+-    qDebug() << "Module loaded";
+     qDebug() << "Root objects:" << engine.rootObjects().size();
++
+     if (engine.rootObjects().isEmpty()) {
+-        qCritical() << "No root QML object created";
++        fatalError("QML error", "No root QML object was created.\n"
++                   "The LumenForge QML module could not be loaded.");
++        delete docCtrl;
+         return -1;
+     }
++
++    // Transfer ownership to the engine so docCtrl is cleaned up with the engine.
++    docCtrl->setParent(engine.rootObjects().first());
++
+     qDebug() << "Entering event loop";
+     return QGuiApplication::exec();
+ }
+\ No newline at end of file
+-- 
+2.43.0
+

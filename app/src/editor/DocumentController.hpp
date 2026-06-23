@@ -141,8 +141,16 @@ private:
     lumen::ExportService   m_exportService;
     lumen::ProjectStore    m_projectStore;
     lumen::AiRuntime       m_aiRuntime;
-    lumen::InpaintEngine   m_inpaintEngine;
-    lumen::UpscaleEngine   m_upscaleEngine;
+    // Held as unique_ptr so the InpaintEngine / UpscaleEngine constructors
+    // (which create an Ort::Env and load the ONNX Runtime) are NOT called at
+    // DocumentController construction time.  Previously these were value
+    // members, meaning two Ort::Env objects were created before main() even
+    // reached QGuiApplication::exec() — if onnxruntime.dll or any transitive
+    // dependency failed to load the process terminated silently.  With
+    // unique_ptr the engines are created on first AI use; by then we are inside
+    // the Qt event loop and can show an error message rather than crashing.
+    std::unique_ptr<lumen::InpaintEngine>  m_inpaintEngine;
+    std::unique_ptr<lumen::UpscaleEngine>  m_upscaleEngine;
     QString  m_previewPath;
     int      m_previewVersion    = 0;
     bool     m_showOriginal      = false;
