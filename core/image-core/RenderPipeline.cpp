@@ -257,16 +257,50 @@ QImage RenderPipeline::applyAdjustments(
         cv::Mat mat(img8.height(), img8.width(), CV_8UC3,
                     img8.bits(), img8.bytesPerLine());
         cv::cvtColor(mat, mat, cv::COLOR_RGB2BGR);
+
         if (nr > 0.0) {
-            float h = static_cast<float>(nr * 0.5);
-            cv::fastNlMeansDenoisingColored(mat, mat, h, h, 7, 21);
+            // Bilateral filter: edge-preserving denoising — does NOT blur across
+            // edges unlike fastNlMeansDenoising. Much faster and produces clean
+            // results that match professional photo editors (Lightroom uses a
+            // similar luminance/color bilateral approach).
+            // sigmaColor: how much color difference is tolerated (higher = more smoothing)
+            // sigmaSpace: spatial extent — keep moderate to avoid oil-painting look
+            cv::Mat filtered;
+            const double sigmaColor = 8.0 + nr * 0.40;   // 8–48 range
+            const double sigmaSpace = 4.0 + nr * 0.12;   // 4–16 range
+            // Use small d=-1 so sigma drives radius (avoids O(d^2) cost)
+            cv::bilateralFilter(mat, filtered, -1, sigmaColor, sigmaSpace);
+            mat = filtered;
         }
+
         if (sh > 0.0) {
+            // Proper Unsharp Masking (USM): the industry standard.
+            // sharp = original + amount * (original - blurred)
+            // Equivalent to: sharp = (1+amount)*original - amount*blurred
+            // Threshold clamping prevents amplifying already-noisy regions.
+            const double sigma  = 0.6 + sh * 0.025;     // 0.6–3.1px blur radius
+            const double amount = sh * 0.018;            // 0–1.8 gain
+            const int    thresh = static_cast<int>(sh * 0.3); // noise gate 0–30
+
             cv::Mat blurred;
-            cv::GaussianBlur(mat, blurred, cv::Size(0,0), 3);
-            cv::addWeighted(mat, 1.0 + sh/100.0,
-                            blurred, -(sh/100.0), 0, mat);
+            cv::GaussianBlur(mat, blurred, cv::Size(0, 0), sigma);
+
+            // Apply USM only where the edge signal exceeds the threshold
+            // (prevents halo artifacts on flat areas and noise amplification)
+            for (int y = 0; y < mat.rows; ++y) {
+                const uchar* src = mat.ptr<uchar>(y);
+                const uchar* blu = blurred.ptr<uchar>(y);
+                uchar*       dst = mat.ptr<uchar>(y);
+                for (int x = 0; x < mat.cols * 3; ++x) {
+                    const int edge = static_cast<int>(src[x]) - static_cast<int>(blu[x]);
+                    if (std::abs(edge) > thresh)
+                        dst[x] = static_cast<uchar>(
+                            std::clamp(static_cast<int>(src[x]) +
+                                static_cast<int>(std::round(amount * edge)), 0, 255));
+                }
+            }
         }
+
         cv::cvtColor(mat, mat, cv::COLOR_BGR2RGB);
         QImage result(mat.data, mat.cols, mat.rows,
                       static_cast<int>(mat.step), QImage::Format_RGB888);

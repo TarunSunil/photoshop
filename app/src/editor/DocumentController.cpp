@@ -5,15 +5,31 @@
 #include <QStandardPaths>
 #include <QVariantMap>
 #include <QtConcurrent>
+#include <QPainter>
+#include <QLinearGradient>
+#include <QRadialGradient>
 DocumentController::DocumentController(QObject* parent)
     : QObject(parent)
     , m_cancelFlag(std::make_shared<std::atomic<bool>>(false))
 {
+    // Preview debounce: wait 100ms after last adjustment change
+    m_previewDebounce = new QTimer(this);
+    m_previewDebounce->setSingleShot(true);
+    m_previewDebounce->setInterval(100);
+    connect(m_previewDebounce, &QTimer::timeout, this, &DocumentController::rebuildPreview);
+    // Mask save debounce: batch expensive PNG saves to every 50ms max.
+    // Without this, every mouse-move during brush painting triggers a
+    // full PNG encode + file write (potentially 100-500ms for large images)
+    // which stacks up and causes the 10-second freeze.
+    m_maskSaveTimer = new QTimer(this);
+    m_maskSaveTimer->setSingleShot(true);
+    m_maskSaveTimer->setInterval(50);
+    connect(m_maskSaveTimer, &QTimer::timeout, this, &DocumentController::flushMaskSave);
     connect(&m_document, &lumen::DocumentModel::changed, this, [this]() {
-        rebuildPreview();
         emit documentChanged();
         emit adjustmentsChanged();
         emit layersChanged();
+        m_previewDebounce->start();
     });
     connect(&m_document, &lumen::DocumentModel::historyChanged,
             this, &DocumentController::historyChanged);
@@ -34,8 +50,7 @@ QString DocumentController::sourceName() const
 }
 QString DocumentController::imageUrl() const
 {
-    if (!m_document.hasDocument())
-        return QString();
+    if (!m_document.hasDocument()) return QString();
     if (m_showOriginal || m_previewPath.isEmpty())
         return QUrl::fromLocalFile(m_document.sourcePath()).toString();
     return QUrl::fromLocalFile(m_previewPath).toString();
@@ -43,6 +58,7 @@ QString DocumentController::imageUrl() const
 bool DocumentController::canUndo()      const { return m_document.canUndo(); }
 bool DocumentController::canRedo()      const { return m_document.canRedo(); }
 bool DocumentController::showOriginal() const { return m_showOriginal; }
+bool DocumentController::cropActive()   const { return m_cropActive; }
 void DocumentController::setShowOriginal(bool v)
 {
     if (m_showOriginal == v) return;
@@ -85,7 +101,15 @@ int DocumentController::sourceHeight() const { return m_document.sourceSize().he
 void DocumentController::setActiveTool(int tool)
 {
     if (m_activeTool == tool) return;
+    // Flush any pending mask before switching tools
+    if (m_maskSaveTimer && m_maskSaveTimer->isActive()) {
+        m_maskSaveTimer->stop();
+        flushMaskSave();
+    }
     m_activeTool = tool;
+    // Entering crop mode: set flag so QML shows the crop overlay
+    m_cropActive = (tool == 5);
+    emit cropActiveChanged();
     emit activeToolChanged();
 }
 bool    DocumentController::aiBusy()   const { return m_aiBusy; }
@@ -200,16 +224,36 @@ void DocumentController::flipHorizontal()         { m_document.flipHorizontal();
 void DocumentController::flipVertical()           { m_document.flipVertical(); }
 void DocumentController::undo()                   { m_document.undo(); }
 void DocumentController::redo()                   { m_document.redo(); }
+// ── Brush mask ───────────────────────────────────────────────────────────────
 void DocumentController::paintMaskStroke(double x, double y, double radius, bool erase)
 {
     if (!m_document.hasDocument() || !m_brushEngine) return;
+    // Paint in memory — this is fast (pure pixel ops, no I/O)
     m_brushEngine->paintStroke(QPointF(x, y), radius, 0.85, erase);
+    // Do NOT call setActiveMask or saveMaskToTemp here — both are expensive
+    // (model update emits 'changed' which triggers preview rebuild;
+    // saveMaskToTemp encodes a full PNG file). Instead, batch them via timer.
+    m_maskSaveTimer->start();
+}
+void DocumentController::commitMaskPaint()
+{
+    // Called on mouseRelease to flush any pending save immediately
+    if (m_maskSaveTimer->isActive()) {
+        m_maskSaveTimer->stop();
+        flushMaskSave();
+    }
+}
+void DocumentController::flushMaskSave()
+{
+    if (!m_brushEngine) return;
+    // Update document model (triggers preview rebuild via debounce)
     m_document.setActiveMask(m_brushEngine->mask());
     saveMaskToTemp();
     emit maskChanged();
 }
 void DocumentController::clearMask()
 {
+    if (m_maskSaveTimer->isActive()) m_maskSaveTimer->stop();
     if (m_brushEngine) m_brushEngine->clear();
     m_document.setActiveMask(QImage());
     m_maskTempPath.clear();
@@ -217,13 +261,80 @@ void DocumentController::clearMask()
 }
 void DocumentController::saveMaskToTemp()
 {
+    const QImage& mask = m_document.activeMask();
+    if (mask.isNull()) return;
+    // Save mask at display resolution (max 1600x1200) — the full-res mask
+    // stays in memory; the temp file is only for QML display overlay.
+    // This makes PNG encode 4-10x faster for large source images.
+    QImage displayMask = (mask.width() > 1600)
+        ? mask.scaled(1600, 1200, Qt::KeepAspectRatio, Qt::FastTransformation)
+        : mask;
     const QString path = QStandardPaths::writableLocation(QStandardPaths::TempLocation)
         + QString("/lumenforge-mask-%1.png").arg(++m_maskVersion);
-    if (m_document.activeMask().save(path)) {
+    if (displayMask.save(path, "PNG")) {
         if (!m_maskTempPath.isEmpty()) QFile::remove(m_maskTempPath);
         m_maskTempPath = path;
     }
 }
+// ── Gradient mask ─────────────────────────────────────────────────────────────
+void DocumentController::applyGradientMask(double x1, double y1, double x2, double y2)
+{
+    if (!m_document.hasDocument()) return;
+    const QSize sz = m_document.sourceSize();
+    QImage mask(sz, QImage::Format_ARGB32);
+    QPainter p(&mask);
+    QLinearGradient grad(x1, y1, x2, y2);
+    grad.setColorAt(0.0, QColor(255, 255, 255, 255));
+    grad.setColorAt(1.0, QColor(255, 255, 255, 0));
+    p.fillRect(QRectF(0, 0, sz.width(), sz.height()), grad);
+    p.end();
+    if (!m_brushEngine) m_brushEngine = std::make_unique<lumen::BrushEngine>(sz);
+    m_brushEngine->mask() = mask;
+    m_document.setActiveMask(mask);
+    saveMaskToTemp();
+    emit maskChanged();
+}
+// ── Radial mask ───────────────────────────────────────────────────────────────
+void DocumentController::applyRadialMask(double cx, double cy, double radius)
+{
+    if (!m_document.hasDocument()) return;
+    const QSize sz = m_document.sourceSize();
+    QImage mask(sz, QImage::Format_ARGB32);
+    mask.fill(Qt::transparent);
+    QPainter p(&mask);
+    QRadialGradient grad(cx, cy, radius);
+    grad.setColorAt(0.0, QColor(255, 255, 255, 255));
+    grad.setColorAt(0.65, QColor(255, 255, 255, 180));
+    grad.setColorAt(1.0, QColor(255, 255, 255, 0));
+    p.fillRect(QRectF(0, 0, sz.width(), sz.height()), grad);
+    p.end();
+    if (!m_brushEngine) m_brushEngine = std::make_unique<lumen::BrushEngine>(sz);
+    m_brushEngine->mask() = mask;
+    m_document.setActiveMask(mask);
+    saveMaskToTemp();
+    emit maskChanged();
+}
+// ── Crop ─────────────────────────────────────────────────────────────────────
+void DocumentController::applyCrop(int x, int y, int w, int h)
+{
+    if (!m_document.hasDocument()) return;
+    const QSize sz = m_document.sourceSize();
+    const QRect rect(
+        qBound(0, x, sz.width()),
+        qBound(0, y, sz.height()),
+        qBound(1, w, sz.width()  - qBound(0, x, sz.width())),
+        qBound(1, h, sz.height() - qBound(0, y, sz.height()))
+    );
+    if (rect.isEmpty()) return;
+    m_document.replaceSourceImage(m_document.sourceImage().copy(rect));
+    m_brushEngine = std::make_unique<lumen::BrushEngine>(m_document.sourceSize());
+    m_maskTempPath.clear();
+    m_cropActive = false;
+    emit cropActiveChanged();
+    emit maskChanged();
+    setActiveTool(0);
+}
+// ── AI ────────────────────────────────────────────────────────────────────────
 void DocumentController::requestAiMask(double x, double y)
 {
     if (!m_document.hasDocument() || m_aiBusy) return;
@@ -258,12 +369,8 @@ void DocumentController::applyInpaint()
         m_document.replaceSourceImage(w->result());
         if (m_brushEngine) m_brushEngine->resize(m_document.sourceSize());
         const QString error = m_inpaintEngine.lastError();
-        if (!error.isEmpty()) {
-            setAiStatus(error);
-            emit operationFailed(error);
-        } else {
-            setAiStatus("Done");
-        }
+        if (!error.isEmpty()) { setAiStatus(error); emit operationFailed(error); }
+        else setAiStatus("Done");
         setAiBusy(false);
         rebuildPreview();
         w->deleteLater();
@@ -294,6 +401,7 @@ void DocumentController::applyUpscale()
         return m_upscaleEngine.upscale(src);
     }));
 }
+// ── Layers ───────────────────────────────────────────────────────────────────
 void DocumentController::addImageLayer(const QUrl& url)
 { m_document.addImageLayer(localPath(url)); }
 void DocumentController::deleteLayer(const QString& id)
@@ -304,6 +412,7 @@ void DocumentController::setLayerVisible(const QString& id, bool visible)
 { m_document.setLayerVisible(id, visible); }
 void DocumentController::exportBatch(const QUrl& directory, const QStringList& formats)
 { m_exportService.exportBatch(m_document, directory.toLocalFile(), formats); }
+// ── Preview ──────────────────────────────────────────────────────────────────
 void DocumentController::rebuildPreview()
 {
     if (!m_document.hasDocument()) {
@@ -329,16 +438,19 @@ void DocumentController::rebuildPreview()
         const QImage preview = watcher->result();
         if (!preview.isNull() && requestId == m_previewRequestId) {
             const QString path = QStandardPaths::writableLocation(QStandardPaths::TempLocation)
-                + QString("/lumenforge-preview-%1.png").arg(++m_previewVersion);
-            if (preview.save(path)) { m_previewPath = path; emit previewChanged(); }
+                + QString("/lumenforge-preview-%1.jpg").arg(++m_previewVersion);
+            // Save preview as JPEG (much faster than PNG for large images)
+            // quality=88 is indistinguishable from lossless at preview sizes
+            if (preview.save(path, "JPEG", 88)) { m_previewPath = path; emit previewChanged(); }
         }
         watcher->deleteLater();
         m_previewWatcher = nullptr;
         if (m_previewPending) { m_previewPending = false; rebuildPreview(); }
     });
+    // 1400x1050: good balance of quality and speed
     watcher->setFuture(QtConcurrent::run(
         [pipeline = m_renderPipeline, src, adjs, mask, cancelled]() {
-            return pipeline.renderPreviewFromData(src, adjs, QSize(1800, 1400), mask, cancelled);
+            return pipeline.renderPreviewFromData(src, adjs, QSize(1400, 1050), mask, cancelled);
         }));
 }
 void DocumentController::setAdjustment(lumen::AdjustmentType type, double value)

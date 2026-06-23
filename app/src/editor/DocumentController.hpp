@@ -18,14 +18,12 @@
 #include <memory>
 class DocumentController final : public QObject {
     Q_OBJECT
-    // Core
     Q_PROPERTY(bool hasDocument READ hasDocument NOTIFY documentChanged)
     Q_PROPERTY(QString sourceName READ sourceName NOTIFY documentChanged)
     Q_PROPERTY(QString imageUrl READ imageUrl NOTIFY previewChanged)
     Q_PROPERTY(bool canUndo READ canUndo NOTIFY historyChanged)
     Q_PROPERTY(bool canRedo READ canRedo NOTIFY historyChanged)
     Q_PROPERTY(bool showOriginal READ showOriginal WRITE setShowOriginal NOTIFY previewChanged)
-    // Adjustments
     Q_PROPERTY(double exposure    READ exposure    WRITE setExposure    NOTIFY adjustmentsChanged)
     Q_PROPERTY(double contrast    READ contrast    WRITE setContrast    NOTIFY adjustmentsChanged)
     Q_PROPERTY(double saturation  READ saturation  WRITE setSaturation  NOTIFY adjustmentsChanged)
@@ -38,19 +36,17 @@ class DocumentController final : public QObject {
     Q_PROPERTY(double tint        READ tint        WRITE setTint        NOTIFY adjustmentsChanged)
     Q_PROPERTY(double noiseReduction READ noiseReduction WRITE setNoiseReduction NOTIFY adjustmentsChanged)
     Q_PROPERTY(double sharpening  READ sharpening  WRITE setSharpening  NOTIFY adjustmentsChanged)
-    // M5 — masking
     Q_PROPERTY(int    activeTool  READ activeTool  WRITE setActiveTool  NOTIFY activeToolChanged)
     Q_PROPERTY(bool   hasMask     READ hasMask     NOTIFY maskChanged)
     Q_PROPERTY(QString maskUrl    READ maskUrl     NOTIFY maskChanged)
     Q_PROPERTY(int sourceWidth    READ sourceWidth  NOTIFY documentChanged)
     Q_PROPERTY(int sourceHeight   READ sourceHeight NOTIFY documentChanged)
-    // M6/M7 — AI
     Q_PROPERTY(bool   aiBusy     READ aiBusy      NOTIFY aiBusyChanged)
     Q_PROPERTY(QString aiStatus  READ aiStatus    NOTIFY aiStatusChanged)
-    // M8 — layers
     Q_PROPERTY(QVariantList layerModel READ layerModel NOTIFY layersChanged)
-    // M10 — recovery
     Q_PROPERTY(bool hasPendingRecovery READ hasPendingRecovery NOTIFY recoveryChanged)
+    // Crop overlay state exposed to QML
+    Q_PROPERTY(bool cropActive READ cropActive NOTIFY cropActiveChanged)
 public:
     explicit DocumentController(QObject* parent = nullptr);
     [[nodiscard]] bool    hasDocument()  const;
@@ -81,6 +77,7 @@ public:
     [[nodiscard]] QString aiStatus()     const;
     [[nodiscard]] QVariantList layerModel() const;
     [[nodiscard]] bool hasPendingRecovery() const;
+    [[nodiscard]] bool cropActive()      const;
     Q_INVOKABLE bool openImage(const QUrl& url);
     Q_INVOKABLE bool saveProject(const QUrl& url);
     Q_INVOKABLE bool loadProject(const QUrl& url);
@@ -92,21 +89,27 @@ public:
     Q_INVOKABLE void flipVertical();
     Q_INVOKABLE void undo();
     Q_INVOKABLE void redo();
-    // M5
+    // Mask tools
     Q_INVOKABLE void paintMaskStroke(double x, double y, double radius, bool erase);
+    Q_INVOKABLE void commitMaskPaint();
     Q_INVOKABLE void clearMask();
-    // M6
+    // Gradient mask: linear gradient from (x1,y1) white to (x2,y2) transparent
+    Q_INVOKABLE void applyGradientMask(double x1, double y1, double x2, double y2);
+    // Radial mask: circle centered at (cx,cy) with given radius, white inside
+    Q_INVOKABLE void applyRadialMask(double cx, double cy, double radius);
+    // Crop: coordinates in source image space
+    Q_INVOKABLE void applyCrop(int x, int y, int w, int h);
+    // AI
     Q_INVOKABLE void requestAiMask(double x, double y);
-    // M7
     Q_INVOKABLE void applyInpaint();
     Q_INVOKABLE void applyUpscale();
-    // M8
+    // Layers
     Q_INVOKABLE void addImageLayer(const QUrl& url);
     Q_INVOKABLE void deleteLayer(const QString& id);
     Q_INVOKABLE void setLayerOpacity(const QString& id, double opacity);
     Q_INVOKABLE void setLayerVisible(const QString& id, bool visible);
     Q_INVOKABLE void exportBatch(const QUrl& directory, const QStringList& formats);
-    // M10
+    // Recovery
     Q_INVOKABLE void recoverProject();
     Q_INVOKABLE void discardRecovery();
 signals:
@@ -121,11 +124,13 @@ signals:
     void aiStatusChanged();
     void layersChanged();
     void recoveryChanged();
+    void cropActiveChanged();
 private:
     void rebuildPreview();
     void setAdjustment(lumen::AdjustmentType type, double value);
     [[nodiscard]] QString localPath(const QUrl& url) const;
     void saveMaskToTemp();
+    void flushMaskSave();    // called by m_maskSaveTimer to batch mask PNG saves
     void setAiBusy(bool busy);
     void setAiStatus(const QString& status);
     void autoSave();
@@ -145,15 +150,15 @@ private:
     bool     m_previewPending    = false;
     int      m_previewRequestId  = 0;
     std::shared_ptr<std::atomic<bool>> m_cancelFlag;
-    // M5
     int      m_activeTool        = 0;
     std::unique_ptr<lumen::BrushEngine> m_brushEngine;
     QString  m_maskTempPath;
     int      m_maskVersion       = 0;
-    // M6/M7
     bool     m_aiBusy            = false;
     QString  m_aiStatus;
-    // M10
     QTimer*  m_autosaveTimer     = nullptr;
+    QTimer*  m_previewDebounce   = nullptr;
+    QTimer*  m_maskSaveTimer     = nullptr;  // 50ms debounce for mask PNG saves
     bool     m_hasPendingRecovery = false;
+    bool     m_cropActive        = false;
 };
