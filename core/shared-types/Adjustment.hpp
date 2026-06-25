@@ -4,6 +4,7 @@
 namespace lumen {
 enum class AdjustmentType {
     // Tone
+    Brightness,   // simple additive midtone lift/pull — appears above Exposure in the panel
     Exposure,
     Contrast,
     Highlights,

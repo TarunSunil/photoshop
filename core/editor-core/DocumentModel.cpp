@@ -9,6 +9,7 @@ QString makeId() { return QUuid::createUuid().toString(QUuid::WithoutBraces); }
 QString adjustmentTypeToString(AdjustmentType type)
 {
     switch (type) {
+    case AdjustmentType::Brightness:     return "brightness";
     case AdjustmentType::Exposure:       return "exposure";
     case AdjustmentType::Contrast:       return "contrast";
     case AdjustmentType::Highlights:     return "highlights";
@@ -33,6 +34,7 @@ QString adjustmentTypeToString(AdjustmentType type)
 }
 AdjustmentType adjustmentTypeFromString(const QString& v)
 {
+    if (v == "brightness")      return AdjustmentType::Brightness;
     if (v == "contrast")        return AdjustmentType::Contrast;
     if (v == "highlights")      return AdjustmentType::Highlights;
     if (v == "shadows")         return AdjustmentType::Shadows;
@@ -195,7 +197,6 @@ void DocumentModel::redo()
     m_undoStack.push_back(m_adjustments);
     restoreAdjustments(m_redoStack.takeLast());
 }
-// Layer management
 void DocumentModel::addImageLayer(const QString& path)
 {
     QImage img; img.load(path);

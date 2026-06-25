@@ -24,6 +24,7 @@ class DocumentController final : public QObject {
     Q_PROPERTY(bool canUndo READ canUndo NOTIFY historyChanged)
     Q_PROPERTY(bool canRedo READ canRedo NOTIFY historyChanged)
     Q_PROPERTY(bool showOriginal READ showOriginal WRITE setShowOriginal NOTIFY previewChanged)
+    Q_PROPERTY(double brightness  READ brightness  WRITE setBrightness  NOTIFY adjustmentsChanged)
     Q_PROPERTY(double exposure    READ exposure    WRITE setExposure    NOTIFY adjustmentsChanged)
     Q_PROPERTY(double contrast    READ contrast    WRITE setContrast    NOTIFY adjustmentsChanged)
     Q_PROPERTY(double saturation  READ saturation  WRITE setSaturation  NOTIFY adjustmentsChanged)
@@ -45,7 +46,6 @@ class DocumentController final : public QObject {
     Q_PROPERTY(QString aiStatus  READ aiStatus    NOTIFY aiStatusChanged)
     Q_PROPERTY(QVariantList layerModel READ layerModel NOTIFY layersChanged)
     Q_PROPERTY(bool hasPendingRecovery READ hasPendingRecovery NOTIFY recoveryChanged)
-    // Crop overlay state exposed to QML
     Q_PROPERTY(bool cropActive READ cropActive NOTIFY cropActiveChanged)
 public:
     explicit DocumentController(QObject* parent = nullptr);
@@ -56,6 +56,7 @@ public:
     [[nodiscard]] bool    canRedo()      const;
     [[nodiscard]] bool    showOriginal() const;
     void setShowOriginal(bool v);
+    [[nodiscard]] double brightness()    const;  void setBrightness(double v);
     [[nodiscard]] double exposure()      const;  void setExposure(double v);
     [[nodiscard]] double contrast()      const;  void setContrast(double v);
     [[nodiscard]] double saturation()    const;  void setSaturation(double v);
@@ -93,12 +94,11 @@ public:
     Q_INVOKABLE void paintMaskStroke(double x, double y, double radius, bool erase);
     Q_INVOKABLE void commitMaskPaint();
     Q_INVOKABLE void clearMask();
-    // Gradient mask: linear gradient from (x1,y1) white to (x2,y2) transparent
     Q_INVOKABLE void applyGradientMask(double x1, double y1, double x2, double y2);
-    // Radial mask: circle centered at (cx,cy) with given radius, white inside
     Q_INVOKABLE void applyRadialMask(double cx, double cy, double radius);
-    // Crop: coordinates in source image space
     Q_INVOKABLE void applyCrop(int x, int y, int w, int h);
+    // Edge-aware mask refinement (OpenCV Canny + boundary snap)
+    Q_INVOKABLE void refineEdges();
     // AI
     Q_INVOKABLE void requestAiMask(double x, double y);
     Q_INVOKABLE void applyInpaint();
@@ -127,46 +127,47 @@ signals:
     void cropActiveChanged();
 private:
     void rebuildPreview();
+    void buildHqPreview();       // full-resolution render after 1.5 s idle
     void setAdjustment(lumen::AdjustmentType type, double value);
     [[nodiscard]] QString localPath(const QUrl& url) const;
     void saveMaskToTemp();
-    void flushMaskSave();    // called by m_maskSaveTimer to batch mask PNG saves
+    void flushMaskSave();
     void setAiBusy(bool busy);
     void setAiStatus(const QString& status);
     void autoSave();
     void checkRecovery();
     QString autosavePath() const;
+
     lumen::DocumentModel   m_document;
     lumen::RenderPipeline  m_renderPipeline;
     lumen::ExportService   m_exportService;
     lumen::ProjectStore    m_projectStore;
     lumen::AiRuntime       m_aiRuntime;
-    // Held as unique_ptr so the InpaintEngine / UpscaleEngine constructors
-    // (which create an Ort::Env and load the ONNX Runtime) are NOT called at
-    // DocumentController construction time.  Previously these were value
-    // members, meaning two Ort::Env objects were created before main() even
-    // reached QGuiApplication::exec() — if onnxruntime.dll or any transitive
-    // dependency failed to load the process terminated silently.  With
-    // unique_ptr the engines are created on first AI use; by then we are inside
-    // the Qt event loop and can show an error message rather than crashing.
     std::unique_ptr<lumen::InpaintEngine>  m_inpaintEngine;
     std::unique_ptr<lumen::UpscaleEngine>  m_upscaleEngine;
+
     QString  m_previewPath;
-    int      m_previewVersion    = 0;
-    bool     m_showOriginal      = false;
+    int      m_previewVersion   = 0;
+    bool     m_showOriginal     = false;
     QFutureWatcher<QImage>* m_previewWatcher = nullptr;
-    bool     m_previewPending    = false;
-    int      m_previewRequestId  = 0;
+    bool     m_previewPending   = false;
+    int      m_previewRequestId = 0;
     std::shared_ptr<std::atomic<bool>> m_cancelFlag;
-    int      m_activeTool        = 0;
+
+    // HQ preview: triggered 1.5 s after the last change settles (after LQ is shown)
+    QTimer*  m_hqTimer   = nullptr;
+    QFutureWatcher<QImage>* m_hqWatcher = nullptr;
+    std::shared_ptr<std::atomic<bool>> m_hqCancelFlag;
+
+    int      m_activeTool       = 0;
     std::unique_ptr<lumen::BrushEngine> m_brushEngine;
     QString  m_maskTempPath;
-    int      m_maskVersion       = 0;
-    bool     m_aiBusy            = false;
+    int      m_maskVersion      = 0;
+    bool     m_aiBusy           = false;
     QString  m_aiStatus;
-    QTimer*  m_autosaveTimer     = nullptr;
-    QTimer*  m_previewDebounce   = nullptr;
-    QTimer*  m_maskSaveTimer     = nullptr;  // 50ms debounce for mask PNG saves
+    QTimer*  m_autosaveTimer    = nullptr;
+    QTimer*  m_previewDebounce  = nullptr;
+    QTimer*  m_maskSaveTimer    = nullptr;
     bool     m_hasPendingRecovery = false;
-    bool     m_cropActive        = false;
+    bool     m_cropActive       = false;
 };

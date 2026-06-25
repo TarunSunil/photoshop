@@ -9,6 +9,7 @@ qt_add_qml_module(LumenForge
     QML_FILES
         resources/qml/Main.qml
         resources/qml/MaskCanvas.qml
+        resources/qml/CropOverlay.qml
 )
 target_link_libraries(LumenForge
     PRIVATE
@@ -25,17 +26,11 @@ target_include_directories(LumenForge
 )
 set_target_properties(LumenForge PROPERTIES
     # Release: proper WIN32 GUI exe (no console window).
-    # Debug: console exe so qDebug/qCritical/stdout are visible in the terminal.
+    # Debug: console exe so qDebug/qCritical/stdout are visible.
     WIN32_EXECUTABLE $<CONFIG:Release>
     MACOSX_BUNDLE TRUE
 )
-# Delay-load onnxruntime.dll — only relevant when ONNX is actually linked.
-# When LUMEN_ENABLE_ONNX=ON, onnxruntime.dll must NOT be pulled into the
-# process import table at startup because onnxruntime_cxx_api.h has a global
-# static initialiser that calls OrtGetApiBase() before main() runs (see
-# core/CMakeLists.txt for the full explanation).  DELAYLOAD defers the DLL
-# load until the first ORT API call inside the event loop, where we have
-# proper exception handling.
+# Delay-load onnxruntime.dll only when AI inference is actually linked.
 if(MSVC AND LUMEN_ENABLE_ONNX)
     target_link_options(LumenForge PRIVATE /DELAYLOAD:onnxruntime.dll)
     target_link_libraries(LumenForge PRIVATE delayimp)

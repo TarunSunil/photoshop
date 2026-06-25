@@ -42,7 +42,7 @@ ApplicationWindow {
                 onClicked: { documentController.discardRecovery(); recoveryDialog.close() } }
         }
     }
-    // Shortcuts
+    // ── Keyboard shortcuts ────────────────────────────────────────────────────
     Shortcut { sequence: StandardKey.Open;  onActivated: openImageDialog.open() }
     Shortcut { sequence: StandardKey.Save;  onActivated: saveProjectDialog.open() }
     Shortcut { sequence: "Ctrl+E";          onActivated: exportDialog.open() }
@@ -58,13 +58,18 @@ ApplicationWindow {
     Shortcut { sequence: "G"; onActivated: if (documentController.hasDocument) documentController.activeTool = (documentController.activeTool === 3 ? 0 : 3) }
     Shortcut { sequence: "R"; onActivated: if (documentController.hasDocument) documentController.activeTool = (documentController.activeTool === 4 ? 0 : 4) }
     Shortcut { sequence: "C"; onActivated: if (documentController.hasDocument) documentController.activeTool = (documentController.activeTool === 5 ? 0 : 5) }
-    // Header
+    // Enter confirms crop when the crop overlay is active
+    Shortcut {
+        sequence: "Return"
+        enabled: documentController.activeTool === 5 && documentController.hasDocument
+        onActivated: cropOverlayItem.confirm()
+    }
+    // ── Header ────────────────────────────────────────────────────────────────
     header: ToolBar {
         height: 52
         background: Rectangle { color: "#13161f"; border.color: "#1e2438"; border.width: 1 }
         RowLayout {
             anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 8
-            // Logo mark
             Rectangle { width: 8; height: 28; radius: 4
                 gradient: Gradient { GradientStop { position: 0; color: "#6366f1" } GradientStop { position: 1; color: "#818cf8" } } }
             Label { text: "LumenForge"; color: "#e2e8f0"; font.pixelSize: 16; font.weight: Font.DemiBold }
@@ -72,21 +77,25 @@ ApplicationWindow {
                 elide: Text.ElideMiddle; Layout.fillWidth: true; font.pixelSize: 12 }
             Label { text: documentController.aiStatus; color: "#f59e0b"; font.pixelSize: 11
                 visible: documentController.aiStatus.length > 0 }
-            Button { text: "Open";    onClicked: openImageDialog.open()
+            Button { text: "Open"
                 background: Rectangle { color: parent.hovered ? "#1e2438" : "#161a28"; radius: 7; border.color: "#252d45" }
-                contentItem: Label { text: "Open";    color: "#c8d0e0"; font.pixelSize: 12; horizontalAlignment: Text.AlignHCenter } }
-            Button { text: "Project"; onClicked: openProjectDialog.open()
+                contentItem: Label { text: "Open"; color: "#c8d0e0"; font.pixelSize: 12; horizontalAlignment: Text.AlignHCenter }
+                onClicked: openImageDialog.open() }
+            Button { text: "Project"
                 background: Rectangle { color: parent.hovered ? "#1e2438" : "#161a28"; radius: 7; border.color: "#252d45" }
-                contentItem: Label { text: "Project"; color: "#c8d0e0"; font.pixelSize: 12; horizontalAlignment: Text.AlignHCenter } }
-            Button { text: "Save";    enabled: documentController.hasDocument; onClicked: saveProjectDialog.open()
+                contentItem: Label { text: "Project"; color: "#c8d0e0"; font.pixelSize: 12; horizontalAlignment: Text.AlignHCenter }
+                onClicked: openProjectDialog.open() }
+            Button { text: "Save"; enabled: documentController.hasDocument
                 background: Rectangle { color: parent.hovered ? "#1e2438" : "#161a28"; radius: 7; border.color: "#252d45" }
-                contentItem: Label { text: "Save";    color: parent.enabled ? "#c8d0e0" : "#4a5268"; font.pixelSize: 12; horizontalAlignment: Text.AlignHCenter } }
-            Button { text: "Export";  enabled: documentController.hasDocument; onClicked: exportDialog.open()
+                contentItem: Label { text: "Save"; color: parent.enabled ? "#c8d0e0" : "#4a5268"; font.pixelSize: 12; horizontalAlignment: Text.AlignHCenter }
+                onClicked: saveProjectDialog.open() }
+            Button { text: "Export"; enabled: documentController.hasDocument
                 background: Rectangle { color: parent.hovered ? "#252d6a" : "#1c2058"; radius: 7; border.color: "#3d41a0" }
-                contentItem: Label { text: "Export";  color: parent.enabled ? "#c7d2fe" : "#4a5268"; font.pixelSize: 12; horizontalAlignment: Text.AlignHCenter } }
+                contentItem: Label { text: "Export"; color: parent.enabled ? "#c7d2fe" : "#4a5268"; font.pixelSize: 12; horizontalAlignment: Text.AlignHCenter }
+                onClicked: exportDialog.open() }
         }
     }
-    // Footer
+    // ── Footer ────────────────────────────────────────────────────────────────
     footer: Rectangle {
         height: 118; color: "#13161f"; border.color: "#1e2438"
         RowLayout {
@@ -129,7 +138,7 @@ ApplicationWindow {
             Item { Layout.fillWidth: true }
         }
     }
-    // Main 3-column layout
+    // ── Main 3-column layout ──────────────────────────────────────────────────
     RowLayout { anchors.fill: parent; spacing: 0
         // ── Tool rail ────────────────────────────────────────────────────────
         Rectangle {
@@ -138,15 +147,14 @@ ApplicationWindow {
             ColumnLayout {
                 anchors.top: parent.top; anchors.horizontalCenter: parent.horizontalCenter
                 anchors.topMargin: 14; spacing: 5
-                // Tools: 0=navigate, 1=brush, 2=erase, 3=gradient, 4=radial, 5=crop
                 Repeater {
                     model: [
-                        { icon: "✥",  tip: "Navigate / Pan\nRight-click also pans",  tool: 0 },
-                        { icon: "⬤",  tip: "Brush Mask  [B]",                         tool: 1 },
-                        { icon: "◯",  tip: "Erase Mask  [E]",                         tool: 2 },
-                        { icon: "▬",  tip: "Gradient Mask  [G]\nDrag start → end",    tool: 3 },
-                        { icon: "◎",  tip: "Radial Mask  [R]\nDrag center → edge",    tool: 4 },
-                        { icon: "⊡",  tip: "Crop  [C]\nDrag to select area",          tool: 5 },
+                        { icon: "✥",  tip: "Navigate / Pan",                     tool: 0 },
+                        { icon: "⬤",  tip: "Brush Mask  [B]",                    tool: 1 },
+                        { icon: "◯",  tip: "Erase Mask  [E]",                    tool: 2 },
+                        { icon: "▬",  tip: "Gradient Mask  [G]",                 tool: 3 },
+                        { icon: "◎",  tip: "Radial Mask  [R]",                   tool: 4 },
+                        { icon: "⊡",  tip: "Crop  [C] — drag handles to resize", tool: 5 },
                     ]
                     delegate: Button {
                         Layout.preferredWidth: 46; Layout.preferredHeight: 40
@@ -161,16 +169,12 @@ ApplicationWindow {
                         }
                         background: Rectangle {
                             radius: 8
-                            color: parent.checked ? "#4f46e5"
-                                 : parent.hovered  ? "#1e2438"
-                                 : "transparent"
+                            color: parent.checked ? "#4f46e5" : parent.hovered ? "#1e2438" : "transparent"
                             Behavior on color { ColorAnimation { duration: 120 } }
                         }
                         contentItem: Label {
                             text: modelData.icon
-                            color: parent.checked ? "#ffffff"
-                                 : parent.enabled  ? "#8892a4"
-                                 : "#2a3050"
+                            color: parent.checked ? "#ffffff" : parent.enabled ? "#8892a4" : "#2a3050"
                             horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
                             font.pixelSize: 15
                         }
@@ -186,7 +190,7 @@ ApplicationWindow {
                 }
             }
         }
-        // ── Canvas ───────────────────────────────────────────────────────────
+        // ── Canvas area ───────────────────────────────────────────────────────
         Rectangle {
             Layout.fillWidth: true; Layout.fillHeight: true
             color: "#0a0c12"
@@ -195,8 +199,6 @@ ApplicationWindow {
                 contentWidth:  Math.max(width,  imagePreview.width  + 80)
                 contentHeight: Math.max(height, imagePreview.height + 80)
                 clip: true
-                // Only left-drag-to-pan when no tool is active;
-                // right-click panning is handled by the MouseArea below
                 interactive: documentController.activeTool === 0
                 WheelHandler {
                     acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
@@ -210,6 +212,7 @@ ApplicationWindow {
                     width:  Math.max(380, imagePreview.width  + 80)
                     height: Math.max(280, imagePreview.height + 80)
                     color: "#08090e"; border.color: "#1a1e2e"; radius: 3
+
                     Image {
                         id: imagePreview; anchors.centerIn: parent
                         source: documentController.imageUrl
@@ -219,36 +222,57 @@ ApplicationWindow {
                         asynchronous: true; smooth: true
                         onSourceSizeChanged: root.zoom = root.fitZoom()
                     }
+
+                    // Mask canvas — brush / gradient / radial tools (1–4) only.
+                    // The crop tool (5) is handled by CropOverlay below.
                     MaskCanvas {
                         id: maskOverlay
                         anchors.centerIn: parent
                         width:  imagePreview.width
                         height: imagePreview.height
-                        visible: documentController.activeTool > 0
+                        visible: documentController.hasDocument &&
+                                 documentController.activeTool >= 1 &&
+                                 documentController.activeTool <= 4
                         docCtrl:      documentController
                         brushRadius:  root.brushRadius
                         eraseMode:    documentController.activeTool === 2
-                        paintEnabled: documentController.activeTool > 0
+                        paintEnabled: documentController.activeTool === 1 ||
+                                      documentController.activeTool === 2
                     }
-                    BusyIndicator { anchors.centerIn: parent
-                        visible: documentController.aiBusy; running: documentController.aiBusy }
-                    Label { anchors.centerIn: parent
-                    	visible: !documentController.hasDocument
+
+                    // Crop overlay — resizable box with 8 handles, visible for tool 5
+                    CropOverlay {
+                        id: cropOverlayItem
+                        anchors.centerIn: parent
+                        width:  imagePreview.width
+                        height: imagePreview.height
+                        visible: documentController.hasDocument &&
+                                 documentController.activeTool === 5
+                        docCtrl: documentController
+                    }
+
+                    BusyIndicator {
+                        anchors.centerIn: parent
+                        visible: documentController.aiBusy
+                        running: documentController.aiBusy
+                    }
+                    Label {
+                        anchors.centerIn: parent
+                        visible: !documentController.hasDocument
                         text: "Open an image to begin"
-                        color: "#3a4566"; font.pixelSize: 20 }
+                        color: "#3a4566"; font.pixelSize: 20
+                    }
                 }
-                // ── Right / middle-click pan ──────────────────────────────
-                // Sits ABOVE MaskCanvas in z-order; only grabs right+middle so
-                // left-click still falls through to MaskCanvas for painting.
+                // Right / middle-click pan
                 MouseArea {
                     id: panArea; anchors.fill: parent
                     acceptedButtons: Qt.RightButton | Qt.MiddleButton
                     propagateComposedEvents: true
                     property real lx: 0; property real ly: 0
                     cursorShape: pressed ? Qt.ClosedHandCursor : Qt.ArrowCursor
-                    onPressed: (mouse) => { lx = mouse.x; ly = mouse.y; mouse.accepted = true }
+                    onPressed:  (mouse) => { lx = mouse.x; ly = mouse.y; mouse.accepted = true }
                     onPositionChanged: (mouse) => {
-                        const dx = mouse.x - lx; const dy = mouse.y - ly
+                        const dx = mouse.x - lx, dy = mouse.y - ly
                         canvasFlick.contentX = Math.max(0, Math.min(canvasFlick.contentWidth  - canvasFlick.width,  canvasFlick.contentX - dx))
                         canvasFlick.contentY = Math.max(0, Math.min(canvasFlick.contentHeight - canvasFlick.height, canvasFlick.contentY - dy))
                         lx = mouse.x; ly = mouse.y
@@ -259,10 +283,10 @@ ApplicationWindow {
             Row {
                 anchors.left: parent.left; anchors.bottom: parent.bottom
                 anchors.margins: 14; spacing: 6
-                Button { text: "Fit";  enabled: documentController.hasDocument; implicitHeight: 28; implicitWidth: 40
+                Button { text: "Fit"; enabled: documentController.hasDocument; implicitHeight: 28; implicitWidth: 40
                     onClicked: root.zoom = root.fitZoom()
                     background: Rectangle { color: parent.hovered ? "#1e2438" : "#0f1219"; radius: 6; border.color: "#1e2438" }
-                    contentItem: Label { text: "Fit";  color: "#6b7a99"; font.pixelSize: 11; horizontalAlignment: Text.AlignHCenter } }
+                    contentItem: Label { text: "Fit"; color: "#6b7a99"; font.pixelSize: 11; horizontalAlignment: Text.AlignHCenter } }
                 Button { text: "100%"; enabled: documentController.hasDocument; implicitHeight: 28; implicitWidth: 44
                     onClicked: root.zoom = 1.0
                     background: Rectangle { color: parent.hovered ? "#1e2438" : "#0f1219"; radius: 6; border.color: "#1e2438" }
@@ -288,11 +312,11 @@ ApplicationWindow {
                     background: Rectangle { color: parent.hovered ? "#2a1414" : "#0f1219"; radius: 6; border.color: "#1e2438" }
                     contentItem: Label { text: "Clear mask"; color: "#f07070"; font.pixelSize: 11; horizontalAlignment: Text.AlignHCenter } }
             }
-            // Zoom %
-            Rectangle { anchors.right: parent.right; anchors.bottom: parent.bottom; anchors.margins: 14
+            Rectangle {
+                anchors.right: parent.right; anchors.bottom: parent.bottom; anchors.margins: 14
                 width: 52; height: 24; radius: 5; color: "#0f1219"; border.color: "#1e2438"
-                Label { anchors.centerIn: parent; text: Math.round(root.zoom * 100) + "%"
-                    color: "#6b7a99"; font.pixelSize: 11 } }
+                Label { anchors.centerIn: parent; text: Math.round(root.zoom * 100) + "%"; color: "#6b7a99"; font.pixelSize: 11 }
+            }
         }
         // ── Adjustments panel ─────────────────────────────────────────────────
         Rectangle {
@@ -301,14 +325,12 @@ ApplicationWindow {
             ScrollView { anchors.fill: parent
                 ColumnLayout {
                     width: 310; spacing: 12
-                    // Header
                     Item { Layout.fillWidth: true; Layout.preferredHeight: 52
                         Label { anchors.left: parent.left; anchors.leftMargin: 18
                             anchors.verticalCenter: parent.verticalCenter
                             text: "Adjustments"; color: "#e2e8f0"; font.pixelSize: 17; font.weight: Font.DemiBold } }
                     // Transform
-                    Label { text: "TRANSFORM"; color: "#3a4566"; font.pixelSize: 10; font.weight: Font.Medium
-                        Layout.leftMargin: 18 }
+                    Label { text: "TRANSFORM"; color: "#3a4566"; font.pixelSize: 10; font.weight: Font.Medium; Layout.leftMargin: 18 }
                     GridLayout { Layout.leftMargin: 14; Layout.rightMargin: 14; Layout.fillWidth: true
                         columns: 2; rowSpacing: 6; columnSpacing: 6
                         Button { text: "↺ Left";   Layout.fillWidth: true; implicitHeight: 30; enabled: documentController.hasDocument; onClicked: documentController.rotateCounterClockwise()
@@ -332,42 +354,59 @@ ApplicationWindow {
                             background: Rectangle { color: parent.hovered ? "#1e2438" : "#171c2a"; radius: 7; border.color: "#252d45" }
                             contentItem: Label { text: parent.text; color: "#8892a4"; font.pixelSize: 11; horizontalAlignment: Text.AlignHCenter } }
                     }
-                    // Light
+                    // LIGHT — Brightness is first, above Exposure
                     Label { text: "LIGHT"; color: "#3a4566"; font.pixelSize: 10; font.weight: Font.Medium; Layout.leftMargin: 18 }
-                    AdjustmentSlider { label: "Exposure";   from: -3;   to: 3;   value: documentController.exposure;    onMoved: (v) => documentController.exposure    = v }
-                    AdjustmentSlider { label: "Contrast";   from: -100; to: 100; value: documentController.contrast;    onMoved: (v) => documentController.contrast    = v }
-                    AdjustmentSlider { label: "Highlights"; from: -100; to: 100; value: documentController.highlights;  onMoved: (v) => documentController.highlights  = v }
-                    AdjustmentSlider { label: "Shadows";    from: -100; to: 100; value: documentController.shadows;     onMoved: (v) => documentController.shadows     = v }
-                    AdjustmentSlider { label: "Whites";     from: -100; to: 100; value: documentController.whites;      onMoved: (v) => documentController.whites      = v }
-                    AdjustmentSlider { label: "Blacks";     from: -100; to: 100; value: documentController.blacks;      onMoved: (v) => documentController.blacks      = v }
-                    // Color
+                    AdjustmentSlider { label: "Brightness"; from: -100; to: 100; value: documentController.brightness;  onMoved: (v) => documentController.brightness  = v }
+                    AdjustmentSlider { label: "Exposure";   from: -3;   to: 3;   value: documentController.exposure;   onMoved: (v) => documentController.exposure   = v }
+                    AdjustmentSlider { label: "Contrast";   from: -100; to: 100; value: documentController.contrast;   onMoved: (v) => documentController.contrast   = v }
+                    AdjustmentSlider { label: "Highlights"; from: -100; to: 100; value: documentController.highlights; onMoved: (v) => documentController.highlights = v }
+                    AdjustmentSlider { label: "Shadows";    from: -100; to: 100; value: documentController.shadows;    onMoved: (v) => documentController.shadows    = v }
+                    AdjustmentSlider { label: "Whites";     from: -100; to: 100; value: documentController.whites;     onMoved: (v) => documentController.whites     = v }
+                    AdjustmentSlider { label: "Blacks";     from: -100; to: 100; value: documentController.blacks;     onMoved: (v) => documentController.blacks     = v }
+                    // COLOR
                     Label { text: "COLOR"; color: "#3a4566"; font.pixelSize: 10; font.weight: Font.Medium; Layout.leftMargin: 18 }
                     AdjustmentSlider { label: "Saturation";  from: -100; to: 100; value: documentController.saturation;  onMoved: (v) => documentController.saturation  = v }
                     AdjustmentSlider { label: "Vibrance";    from: -100; to: 100; value: documentController.vibrance;    onMoved: (v) => documentController.vibrance    = v }
                     AdjustmentSlider { label: "Temperature"; from: -100; to: 100; value: documentController.temperature; onMoved: (v) => documentController.temperature = v }
                     AdjustmentSlider { label: "Tint";        from: -100; to: 100; value: documentController.tint;        onMoved: (v) => documentController.tint        = v }
-                    // Detail
-                    Label { text: "DETAIL"; color: "#3a4566"; font.pixelSize: 10; font.weight: Font.Medium; Layout.leftMargin: 18}
+                    // DETAIL
+                    Label { text: "DETAIL"; color: "#3a4566"; font.pixelSize: 10; font.weight: Font.Medium; Layout.leftMargin: 18 }
                     AdjustmentSlider { label: "Noise Reduction"; from: 0; to: 100; value: documentController.noiseReduction; onMoved: (v) => documentController.noiseReduction = v }
                     AdjustmentSlider { label: "Sharpening";      from: 0; to: 100; value: documentController.sharpening;     onMoved: (v) => documentController.sharpening     = v }
+                    Button {
+                        text: "Refine Edges"
+                        enabled: documentController.hasDocument &&
+                                 documentController.hasMask &&
+                                 !documentController.aiBusy
+                        implicitHeight: 30
+                        Layout.leftMargin: 14; Layout.rightMargin: 14; Layout.fillWidth: true
+                        onClicked: documentController.refineEdges()
+                        ToolTip.visible: hovered; ToolTip.delay: 600
+                        ToolTip.text: "Snap mask boundaries to image edges (OpenCV Canny)"
+                        background: Rectangle { color: parent.hovered ? "#1e2438" : "#171c2a"; radius: 7; border.color: "#252d45" }
+                        contentItem: Label { text: "Refine Edges"; color: parent.enabled ? "#8892a4" : "#4a5268"; font.pixelSize: 11; horizontalAlignment: Text.AlignHCenter }
+                    }
                     Button { text: "Reset All"; enabled: documentController.hasDocument; implicitHeight: 30
                         Layout.leftMargin: 14; Layout.rightMargin: 14; Layout.fillWidth: true
                         onClicked: documentController.resetAdjustments()
                         background: Rectangle { color: parent.hovered ? "#2a1414" : "#171c2a"; radius: 7; border.color: "#252d45" }
                         contentItem: Label { text: "Reset All"; color: "#f07070"; font.pixelSize: 11; horizontalAlignment: Text.AlignHCenter } }
-                    // AI
+                    // AI TOOLS
                     Label { text: "AI TOOLS"; color: "#3a4566"; font.pixelSize: 10; font.weight: Font.Medium; Layout.leftMargin: 18 }
-                    Button { text: "Subject mask"; enabled: documentController.hasDocument && !documentController.aiBusy; implicitHeight: 30
+                    Button { text: "Subject mask"
+                        enabled: documentController.hasDocument && !documentController.aiBusy; implicitHeight: 30
                         Layout.leftMargin: 14; Layout.rightMargin: 14; Layout.fillWidth: true
                         onClicked: documentController.requestAiMask(imagePreview.width/2, imagePreview.height/2)
                         background: Rectangle { color: parent.hovered ? "#252d6a" : "#1c2058"; radius: 7; border.color: "#3d41a0" }
                         contentItem: Label { text: parent.text; color: parent.enabled ? "#c7d2fe" : "#4a5268"; font.pixelSize: 11; horizontalAlignment: Text.AlignHCenter } }
-                    Button { text: "Object removal"; enabled: documentController.hasDocument && documentController.hasMask && !documentController.aiBusy; implicitHeight: 30
+                    Button { text: "Object removal"
+                        enabled: documentController.hasDocument && documentController.hasMask && !documentController.aiBusy; implicitHeight: 30
                         Layout.leftMargin: 14; Layout.rightMargin: 14; Layout.fillWidth: true
                         onClicked: documentController.applyInpaint()
                         background: Rectangle { color: parent.hovered ? "#252d6a" : "#1c2058"; radius: 7; border.color: "#3d41a0" }
                         contentItem: Label { text: parent.text; color: parent.enabled ? "#c7d2fe" : "#4a5268"; font.pixelSize: 11; horizontalAlignment: Text.AlignHCenter } }
-                    Button { text: "Upscale x4"; enabled: documentController.hasDocument && !documentController.aiBusy; implicitHeight: 30
+                    Button { text: "Upscale x4"
+                        enabled: documentController.hasDocument && !documentController.aiBusy; implicitHeight: 30
                         Layout.leftMargin: 14; Layout.rightMargin: 14; Layout.fillWidth: true
                         onClicked: documentController.applyUpscale()
                         background: Rectangle { color: parent.hovered ? "#252d6a" : "#1c2058"; radius: 7; border.color: "#3d41a0" }
@@ -377,7 +416,7 @@ ApplicationWindow {
             }
         }
     }
-    // AdjustmentSlider component — uses explicit sliderRoot id to avoid scope issues
+    // ── Reusable AdjustmentSlider inline component ────────────────────────────
     component AdjustmentSlider: ColumnLayout {
         id: sliderRoot
         property string label: ""
@@ -405,7 +444,7 @@ ApplicationWindow {
                 x: sl.leftPadding + sl.visualPosition * (sl.availableWidth - width)
                 y: sl.topPadding + sl.availableHeight/2 - height/2
                 width: 14; height: 14; radius: 7
-                color: sl.pressed ? "#818cf8" : (sl.hovered ? "#818cf8" : "#6366f1")
+                color: sl.pressed ? "#818cf8" : sl.hovered ? "#818cf8" : "#6366f1"
                 Behavior on color { ColorAnimation { duration: 100 } }
             }
         }
