@@ -10,12 +10,13 @@
 #include <QFutureWatcher>
 #include <QImage>
 #include <QObject>
+#include <QStringList>
 #include <QTimer>
 #include <QUrl>
 #include <QVariantList>
-#include <QStringList>
 #include <atomic>
 #include <memory>
+
 class DocumentController final : public QObject {
     Q_OBJECT
     Q_PROPERTY(bool hasDocument READ hasDocument NOTIFY documentChanged)
@@ -44,11 +45,15 @@ class DocumentController final : public QObject {
     Q_PROPERTY(int sourceHeight   READ sourceHeight NOTIFY documentChanged)
     Q_PROPERTY(bool   aiBusy     READ aiBusy      NOTIFY aiBusyChanged)
     Q_PROPERTY(QString aiStatus  READ aiStatus    NOTIFY aiStatusChanged)
-    Q_PROPERTY(QVariantList layerModel READ layerModel NOTIFY layersChanged)
+    Q_PROPERTY(QVariantList layerModel  READ layerModel  NOTIFY layersChanged)
+    Q_PROPERTY(QStringList  historyLog  READ historyLog  NOTIFY historyLogChanged)
+    Q_PROPERTY(QVariantList maskList    READ maskList    NOTIFY maskChanged)
+    Q_PROPERTY(QStringList  recentFiles READ recentFiles NOTIFY recentFilesChanged)
     Q_PROPERTY(bool hasPendingRecovery READ hasPendingRecovery NOTIFY recoveryChanged)
     Q_PROPERTY(bool cropActive READ cropActive NOTIFY cropActiveChanged)
 public:
     explicit DocumentController(QObject* parent = nullptr);
+
     [[nodiscard]] bool    hasDocument()  const;
     [[nodiscard]] QString sourceName()   const;
     [[nodiscard]] QString imageUrl()     const;
@@ -56,6 +61,7 @@ public:
     [[nodiscard]] bool    canRedo()      const;
     [[nodiscard]] bool    showOriginal() const;
     void setShowOriginal(bool v);
+
     [[nodiscard]] double brightness()    const;  void setBrightness(double v);
     [[nodiscard]] double exposure()      const;  void setExposure(double v);
     [[nodiscard]] double contrast()      const;  void setContrast(double v);
@@ -69,16 +75,21 @@ public:
     [[nodiscard]] double tint()          const;  void setTint(double v);
     [[nodiscard]] double noiseReduction()const;  void setNoiseReduction(double v);
     [[nodiscard]] double sharpening()    const;  void setSharpening(double v);
-    [[nodiscard]] int    activeTool()    const;  void setActiveTool(int tool);
-    [[nodiscard]] bool   hasMask()       const;
+
+    [[nodiscard]] int     activeTool()   const;  void setActiveTool(int tool);
+    [[nodiscard]] bool    hasMask()      const;
     [[nodiscard]] QString maskUrl()      const;
-    [[nodiscard]] int sourceWidth()      const;
-    [[nodiscard]] int sourceHeight()     const;
-    [[nodiscard]] bool   aiBusy()        const;
+    [[nodiscard]] int     sourceWidth()  const;
+    [[nodiscard]] int     sourceHeight() const;
+    [[nodiscard]] bool    aiBusy()       const;
     [[nodiscard]] QString aiStatus()     const;
-    [[nodiscard]] QVariantList layerModel() const;
-    [[nodiscard]] bool hasPendingRecovery() const;
-    [[nodiscard]] bool cropActive()      const;
+    [[nodiscard]] QVariantList layerModel()  const;
+    [[nodiscard]] QStringList  historyLog()  const;
+    [[nodiscard]] QVariantList maskList()    const;
+    [[nodiscard]] QStringList  recentFiles() const;
+    [[nodiscard]] bool    hasPendingRecovery() const;
+    [[nodiscard]] bool    cropActive()   const;
+
     Q_INVOKABLE bool openImage(const QUrl& url);
     Q_INVOKABLE bool saveProject(const QUrl& url);
     Q_INVOKABLE bool loadProject(const QUrl& url);
@@ -97,7 +108,6 @@ public:
     Q_INVOKABLE void applyGradientMask(double x1, double y1, double x2, double y2);
     Q_INVOKABLE void applyRadialMask(double cx, double cy, double radius);
     Q_INVOKABLE void applyCrop(int x, int y, int w, int h);
-    // Edge-aware mask refinement (OpenCV Canny + boundary snap)
     Q_INVOKABLE void refineEdges();
     // AI
     Q_INVOKABLE void requestAiMask(double x, double y);
@@ -108,10 +118,13 @@ public:
     Q_INVOKABLE void deleteLayer(const QString& id);
     Q_INVOKABLE void setLayerOpacity(const QString& id, double opacity);
     Q_INVOKABLE void setLayerVisible(const QString& id, bool visible);
+    Q_INVOKABLE void moveLayerUp(const QString& id);
+    Q_INVOKABLE void moveLayerDown(const QString& id);
     Q_INVOKABLE void exportBatch(const QUrl& directory, const QStringList& formats);
     // Recovery
     Q_INVOKABLE void recoverProject();
     Q_INVOKABLE void discardRecovery();
+
 signals:
     void documentChanged();
     void previewChanged();
@@ -123,12 +136,19 @@ signals:
     void aiBusyChanged();
     void aiStatusChanged();
     void layersChanged();
+    void historyLogChanged();
+    void recentFilesChanged();
     void recoveryChanged();
     void cropActiveChanged();
+
 private:
+    struct StrokePoint { double x, y, radius; bool erase; };
+
     void rebuildPreview();
-    void buildHqPreview();       // full-resolution render after 1.5 s idle
+    void buildHqPreview();
     void setAdjustment(lumen::AdjustmentType type, double value);
+    void logHistory(const QString& label);
+    void addRecentFile(const QString& path);
     [[nodiscard]] QString localPath(const QUrl& url) const;
     void saveMaskToTemp();
     void flushMaskSave();
@@ -147,27 +167,27 @@ private:
     std::unique_ptr<lumen::UpscaleEngine>  m_upscaleEngine;
 
     QString  m_previewPath;
-    int      m_previewVersion   = 0;
-    bool     m_showOriginal     = false;
-    QFutureWatcher<QImage>* m_previewWatcher = nullptr;
-    bool     m_previewPending   = false;
-    int      m_previewRequestId = 0;
+    int      m_previewVersion    = 0;
+    bool     m_showOriginal      = false;
+    QFutureWatcher<QImage>* m_previewWatcher  = nullptr;
+    QFutureWatcher<QImage>* m_hqWatcher       = nullptr;
+    bool     m_previewPending    = false;
+    int      m_previewRequestId  = 0;
     std::shared_ptr<std::atomic<bool>> m_cancelFlag;
-
-    // HQ preview: triggered 1.5 s after the last change settles (after LQ is shown)
-    QTimer*  m_hqTimer   = nullptr;
-    QFutureWatcher<QImage>* m_hqWatcher = nullptr;
     std::shared_ptr<std::atomic<bool>> m_hqCancelFlag;
 
-    int      m_activeTool       = 0;
+    QTimer*  m_hqTimer           = nullptr;
+    int      m_activeTool        = 0;
     std::unique_ptr<lumen::BrushEngine> m_brushEngine;
+    QVector<StrokePoint> m_pendingStrokes;
     QString  m_maskTempPath;
-    int      m_maskVersion      = 0;
-    bool     m_aiBusy           = false;
+    int      m_maskVersion       = 0;
+    bool     m_aiBusy            = false;
     QString  m_aiStatus;
-    QTimer*  m_autosaveTimer    = nullptr;
-    QTimer*  m_previewDebounce  = nullptr;
-    QTimer*  m_maskSaveTimer    = nullptr;
+    QTimer*  m_autosaveTimer     = nullptr;
+    QTimer*  m_previewDebounce   = nullptr;
+    QTimer*  m_maskSaveTimer     = nullptr;
     bool     m_hasPendingRecovery = false;
-    bool     m_cropActive       = false;
+    bool     m_cropActive        = false;
+    QStringList m_historyLog;
 };

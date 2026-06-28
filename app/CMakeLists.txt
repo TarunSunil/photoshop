@@ -20,22 +20,16 @@ target_link_libraries(LumenForge
         Qt6::Quick
         Qt6::QuickControls2
 )
-target_include_directories(LumenForge
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
+target_include_directories(LumenForge PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set_target_properties(LumenForge PROPERTIES
-    # Release: proper WIN32 GUI exe (no console window).
-    # Debug: console exe so qDebug/qCritical/stdout are visible.
     WIN32_EXECUTABLE $<CONFIG:Release>
     MACOSX_BUNDLE TRUE
 )
-# Delay-load onnxruntime.dll only when AI inference is actually linked.
 if(MSVC AND LUMEN_ENABLE_ONNX)
     target_link_options(LumenForge PRIVATE /DELAYLOAD:onnxruntime.dll)
     target_link_libraries(LumenForge PRIVATE delayimp)
 endif()
-install(TARGETS LumenForge
-    BUNDLE  DESTINATION .
-    RUNTIME DESTINATION bin
-)
+
+
+
+install(TARGETS LumenForge BUNDLE DESTINATION . RUNTIME DESTINATION bin)

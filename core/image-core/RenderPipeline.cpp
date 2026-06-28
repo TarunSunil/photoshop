@@ -13,339 +13,173 @@
 #endif
 namespace lumen {
 namespace {
-quint16 clamp16(double v) { return static_cast<quint16>(qBound(0.0, v, 65535.0)); }
-double scalarAdj(const QVector<Adjustment>& adjs, AdjustmentType type)
-{
-    for (const Adjustment& a : adjs)
-        if (a.type == type && a.enabled)
-            return a.parameters.value("value").toDouble(0.0);
+quint16 clamp16(double v) { return static_cast<quint16>(qBound(0.0,v,65535.0)); }
+double scalarAdj(const QVector<Adjustment>& adjs, AdjustmentType t) {
+    for (const auto& a : adjs) if (a.type==t && a.enabled) return a.parameters.value("value").toDouble(0.0);
     return 0.0;
 }
-const Adjustment* findAdj(const QVector<Adjustment>& adjs, AdjustmentType type)
-{
-    for (const Adjustment& a : adjs)
-        if (a.type == type && a.enabled) return &a;
+const Adjustment* findAdj(const QVector<Adjustment>& adjs, AdjustmentType t) {
+    for (const auto& a : adjs) if (a.type==t && a.enabled) return &a;
     return nullptr;
 }
 } // namespace
 
-std::vector<double> RenderPipeline::buildCurveLut(const QJsonArray& points)
-{
+std::vector<double> RenderPipeline::buildCurveLut(const QJsonArray& points) {
     std::vector<double> lut(65536);
-    if (points.isEmpty()) {
-        for (int i = 0; i < 65536; ++i) lut[i] = i;
-        return lut;
-    }
-    QVector<QPair<double,double>> pts;
-    pts.append({0.0, 0.0});
-    for (const QJsonValue& v : points) {
-        const QJsonArray p = v.toArray();
-        if (p.size() >= 2)
-            pts.append({p[0].toDouble(), p[1].toDouble()});
-    }
-    pts.append({1.0, 1.0});
-    std::sort(pts.begin(), pts.end(), [](auto& a, auto& b){ return a.first < b.first; });
-    for (int i = 0; i < 65536; ++i) {
-        const double x = i / 65535.0;
-        double y = x;
-        for (int k = 1; k < pts.size(); ++k) {
-            if (x <= pts[k].first) {
-                const double t = (x - pts[k-1].first) / (pts[k].first - pts[k-1].first + 1e-9);
-                y = pts[k-1].second + t * (pts[k].second - pts[k-1].second);
-                break;
-            }
+    if (points.isEmpty()) { for (int i=0;i<65536;++i) lut[i]=i; return lut; }
+    QVector<QPair<double,double>> pts; pts.append({0.0,0.0});
+    for (const QJsonValue& v : points) { const QJsonArray p=v.toArray(); if (p.size()>=2) pts.append({p[0].toDouble(),p[1].toDouble()}); }
+    pts.append({1.0,1.0});
+    std::sort(pts.begin(),pts.end(),[](auto& a,auto& b){return a.first<b.first;});
+    for (int i=0;i<65536;++i) {
+        const double x=i/65535.0; double y=x;
+        for (int k=1;k<pts.size();++k) {
+            if (x<=pts[k].first) { const double t=(x-pts[k-1].first)/(pts[k].first-pts[k-1].first+1e-9);
+                y=pts[k-1].second+t*(pts[k].second-pts[k-1].second); break; }
         }
-        lut[i] = qBound(0.0, y * 65535.0, 65535.0);
+        lut[i]=qBound(0.0,y*65535.0,65535.0);
     }
     return lut;
 }
 
-QImage RenderPipeline::renderPreview(const DocumentModel& doc, QSize maxSize,
-                                      std::shared_ptr<std::atomic<bool>> cancelled) const
-{
+QImage RenderPipeline::renderPreview(const DocumentModel& doc, QSize sz, std::shared_ptr<std::atomic<bool>> c) const {
     if (!doc.hasDocument()) return {};
-    return renderPreviewFromData(doc.sourceImage(), doc.adjustments(),
-                                  maxSize, doc.activeMask(), cancelled);
+    return renderPreviewFromData(doc.sourceImage(),doc.adjustments(),sz,doc.activeMask(),c);
 }
-
-QImage RenderPipeline::renderPreviewFromData(
-    const QImage& sourceImage,
-    const QVector<Adjustment>& adjustments,
-    QSize maximumSize,
-    const QImage& mask,
-    std::shared_ptr<std::atomic<bool>> cancelled) const
-{
-    if (sourceImage.isNull()) return {};
-    QImage source = sourceImage;
-    if (maximumSize.isValid() &&
-        (source.width() > maximumSize.width() || source.height() > maximumSize.height()))
-        source = source.scaled(maximumSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-    QImage scaledMask = mask.isNull() ? QImage() :
-        mask.scaled(source.size(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
-    return applyAdjustments(source, adjustments, scaledMask, cancelled);
+QImage RenderPipeline::renderPreviewFromData(const QImage& src, const QVector<Adjustment>& adjs,
+    QSize maxSz, const QImage& mask, std::shared_ptr<std::atomic<bool>> cancelled) const {
+    if (src.isNull()) return {};
+    QImage s=src;
+    if (maxSz.isValid()&&(s.width()>maxSz.width()||s.height()>maxSz.height()))
+        s=s.scaled(maxSz,Qt::KeepAspectRatio,Qt::SmoothTransformation);
+    QImage sm=mask.isNull()?QImage():mask.scaled(s.size(),Qt::IgnoreAspectRatio,Qt::SmoothTransformation);
+    return applyAdjustments(s,adjs,sm,cancelled);
 }
-
-QImage RenderPipeline::renderFullResolution(const DocumentModel& doc) const
-{
+QImage RenderPipeline::renderFullResolution(const DocumentModel& doc) const {
     if (!doc.hasDocument()) return {};
-    auto layers = doc.layers();
-    if (layers.isEmpty())
-        return applyAdjustments(doc.sourceImage(), doc.adjustmentsForLayer(QString()),
-                                doc.activeMask());
-    std::sort(layers.begin(), layers.end(),
-              [](const Layer& a, const Layer& b){ return a.order < b.order; });
-    const QSize sz = doc.sourceImage().size();
-    QImage canvas(sz, QImage::Format_RGBA64);
-    canvas.fill(Qt::transparent);
-    const QVector<Adjustment> globalAdjs = doc.adjustmentsForLayer(QString());
-    const QImage activeMask = doc.activeMask();
-    for (const Layer& layer : layers) {
-        if (!layer.visible) continue;
-        QImage layerImg = doc.layerImage(layer.id);
-        if (layerImg.isNull()) continue;
-        QVector<Adjustment> adjs = globalAdjs;
-        adjs.append(doc.adjustmentsForLayer(layer.id));
-        layerImg = applyAdjustments(
-            layerImg.convertToFormat(QImage::Format_RGBA64), adjs, activeMask);
-        blendOnto(canvas, layerImg, layer.blendMode, layer.opacity);
+    auto layers=doc.layers();
+    if (layers.isEmpty()) return applyAdjustments(doc.sourceImage(),doc.adjustmentsForLayer(QString()),doc.activeMask());
+    std::sort(layers.begin(),layers.end(),[](const Layer& a,const Layer& b){return a.order<b.order;});
+    QImage canvas(doc.sourceImage().size(),QImage::Format_RGBA64); canvas.fill(Qt::transparent);
+    const QVector<Adjustment> ga=doc.adjustmentsForLayer(QString());
+    const QImage am=doc.activeMask();
+    for (const Layer& l : layers) {
+        if (!l.visible) continue;
+        QImage li=doc.layerImage(l.id); if (li.isNull()) continue;
+        QVector<Adjustment> a=ga; a.append(doc.adjustmentsForLayer(l.id));
+        li=applyAdjustments(li.convertToFormat(QImage::Format_RGBA64),a,am);
+        blendOnto(canvas,li,l.blendMode,l.opacity);
     }
     return canvas;
 }
-
-void RenderPipeline::blendOnto(QImage& canvas, const QImage& layer,
-                                BlendMode mode, double opacity) const
-{
-    const int W = qMin(canvas.width(),  layer.width());
-    const int H = qMin(canvas.height(), layer.height());
-    for (int y = 0; y < H; ++y) {
-        auto*       dst = reinterpret_cast<QRgba64*>(canvas.scanLine(y));
-        const auto* src = reinterpret_cast<const QRgba64*>(layer.constScanLine(y));
-        for (int x = 0; x < W; ++x) {
-            const double bR = dst[x].red()   / 65535.0, bG = dst[x].green() / 65535.0;
-            const double bB = dst[x].blue()  / 65535.0, bA = dst[x].alpha() / 65535.0;
-            const double lR = src[x].red()   / 65535.0, lG = src[x].green() / 65535.0;
-            const double lB = src[x].blue()  / 65535.0, lA = src[x].alpha() / 65535.0;
-            const double eff = opacity * lA;
-            const double oR  = blend::compose(bR, lR, eff, mode);
-            const double oG  = blend::compose(bG, lG, eff, mode);
-            const double oB  = blend::compose(bB, lB, eff, mode);
-            const double oA  = bA + lA * opacity * (1.0 - bA);
-            dst[x] = QRgba64::fromRgba64(
-                clamp16(oR*65535), clamp16(oG*65535),
-                clamp16(oB*65535), clamp16(oA*65535));
+void RenderPipeline::blendOnto(QImage& canvas,const QImage& layer,BlendMode mode,double opacity) const {
+    const int W=qMin(canvas.width(),layer.width()),H=qMin(canvas.height(),layer.height());
+    for (int y=0;y<H;++y) {
+        auto* dst=reinterpret_cast<QRgba64*>(canvas.scanLine(y));
+        const auto* src=reinterpret_cast<const QRgba64*>(layer.constScanLine(y));
+        for (int x=0;x<W;++x) {
+            const double bR=dst[x].red()/65535.0,bG=dst[x].green()/65535.0,bB=dst[x].blue()/65535.0,bA=dst[x].alpha()/65535.0;
+            const double lR=src[x].red()/65535.0,lG=src[x].green()/65535.0,lB=src[x].blue()/65535.0,lA=src[x].alpha()/65535.0;
+            const double eff=opacity*lA;
+            dst[x]=QRgba64::fromRgba64(clamp16(blend::compose(bR,lR,eff,mode)*65535),clamp16(blend::compose(bG,lG,eff,mode)*65535),
+                clamp16(blend::compose(bB,lB,eff,mode)*65535),clamp16((bA+lA*opacity*(1.0-bA))*65535));
         }
     }
 }
 
-QImage RenderPipeline::applyAdjustments(
-    QImage image,
-    const QVector<Adjustment>& adjustments,
-    const QImage& mask,
-    std::shared_ptr<std::atomic<bool>> cancelled) const
-{
-    image = image.convertToFormat(QImage::Format_RGBA64);
+QImage RenderPipeline::applyAdjustments(QImage image,const QVector<Adjustment>& adjustments,
+    const QImage& mask,std::shared_ptr<std::atomic<bool>> cancelled) const {
+    image=image.convertToFormat(QImage::Format_RGBA64);
+    const int rot=int(scalarAdj(adjustments,AdjustmentType::RotationDegrees))%360;
+    const bool fh=scalarAdj(adjustments,AdjustmentType::FlipHorizontal)>0.5;
+    const bool fv=scalarAdj(adjustments,AdjustmentType::FlipVertical)>0.5;
+    if (fh||fv) image=image.mirrored(fh,fv);
+    if (rot!=0) { QTransform t; t.rotate(rot); image=image.transformed(t,Qt::SmoothTransformation); }
 
-    const int  rotation = int(scalarAdj(adjustments, AdjustmentType::RotationDegrees)) % 360;
-    const bool flipH    = scalarAdj(adjustments, AdjustmentType::FlipHorizontal) > 0.5;
-    const bool flipV    = scalarAdj(adjustments, AdjustmentType::FlipVertical)   > 0.5;
-    if (flipH || flipV) image = image.mirrored(flipH, flipV);
-    if (rotation != 0) {
-        QTransform t; t.rotate(rotation);
-        image = image.transformed(t, Qt::SmoothTransformation);
-    }
+    // BRIGHTNESS + EXPOSURE: both multiplicative EV gains, applied together.
+    // Exposure  −3…+3  → gain 0.125×…8×  (rescue / strong tonal shift)
+    // Brightness −100…+100 → gain 0.5×…2× (fine-tune, ±1 EV)
+    // Combined gain applied in a single multiply avoids double-darkening artefacts.
+    const double combinedGain = qPow(2.0, scalarAdj(adjustments,AdjustmentType::Exposure))
+                               * qPow(2.0, scalarAdj(adjustments,AdjustmentType::Brightness)/100.0);
+    const double cg  = 1.0+scalarAdj(adjustments,AdjustmentType::Contrast)/100.0;
+    const double hl  = scalarAdj(adjustments,AdjustmentType::Highlights)/100.0;
+    const double sh  = scalarAdj(adjustments,AdjustmentType::Shadows)/100.0;
+    const double wg  = 1.0+scalarAdj(adjustments,AdjustmentType::Whites)*0.005;
+    const double bof = scalarAdj(adjustments,AdjustmentType::Blacks)*0.15*65535.0;
+    const double sg  = 1.0+scalarAdj(adjustments,AdjustmentType::Saturation)/100.0;
+    const double vib = scalarAdj(adjustments,AdjustmentType::Vibrance)/100.0;
+    const double tmp = scalarAdj(adjustments,AdjustmentType::Temperature);
+    const double tnt = scalarAdj(adjustments,AdjustmentType::Tint);
+    const double rbal=1.0+tmp/400.0, bbal=1.0-tmp/400.0, gbal=1.0+tnt/400.0;
 
-    // ── Scalar adjustment parameters ─────────────────────────────────────────
-    // Brightness: ±100 → ±32767 additive offset on the 0-65535 channel range.
-    // Applied after Exposure so both controls interact naturally (Lightroom legacy model).
-    const double brightnessOffset = scalarAdj(adjustments, AdjustmentType::Brightness)
-                                    / 100.0 * 32767.0;
-    const double exposureGain  = qPow(2.0, scalarAdj(adjustments, AdjustmentType::Exposure));
-    const double contrastGain  = 1.0 + scalarAdj(adjustments, AdjustmentType::Contrast) / 100.0;
-    const double highlights    = scalarAdj(adjustments, AdjustmentType::Highlights) / 100.0;
-    const double shadows       = scalarAdj(adjustments, AdjustmentType::Shadows)    / 100.0;
-    const double whites        = scalarAdj(adjustments, AdjustmentType::Whites)     / 100.0;
-    const double blacks        = scalarAdj(adjustments, AdjustmentType::Blacks)     / 100.0;
-    const double satGain       = 1.0 + scalarAdj(adjustments, AdjustmentType::Saturation) / 100.0;
-    const double vibrance      = scalarAdj(adjustments, AdjustmentType::Vibrance)   / 100.0;
-    const double temperature   = scalarAdj(adjustments, AdjustmentType::Temperature);
-    const double tint          = scalarAdj(adjustments, AdjustmentType::Tint);
-    const double whitesGain    = 1.0 + whites * 0.5;
-    const double blacksOffset  = blacks * 0.15 * 65535.0;
-    const double redBalance    = 1.0 + temperature / 400.0;
-    const double blueBalance   = 1.0 - temperature / 400.0;
-    const double greenBalance  = 1.0 + tint        / 400.0;
+    bool hL=false,hR=false,hG=false,hB=false;
+    std::vector<double> lumaLut,rLut,gLut,bLut;
+    if (const Adjustment* a=findAdj(adjustments,AdjustmentType::ToneCurveLuma)){lumaLut=buildCurveLut(a->parameters.value("points").toArray());hL=true;}
+    if (const Adjustment* a=findAdj(adjustments,AdjustmentType::ToneCurveR)){rLut=buildCurveLut(a->parameters.value("points").toArray());hR=true;}
+    if (const Adjustment* a=findAdj(adjustments,AdjustmentType::ToneCurveG)){gLut=buildCurveLut(a->parameters.value("points").toArray());hG=true;}
+    if (const Adjustment* a=findAdj(adjustments,AdjustmentType::ToneCurveB)){bLut=buildCurveLut(a->parameters.value("points").toArray());hB=true;}
 
-    bool hasLumaLut = false, hasRLut = false, hasGLut = false, hasBLut = false;
-    std::vector<double> lumaLut, rLut, gLut, bLut;
-    if (const Adjustment* a = findAdj(adjustments, AdjustmentType::ToneCurveLuma)) {
-        lumaLut = buildCurveLut(a->parameters.value("points").toArray()); hasLumaLut = true; }
-    if (const Adjustment* a = findAdj(adjustments, AdjustmentType::ToneCurveR)) {
-        rLut = buildCurveLut(a->parameters.value("points").toArray()); hasRLut = true; }
-    if (const Adjustment* a = findAdj(adjustments, AdjustmentType::ToneCurveG)) {
-        gLut = buildCurveLut(a->parameters.value("points").toArray()); hasGLut = true; }
-    if (const Adjustment* a = findAdj(adjustments, AdjustmentType::ToneCurveB)) {
-        bLut = buildCurveLut(a->parameters.value("points").toArray()); hasBLut = true; }
+    const bool hasMask=!mask.isNull();
+    QImage sm=hasMask?mask.scaled(image.size(),Qt::IgnoreAspectRatio,Qt::SmoothTransformation).convertToFormat(QImage::Format_ARGB32):QImage();
 
-    const bool hasMask = !mask.isNull();
-    QImage scaledMask = hasMask ?
-        mask.scaled(image.size(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation)
-            .convertToFormat(QImage::Format_ARGB32) : QImage();
-
-    for (int y = 0; y < image.height(); ++y) {
-        if (cancelled && *cancelled) return {};
-        auto* scanline = reinterpret_cast<QRgba64*>(image.scanLine(y));
-        for (int x = 0; x < image.width(); ++x) {
-            const QRgba64 origPixel = scanline[x];
-
-            // 1. Exposure (multiplicative EV shift)
-            double r = origPixel.red()   * exposureGain;
-            double g = origPixel.green() * exposureGain;
-            double b = origPixel.blue()  * exposureGain;
-
-            // 2. Brightness (additive midtone lift / pull)
-            r += brightnessOffset;
-            g += brightnessOffset;
-            b += brightnessOffset;
-
-            // 3. Whites / Blacks
-            r = (r * whitesGain) + blacksOffset;
-            g = (g * whitesGain) + blacksOffset;
-            b = (b * whitesGain) + blacksOffset;
-
-            // 4. Contrast
-            r = ((r/65535.0 - 0.5) * contrastGain + 0.5) * 65535.0;
-            g = ((g/65535.0 - 0.5) * contrastGain + 0.5) * 65535.0;
-            b = ((b/65535.0 - 0.5) * contrastGain + 0.5) * 65535.0;
-
-            // 5. Highlights
-            double luma = (0.2126*r + 0.7152*g + 0.0722*b) / 65535.0;
-            if (luma > 0.5) {
-                const double blend = (luma - 0.5) * 2.0;
-                const double gain  = 1.0 + highlights * blend;
-                r *= gain; g *= gain; b *= gain;
+    for (int y=0;y<image.height();++y) {
+        if (cancelled&&*cancelled) return {};
+        auto* sc=reinterpret_cast<QRgba64*>(image.scanLine(y));
+        for (int x=0;x<image.width();++x) {
+            const QRgba64 op=sc[x];
+            double r=op.red()*combinedGain, g=op.green()*combinedGain, b=op.blue()*combinedGain;
+            r=(r*wg)+bof; g=(g*wg)+bof; b=(b*wg)+bof;
+            r=((r/65535.0-0.5)*cg+0.5)*65535.0; g=((g/65535.0-0.5)*cg+0.5)*65535.0; b=((b/65535.0-0.5)*cg+0.5)*65535.0;
+            double lm=(0.2126*r+0.7152*g+0.0722*b)/65535.0;
+            if (lm>0.5){double bl=(lm-0.5)*2.0,gn=1.0+hl*bl; r*=gn;g*=gn;b*=gn;}
+            lm=(0.2126*r+0.7152*g+0.0722*b)/65535.0;
+            if (lm<0.5){double bl=(0.5-lm)*2.0,gn=1.0+sh*bl; r*=gn;g*=gn;b*=gn;}
+            const double l16=0.2126*r+0.7152*g+0.0722*b;
+            r=l16+(r-l16)*sg; g=l16+(g-l16)*sg; b=l16+(b-l16)*sg;
+            const double sm2=qMax(r,qMax(g,b)),smi=qMin(r,qMin(g,b));
+            const double cf=(sm2-smi)/(sm2+1e-6),vg=1.0+vib*(1.0-cf);
+            r=l16+(r-l16)*vg; g=l16+(g-l16)*vg; b=l16+(b-l16)*vg;
+            r*=rbal; g*=gbal; b*=bbal;
+            if (hR) r=rLut[clamp16(r)]; if (hG) g=gLut[clamp16(g)]; if (hB) b=bLut[clamp16(b)];
+            if (hL){const double l2=0.2126*r+0.7152*g+0.0722*b,l2m=lumaLut[clamp16(l2)],sc2=l2>0?l2m/l2:1.0; r*=sc2;g*=sc2;b*=sc2;}
+            if (hasMask){
+                const QRgb mp=reinterpret_cast<const QRgb*>(sm.constScanLine(y))[x];
+                const double al=qAlpha(mp)/255.0;
+                r=op.red()*(1.0-al)+r*al; g=op.green()*(1.0-al)+g*al; b=op.blue()*(1.0-al)+b*al;
             }
-
-            // 6. Shadows
-            luma = (0.2126*r + 0.7152*g + 0.0722*b) / 65535.0;
-            if (luma < 0.5) {
-                const double blend = (0.5 - luma) * 2.0;
-                const double gain  = 1.0 + shadows * blend;
-                r *= gain; g *= gain; b *= gain;
-            }
-
-            // 7. Saturation
-            const double luma16 = 0.2126*r + 0.7152*g + 0.0722*b;
-            r = luma16 + (r - luma16) * satGain;
-            g = luma16 + (g - luma16) * satGain;
-            b = luma16 + (b - luma16) * satGain;
-
-            // 8. Vibrance
-            const double satMax = qMax(r, qMax(g, b));
-            const double satMin = qMin(r, qMin(g, b));
-            const double colorfulness = (satMax - satMin) / (satMax + 1e-6);
-            const double vibGain = 1.0 + vibrance * (1.0 - colorfulness);
-            r = luma16 + (r - luma16) * vibGain;
-            g = luma16 + (g - luma16) * vibGain;
-            b = luma16 + (b - luma16) * vibGain;
-
-            // 9. Temperature / Tint
-            r *= redBalance; g *= greenBalance; b *= blueBalance;
-
-            // 10. Per-channel tone curves
-            if (hasRLut) r = rLut[clamp16(r)];
-            if (hasGLut) g = gLut[clamp16(g)];
-            if (hasBLut) b = bLut[clamp16(b)];
-            if (hasLumaLut) {
-                const double l2  = 0.2126*r + 0.7152*g + 0.0722*b;
-                const double l2m = lumaLut[clamp16(l2)];
-                const double scale = l2 > 0 ? l2m / l2 : 1.0;
-                r *= scale; g *= scale; b *= scale;
-            }
-
-            // 11. Mask blend
-            if (hasMask) {
-                const QRgb mPx = reinterpret_cast<const QRgb*>(
-                    scaledMask.constScanLine(y))[x];
-                const double alpha = qAlpha(mPx) / 255.0;
-                r = origPixel.red()   * (1.0-alpha) + r * alpha;
-                g = origPixel.green() * (1.0-alpha) + g * alpha;
-                b = origPixel.blue()  * (1.0-alpha) + b * alpha;
-            }
-
-            scanline[x] = QRgba64::fromRgba64(
-                clamp16(r), clamp16(g), clamp16(b), origPixel.alpha());
+            sc[x]=QRgba64::fromRgba64(clamp16(r),clamp16(g),clamp16(b),op.alpha());
         }
     }
-
 #ifdef HAVE_OPENCV
-    const double nr = scalarAdj(adjustments, AdjustmentType::NoiseReduction);
-    const double sh = scalarAdj(adjustments, AdjustmentType::Sharpening);
-    if (nr > 0.0 || sh > 0.0) {
-        // ── Convert RGBA64 → fresh continuous BGR mat ─────────────────────
-        // Root cause of the red-dot export artefact:
-        //   cvtColor(mat, mat, RGB→BGR) on a mat that wraps Qt image data
-        //   corrupts the channel layout on certain OpenCV builds when src==dst.
-        //   Likewise, the USM loop writing dst[x] while reading src[x] from
-        //   the same buffer causes race-like pixel corruption at full resolution.
-        // Fix: always use a separate destination mat for every operation, and
-        //   clone the work buffer before USM so read and write never alias.
-        QImage img8 = image.convertToFormat(QImage::Format_RGB888);
+    // OpenCV realtime passes: bilateral NR + unsharp-mask sharpening.
+    // These remain as the FAST preview path.
+    // For export-quality results, use the AI enhancement buttons (Real-ESRGAN / SCUNet).
+    const double nr=scalarAdj(adjustments,AdjustmentType::NoiseReduction);
+    const double shp=scalarAdj(adjustments,AdjustmentType::Sharpening);
+    if (nr>0.0||shp>0.0) {
+        QImage img8=image.convertToFormat(QImage::Format_RGB888);
         cv::Mat bgrMat;
-        {
-            cv::Mat tmp(img8.height(), img8.width(), CV_8UC3,
-                        const_cast<uchar*>(img8.constBits()),
-                        static_cast<size_t>(img8.bytesPerLine()));
-            cv::cvtColor(tmp, bgrMat, cv::COLOR_RGB2BGR); // separate dst — no in-place
-        }
-        // bgrMat is now a fully continuous, independently-owned BGR mat.
-        // img8 is no longer referenced.
-
-        cv::Mat work = bgrMat;
-
-        if (nr > 0.0) {
-            const double sigmaColor = 8.0 + nr * 0.40;  // 8–48
-            const double sigmaSpace = 4.0 + nr * 0.12;  // 4–16
-            cv::Mat filtered;
-            cv::bilateralFilter(bgrMat, filtered, -1, sigmaColor, sigmaSpace);
-            work = std::move(filtered);
-        }
-
-        if (sh > 0.0) {
-            const double sigma  = 0.6 + sh * 0.025;           // 0.6–3.1 px
-            const double amount = sh * 0.018;                  // 0–1.8 gain
-            const int    thresh = static_cast<int>(sh * 0.3); // 0–30
-
-            cv::Mat blurred;
-            cv::GaussianBlur(work, blurred, cv::Size(0, 0), sigma);
-
-            // Clone work so read (srcClean) and write (work) never alias.
-            // Without this, pixels written early in a row affect the edge
-            // computation for subsequent pixels — the actual source of the
-            // red-dot artefact on full-resolution exports.
-            cv::Mat srcClean = work.clone();
-            for (int y = 0; y < work.rows; ++y) {
-                const uchar* src = srcClean.ptr<uchar>(y);
-                const uchar* blu = blurred.ptr<uchar>(y);
-                uchar*       dst = work.ptr<uchar>(y);
-                for (int x = 0; x < work.cols * 3; ++x) {
-                    const int edge = static_cast<int>(src[x]) - static_cast<int>(blu[x]);
-                    if (std::abs(edge) > thresh) {
-                        dst[x] = static_cast<uchar>(
-                            std::clamp(static_cast<int>(src[x]) +
-                                static_cast<int>(std::round(amount * edge)), 0, 255));
-                    } else {
-                        dst[x] = src[x]; // copy unchanged from the clean src
-                    }
+        { cv::Mat tmp(img8.height(),img8.width(),CV_8UC3,const_cast<uchar*>(img8.constBits()),static_cast<size_t>(img8.bytesPerLine()));
+          cv::cvtColor(tmp,bgrMat,cv::COLOR_RGB2BGR); }
+        cv::Mat work=bgrMat;
+        if (nr>0.0){cv::Mat f; cv::bilateralFilter(bgrMat,f,-1,8.0+nr*0.4,4.0+nr*0.12); work=std::move(f);}
+        if (shp>0.0){
+            const double sigma=0.6+shp*0.025,amount=shp*0.018;
+            const int thresh=static_cast<int>(shp*0.3);
+            cv::Mat blurred; cv::GaussianBlur(work,blurred,cv::Size(0,0),sigma);
+            cv::Mat sc2=work.clone();
+            for (int y=0;y<work.rows;++y){
+                const uchar* s=sc2.ptr<uchar>(y); const uchar* bl=blurred.ptr<uchar>(y); uchar* d=work.ptr<uchar>(y);
+                for (int x=0;x<work.cols*3;++x){
+                    const int e=int(s[x])-int(bl[x]);
+                    d[x]=std::abs(e)>thresh?static_cast<uchar>(std::clamp(int(s[x])+int(std::round(amount*e)),0,255)):s[x];
                 }
             }
         }
-
-        // BGR → RGB with a separate destination mat (no in-place)
-        cv::Mat rgbOut;
-        cv::cvtColor(work, rgbOut, cv::COLOR_BGR2RGB);
-        QImage result(rgbOut.data, rgbOut.cols, rgbOut.rows,
-                      static_cast<int>(rgbOut.step), QImage::Format_RGB888);
-        image = result.copy().convertToFormat(QImage::Format_RGBA64);
+        cv::Mat ro; cv::cvtColor(work,ro,cv::COLOR_BGR2RGB);
+        QImage res(ro.data,ro.cols,ro.rows,static_cast<int>(ro.step),QImage::Format_RGB888);
+        image=res.copy().convertToFormat(QImage::Format_RGBA64);
     }
 #endif
     return image;
