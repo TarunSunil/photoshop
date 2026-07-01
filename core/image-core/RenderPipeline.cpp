@@ -3,6 +3,7 @@
 #include "image-core/ColorManager.hpp"
 #include <QJsonArray>
 #include <QJsonValue>
+#include <QPainter>
 #include <QTransform>
 #include <QtMath>
 #include <algorithm>
@@ -24,6 +25,8 @@ const Adjustment* findAdj(const QVector<Adjustment>& adjs, AdjustmentType t) {
 }
 } // namespace
 
+// ── Curve LUT ─────────────────────────────────────────────────────────────────
+
 std::vector<double> RenderPipeline::buildCurveLut(const QJsonArray& points) {
     std::vector<double> lut(65536);
     if (points.isEmpty()) { for (int i=0;i<65536;++i) lut[i]=i; return lut; }
@@ -42,10 +45,13 @@ std::vector<double> RenderPipeline::buildCurveLut(const QJsonArray& points) {
     return lut;
 }
 
+// ── Legacy preview paths ───────────────────────────────────────────────────────
+
 QImage RenderPipeline::renderPreview(const DocumentModel& doc, QSize sz, std::shared_ptr<std::atomic<bool>> c) const {
     if (!doc.hasDocument()) return {};
     return renderPreviewFromData(doc.sourceImage(),doc.adjustments(),sz,doc.activeMask(),c);
 }
+
 QImage RenderPipeline::renderPreviewFromData(const QImage& src, const QVector<Adjustment>& adjs,
     QSize maxSz, const QImage& mask, std::shared_ptr<std::atomic<bool>> cancelled) const {
     if (src.isNull()) return {};
@@ -55,6 +61,103 @@ QImage RenderPipeline::renderPreviewFromData(const QImage& src, const QVector<Ad
     QImage sm=mask.isNull()?QImage():mask.scaled(s.size(),Qt::IgnoreAspectRatio,Qt::SmoothTransformation);
     return applyAdjustments(s,adjs,sm,cancelled);
 }
+
+// ── Full pipeline render (issues 5 + 6) ──────────────────────────────────────
+
+QImage RenderPipeline::renderWithLayers(
+    const QImage& baseSource,
+    const QVector<Adjustment>& globalAdjustments,
+    const std::vector<MaskAdjLayer>& maskAdjLayers,
+    const QVector<Layer>& overlayLayers,
+    const QHash<QString, QImage>& layerImages,
+    QSize maximumSize,
+    std::shared_ptr<std::atomic<bool>> cancelled) const
+{
+    if (baseSource.isNull()) return {};
+
+    // -- Step 1: scale source to preview size ----------------------------------
+    double previewScale = 1.0;
+    QImage scaledSrc = baseSource;
+    if (maximumSize.isValid() &&
+        (baseSource.width() > maximumSize.width() || baseSource.height() > maximumSize.height())) {
+        previewScale = std::min(
+            static_cast<double>(maximumSize.width())  / baseSource.width(),
+            static_cast<double>(maximumSize.height()) / baseSource.height());
+        scaledSrc = baseSource.scaled(maximumSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    }
+    if (cancelled && *cancelled) return {};
+
+    // -- Step 2: apply global adjustments (no mask) ---------------------------
+    QImage result = applyAdjustments(scaledSrc, globalAdjustments, {}, cancelled);
+    if (result.isNull() || (cancelled && *cancelled)) return {};
+
+    // -- Step 3: apply per-mask local adjustments (issue 5) -------------------
+    for (const auto& ml : maskAdjLayers) {
+        if (cancelled && *cancelled) return {};
+        if (ml.adjustments.isEmpty()) continue;
+        QImage scaledMask = ml.mask.isNull() ? QImage()
+            : ml.mask.scaled(result.size(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        result = applyAdjustments(result, ml.adjustments, scaledMask, cancelled);
+        if (result.isNull()) return {};
+    }
+
+    // -- Step 4: composite overlay layers (issue 6) ---------------------------
+    if (overlayLayers.size() > 1) {
+        compositeOverlayLayers(result, overlayLayers, layerImages, previewScale);
+    }
+
+    return result;
+}
+
+// ── Overlay layer compositing (issue 6) ───────────────────────────────────────
+
+void RenderPipeline::compositeOverlayLayers(
+    QImage& canvas,
+    const QVector<Layer>& layers,
+    const QHash<QString, QImage>& layerImages,
+    double scale) const
+{
+    // Sort by order so base (order==0) is bottom, overlays are on top.
+    QVector<Layer> sorted = layers;
+    std::sort(sorted.begin(), sorted.end(),
+              [](const Layer& a, const Layer& b){ return a.order < b.order; });
+
+    // QPainter needs a premultiplied surface for correct alpha compositing.
+    QImage comp = canvas.convertToFormat(QImage::Format_ARGB32_Premultiplied);
+    QPainter painter(&comp);
+    painter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
+
+    for (const Layer& layer : sorted) {
+        if (layer.order == 0 || !layer.visible) continue;  // skip base layer
+        const QImage img = layerImages.value(layer.id);
+        if (img.isNull()) continue;
+
+        painter.save();
+        painter.setOpacity(layer.opacity);
+
+        // Centre of placement in canvas coords.
+        // posX/posY are in BASE-IMAGE pixels; scale converts to canvas pixels.
+        const double cx = comp.width()  * 0.5 + layer.posX * scale;
+        const double cy = comp.height() * 0.5 + layer.posY * scale;
+
+        // Destination size at current preview scale.
+        const int dw = qMax(1, qRound(img.width()  * layer.scaleX * scale));
+        const int dh = qMax(1, qRound(img.height() * layer.scaleY * scale));
+
+        painter.translate(cx, cy);
+        if (!qFuzzyIsNull(layer.rotation))
+            painter.rotate(layer.rotation);
+        painter.drawImage(QRectF(-dw * 0.5, -dh * 0.5, dw, dh), img);
+        painter.restore();
+    }
+    painter.end();
+
+    // Convert back to RGBA64 to stay consistent with the rest of the pipeline.
+    canvas = comp.convertToFormat(QImage::Format_RGBA64);
+}
+
+// ── Full-resolution export ────────────────────────────────────────────────────
+
 QImage RenderPipeline::renderFullResolution(const DocumentModel& doc) const {
     if (!doc.hasDocument()) return {};
     auto layers=doc.layers();
@@ -70,8 +173,18 @@ QImage RenderPipeline::renderFullResolution(const DocumentModel& doc) const {
         li=applyAdjustments(li.convertToFormat(QImage::Format_RGBA64),a,am);
         blendOnto(canvas,li,l.blendMode,l.opacity);
     }
+    // Apply per-mask adjustments on top of composited result
+    for (const Mask& mask : doc.masks()) {
+        if (mask.id.isEmpty() || mask.mask.isNull()) continue;
+        const auto maskAdjs = doc.adjustmentsForTarget(mask.id);
+        if (!maskAdjs.isEmpty())
+            canvas = applyAdjustments(canvas, maskAdjs, mask.mask);
+    }
     return canvas;
 }
+
+// ── Blend onto canvas ─────────────────────────────────────────────────────────
+
 void RenderPipeline::blendOnto(QImage& canvas,const QImage& layer,BlendMode mode,double opacity) const {
     const int W=qMin(canvas.width(),layer.width()),H=qMin(canvas.height(),layer.height());
     for (int y=0;y<H;++y) {
@@ -87,6 +200,8 @@ void RenderPipeline::blendOnto(QImage& canvas,const QImage& layer,BlendMode mode
     }
 }
 
+// ── Core pixel pipeline ───────────────────────────────────────────────────────
+
 QImage RenderPipeline::applyAdjustments(QImage image,const QVector<Adjustment>& adjustments,
     const QImage& mask,std::shared_ptr<std::atomic<bool>> cancelled) const {
     image=image.convertToFormat(QImage::Format_RGBA64);
@@ -96,10 +211,6 @@ QImage RenderPipeline::applyAdjustments(QImage image,const QVector<Adjustment>& 
     if (fh||fv) image=image.mirrored(fh,fv);
     if (rot!=0) { QTransform t; t.rotate(rot); image=image.transformed(t,Qt::SmoothTransformation); }
 
-    // BRIGHTNESS + EXPOSURE: both multiplicative EV gains, applied together.
-    // Exposure  −3…+3  → gain 0.125×…8×  (rescue / strong tonal shift)
-    // Brightness −100…+100 → gain 0.5×…2× (fine-tune, ±1 EV)
-    // Combined gain applied in a single multiply avoids double-darkening artefacts.
     const double combinedGain = qPow(2.0, scalarAdj(adjustments,AdjustmentType::Exposure))
                                * qPow(2.0, scalarAdj(adjustments,AdjustmentType::Brightness)/100.0);
     const double cg  = 1.0+scalarAdj(adjustments,AdjustmentType::Contrast)/100.0;
@@ -152,9 +263,6 @@ QImage RenderPipeline::applyAdjustments(QImage image,const QVector<Adjustment>& 
         }
     }
 #ifdef HAVE_OPENCV
-    // OpenCV realtime passes: bilateral NR + unsharp-mask sharpening.
-    // These remain as the FAST preview path.
-    // For export-quality results, use the AI enhancement buttons (Real-ESRGAN / SCUNet).
     const double nr=scalarAdj(adjustments,AdjustmentType::NoiseReduction);
     const double shp=scalarAdj(adjustments,AdjustmentType::Sharpening);
     if (nr>0.0||shp>0.0) {

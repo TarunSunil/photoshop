@@ -73,24 +73,38 @@ Item {
         color: "transparent"
         border.color: "white"; border.width: 1
 
-        // Rule-of-thirds grid
-        Canvas {
+        // Rule-of-thirds grid — native Rectangle lines (GPU-composited), not a
+        // Canvas. The previous Canvas-based version did a full CPU
+        // ctx.reset() + 4-line redraw on every pixel of a resize-drag (its
+        // onWidthChanged/onHeightChanged fired every frame), which is a real,
+        // known source of jank for Canvas items during continuous resizing.
+        // Plain Rectangles let the scene graph move/resize them with zero
+        // CPU rasterization.
+        Item {
             anchors.fill: parent
-            onPaint: {
-                const ctx = getContext("2d");
-                ctx.clearRect(0, 0, width, height);
-                ctx.strokeStyle = "rgba(255,255,255,0.35)";
-                ctx.lineWidth = 0.7;
-                ctx.setLineDash([4, 4]);
-                ctx.beginPath();
-                ctx.moveTo(width/3, 0);    ctx.lineTo(width/3, height);
-                ctx.moveTo(2*width/3, 0);  ctx.lineTo(2*width/3, height);
-                ctx.moveTo(0, height/3);   ctx.lineTo(width, height/3);
-                ctx.moveTo(0, 2*height/3); ctx.lineTo(width, 2*height/3);
-                ctx.stroke();
+            opacity: 0.35
+            // Two vertical thirds lines
+            Repeater {
+                model: 2
+                Rectangle {
+                    x: parent.width * (index + 1) / 3 - width / 2
+                    y: 0
+                    width: 1
+                    height: parent.height
+                    color: "white"
+                }
             }
-            onWidthChanged:  requestPaint()
-            onHeightChanged: requestPaint()
+            // Two horizontal thirds lines
+            Repeater {
+                model: 2
+                Rectangle {
+                    x: 0
+                    y: parent.height * (index + 1) / 3 - height / 2
+                    width: parent.width
+                    height: 1
+                    color: "white"
+                }
+            }
         }
 
         // Interior drag — moves the entire box.
@@ -204,7 +218,7 @@ Item {
         z: 20
 
         Button {
-            text: "✓  Crop"
+            text: "\u2713  Crop"
             implicitWidth: 86; implicitHeight: 30
             onClicked: cropOverlay.confirm()
             background: Rectangle {
@@ -212,12 +226,12 @@ Item {
                 radius: 7; border.color: "#3d41a0"
             }
             contentItem: Label {
-                text: "✓  Crop"; color: "#c7d2fe"
+                text: "\u2713  Crop"; color: "#c7d2fe"
                 font.pixelSize: 12; horizontalAlignment: Text.AlignHCenter
             }
         }
         Button {
-            text: "✕  Cancel"
+            text: "\u2715  Cancel"
             implicitWidth: 86; implicitHeight: 30
             onClicked: { if (cropOverlay.docCtrl) cropOverlay.docCtrl.activeTool = 0; }
             background: Rectangle {
@@ -225,7 +239,7 @@ Item {
                 radius: 7; border.color: "#252d45"
             }
             contentItem: Label {
-                text: "✕  Cancel"; color: "#8892a4"
+                text: "\u2715  Cancel"; color: "#8892a4"
                 font.pixelSize: 12; horizontalAlignment: Text.AlignHCenter
             }
         }

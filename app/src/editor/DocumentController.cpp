@@ -5,6 +5,7 @@
 #include <QFutureWatcher>
 #include <QSettings>
 #include <QStandardPaths>
+#include <QUuid>
 #include <QVariantMap>
 #include <QtConcurrent>
 #include <QPainter>
@@ -14,6 +15,35 @@
 #  include <opencv2/core.hpp>
 #  include <opencv2/imgproc.hpp>
 #endif
+
+// ---------------------------------------------------------------------------
+// Brush-engine resolution cap (issue 4 fix)
+// ---------------------------------------------------------------------------
+// Running QPainter on a full-resolution (potentially 20MP+) QImage per
+// mouse-move event causes multi-hundred millisecond stalls, especially after
+// refineEdges() writes a full-res mask back into the brush engine. Capping
+// the brush engine to 2000px on the longest side keeps stroke painting
+// interactive. Masks are upsampled to source resolution before being stored
+// in DocumentModel so exports remain full quality.
+static QSize brushEngineSize(const QSize& sourceSize)
+{
+    constexpr int MAX_DIM = 2000;
+    if (sourceSize.width() <= MAX_DIM && sourceSize.height() <= MAX_DIM)
+        return sourceSize;
+    return sourceSize.scaled(MAX_DIM, MAX_DIM, Qt::KeepAspectRatio);
+}
+
+static QImage upsampleMaskToSource(const QImage& mask, const QSize& sourceSize)
+{
+    if (mask.isNull() || mask.size() == sourceSize) return mask;
+    return mask.scaled(sourceSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+}
+
+static QImage downsampleMaskToBrush(const QImage& mask, const QSize& beSize)
+{
+    if (mask.isNull() || mask.size() == beSize) return mask;
+    return mask.scaled(beSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+}
 
 #ifdef HAVE_OPENCV
 static QImage refineMaskEdgesOcv(const QImage& sourceImage, const QImage& mask)
@@ -121,32 +151,40 @@ bool DocumentController::cropActive()   const { return m_cropActive; }
 void DocumentController::setShowOriginal(bool v) {
     if (m_showOriginal == v) return; m_showOriginal = v; emit previewChanged();
 }
-double DocumentController::brightness()    const { return m_document.scalarAdjustment(lumen::AdjustmentType::Brightness); }
-double DocumentController::exposure()      const { return m_document.scalarAdjustment(lumen::AdjustmentType::Exposure); }
-double DocumentController::contrast()      const { return m_document.scalarAdjustment(lumen::AdjustmentType::Contrast); }
-double DocumentController::saturation()    const { return m_document.scalarAdjustment(lumen::AdjustmentType::Saturation); }
-double DocumentController::highlights()    const { return m_document.scalarAdjustment(lumen::AdjustmentType::Highlights); }
-double DocumentController::shadows()       const { return m_document.scalarAdjustment(lumen::AdjustmentType::Shadows); }
-double DocumentController::whites()        const { return m_document.scalarAdjustment(lumen::AdjustmentType::Whites); }
-double DocumentController::blacks()        const { return m_document.scalarAdjustment(lumen::AdjustmentType::Blacks); }
-double DocumentController::vibrance()      const { return m_document.scalarAdjustment(lumen::AdjustmentType::Vibrance); }
-double DocumentController::temperature()   const { return m_document.scalarAdjustment(lumen::AdjustmentType::Temperature); }
-double DocumentController::tint()          const { return m_document.scalarAdjustment(lumen::AdjustmentType::Tint); }
-double DocumentController::noiseReduction()const { return m_document.scalarAdjustment(lumen::AdjustmentType::NoiseReduction); }
-double DocumentController::sharpening()    const { return m_document.scalarAdjustment(lumen::AdjustmentType::Sharpening); }
-void DocumentController::setBrightness(double v)   { setAdjustment(lumen::AdjustmentType::Brightness,   v); }
-void DocumentController::setExposure(double v)     { setAdjustment(lumen::AdjustmentType::Exposure,     v); }
-void DocumentController::setContrast(double v)     { setAdjustment(lumen::AdjustmentType::Contrast,     v); }
-void DocumentController::setSaturation(double v)   { setAdjustment(lumen::AdjustmentType::Saturation,   v); }
-void DocumentController::setHighlights(double v)   { setAdjustment(lumen::AdjustmentType::Highlights,   v); }
-void DocumentController::setShadows(double v)      { setAdjustment(lumen::AdjustmentType::Shadows,      v); }
-void DocumentController::setWhites(double v)       { setAdjustment(lumen::AdjustmentType::Whites,       v); }
-void DocumentController::setBlacks(double v)       { setAdjustment(lumen::AdjustmentType::Blacks,       v); }
-void DocumentController::setVibrance(double v)     { setAdjustment(lumen::AdjustmentType::Vibrance,     v); }
-void DocumentController::setTemperature(double v)  { setAdjustment(lumen::AdjustmentType::Temperature,  v); }
-void DocumentController::setTint(double v)         { setAdjustment(lumen::AdjustmentType::Tint,         v); }
+
+// ── Issue 5: target-aware sliders ────────────────────────────────────────────
+// Every getter/setter below now routes through scalarAdjustmentForTarget /
+// setScalarAdjustmentForTarget using m_activeAdjustmentTarget, instead of the
+// old global-only scalarAdjustment(). When activeAdjustmentTarget == "" this
+// behaves exactly like before (full-image editing).
+double DocumentController::brightness()    const { return m_document.scalarAdjustmentForTarget(lumen::AdjustmentType::Brightness, m_activeAdjustmentTarget); }
+double DocumentController::exposure()      const { return m_document.scalarAdjustmentForTarget(lumen::AdjustmentType::Exposure, m_activeAdjustmentTarget); }
+double DocumentController::contrast()      const { return m_document.scalarAdjustmentForTarget(lumen::AdjustmentType::Contrast, m_activeAdjustmentTarget); }
+double DocumentController::saturation()    const { return m_document.scalarAdjustmentForTarget(lumen::AdjustmentType::Saturation, m_activeAdjustmentTarget); }
+double DocumentController::highlights()    const { return m_document.scalarAdjustmentForTarget(lumen::AdjustmentType::Highlights, m_activeAdjustmentTarget); }
+double DocumentController::shadows()       const { return m_document.scalarAdjustmentForTarget(lumen::AdjustmentType::Shadows, m_activeAdjustmentTarget); }
+double DocumentController::whites()        const { return m_document.scalarAdjustmentForTarget(lumen::AdjustmentType::Whites, m_activeAdjustmentTarget); }
+double DocumentController::blacks()        const { return m_document.scalarAdjustmentForTarget(lumen::AdjustmentType::Blacks, m_activeAdjustmentTarget); }
+double DocumentController::vibrance()      const { return m_document.scalarAdjustmentForTarget(lumen::AdjustmentType::Vibrance, m_activeAdjustmentTarget); }
+double DocumentController::temperature()   const { return m_document.scalarAdjustmentForTarget(lumen::AdjustmentType::Temperature, m_activeAdjustmentTarget); }
+double DocumentController::tint()          const { return m_document.scalarAdjustmentForTarget(lumen::AdjustmentType::Tint, m_activeAdjustmentTarget); }
+double DocumentController::noiseReduction()const { return m_document.scalarAdjustmentForTarget(lumen::AdjustmentType::NoiseReduction, m_activeAdjustmentTarget); }
+double DocumentController::sharpening()    const { return m_document.scalarAdjustmentForTarget(lumen::AdjustmentType::Sharpening, m_activeAdjustmentTarget); }
+
+void DocumentController::setBrightness(double v)    { setAdjustment(lumen::AdjustmentType::Brightness,   v); }
+void DocumentController::setExposure(double v)      { setAdjustment(lumen::AdjustmentType::Exposure,     v); }
+void DocumentController::setContrast(double v)      { setAdjustment(lumen::AdjustmentType::Contrast,     v); }
+void DocumentController::setSaturation(double v)    { setAdjustment(lumen::AdjustmentType::Saturation,   v); }
+void DocumentController::setHighlights(double v)    { setAdjustment(lumen::AdjustmentType::Highlights,   v); }
+void DocumentController::setShadows(double v)       { setAdjustment(lumen::AdjustmentType::Shadows,      v); }
+void DocumentController::setWhites(double v)        { setAdjustment(lumen::AdjustmentType::Whites,       v); }
+void DocumentController::setBlacks(double v)        { setAdjustment(lumen::AdjustmentType::Blacks,       v); }
+void DocumentController::setVibrance(double v)      { setAdjustment(lumen::AdjustmentType::Vibrance,     v); }
+void DocumentController::setTemperature(double v)   { setAdjustment(lumen::AdjustmentType::Temperature,  v); }
+void DocumentController::setTint(double v)          { setAdjustment(lumen::AdjustmentType::Tint,         v); }
 void DocumentController::setNoiseReduction(double v){ setAdjustment(lumen::AdjustmentType::NoiseReduction,v); }
-void DocumentController::setSharpening(double v)   { setAdjustment(lumen::AdjustmentType::Sharpening,   v); }
+void DocumentController::setSharpening(double v)    { setAdjustment(lumen::AdjustmentType::Sharpening,   v); }
+
 int  DocumentController::activeTool()  const { return m_activeTool; }
 bool DocumentController::hasMask()     const { return !m_document.activeMask().isNull(); }
 QString DocumentController::maskUrl()  const {
@@ -157,17 +195,22 @@ int  DocumentController::sourceWidth()  const { return m_document.sourceSize().w
 int  DocumentController::sourceHeight() const { return m_document.sourceSize().height(); }
 bool    DocumentController::aiBusy()   const { return m_aiBusy; }
 QString DocumentController::aiStatus() const { return m_aiStatus; }
+
 QVariantList DocumentController::layerModel() const {
     QVariantList list;
     for (const lumen::Layer& l : m_document.layers()) {
         QVariantMap m;
-        m["id"]="id_"+l.id; m["name"]=l.name; m["opacity"]=l.opacity;
+        m["id"]=l.id; m["name"]=l.name; m["opacity"]=l.opacity;
         m["visible"]=l.visible; m["order"]=l.order; m["realId"]=l.id;
+        m["isBase"] = (l.order == 0);
+        m["posX"]=l.posX; m["posY"]=l.posY;
+        m["scaleX"]=l.scaleX; m["scaleY"]=l.scaleY; m["rotation"]=l.rotation;
         list.prepend(m);
     }
     return list;
 }
 QStringList DocumentController::historyLog() const { return m_historyLog; }
+
 QVariantList DocumentController::maskList() const {
     QVariantList list;
     const auto& masks = m_document.masks();
@@ -181,6 +224,34 @@ QVariantList DocumentController::maskList() const {
     }
     return list;
 }
+
+// Issue 5: combo model for the Masks tab — "Full Image" first, then each mask.
+QVariantList DocumentController::adjustmentTargets() const {
+    QVariantList list;
+    QVariantMap full; full["id"] = QString(); full["name"] = "Full Image";
+    list.append(full);
+    for (const lumen::Mask& m : m_document.masks()) {
+        QVariantMap e; e["id"] = m.id; e["name"] = m.name.isEmpty() ? "Mask" : m.name;
+        list.append(e);
+    }
+    return list;
+}
+
+QString DocumentController::activeAdjustmentTarget() const { return m_activeAdjustmentTarget; }
+void DocumentController::setActiveAdjustmentTarget(const QString& targetMaskId) {
+    if (m_activeAdjustmentTarget == targetMaskId) return;
+    m_activeAdjustmentTarget = targetMaskId;
+    emit activeAdjustmentTargetChanged();
+    emit adjustmentsChanged();   // sliders must re-read values for the new target
+}
+
+QString DocumentController::selectedLayerId() const { return m_selectedLayerId; }
+void DocumentController::setSelectedLayerId(const QString& id) {
+    if (m_selectedLayerId == id) return;
+    m_selectedLayerId = id;
+    emit selectedLayerChanged();
+}
+
 QStringList DocumentController::recentFiles() const {
     QSettings s("LumenForge","LumenForge");
     return s.value("recentFiles").toStringList();
@@ -245,8 +316,10 @@ bool DocumentController::openImage(const QUrl& url) {
     if (!m_document.openSourceImage(path)) {
         emit operationFailed("Could not open image."); return false;
     }
-    m_brushEngine = std::make_unique<lumen::BrushEngine>(m_document.sourceSize());
+    m_brushEngine = std::make_unique<lumen::BrushEngine>(brushEngineSize(m_document.sourceSize()));
     m_maskTempPath.clear(); m_pendingStrokes.clear();
+    m_activeAdjustmentTarget.clear(); emit activeAdjustmentTargetChanged();
+    m_selectedLayerId.clear(); emit selectedLayerChanged();
     emit maskChanged();
     QFile::remove(autosavePath());
     m_hasPendingRecovery = false; emit recoveryChanged();
@@ -265,8 +338,9 @@ bool DocumentController::loadProject(const QUrl& url) {
     if (!m_projectStore.loadProject(m_document, localPath(url))) {
         emit operationFailed("Could not load project."); return false;
     }
-    m_brushEngine = std::make_unique<lumen::BrushEngine>(m_document.sourceSize());
+    m_brushEngine = std::make_unique<lumen::BrushEngine>(brushEngineSize(m_document.sourceSize()));
     m_pendingStrokes.clear();
+    m_activeAdjustmentTarget.clear(); emit activeAdjustmentTargetChanged();
     logHistory("Project loaded");
     return true;
 }
@@ -278,6 +352,8 @@ bool DocumentController::exportImage(const QUrl& url) {
     return true;
 }
 void DocumentController::resetAdjustments() {
+    // Reset only the CURRENTLY ACTIVE target (issue 5) — resetting the full
+    // image must not wipe out per-mask edits and vice versa.
     for (auto t : {
         lumen::AdjustmentType::Brightness, lumen::AdjustmentType::Exposure,
         lumen::AdjustmentType::Contrast,   lumen::AdjustmentType::Saturation,
@@ -286,8 +362,10 @@ void DocumentController::resetAdjustments() {
         lumen::AdjustmentType::Vibrance,   lumen::AdjustmentType::Temperature,
         lumen::AdjustmentType::Tint, lumen::AdjustmentType::NoiseReduction,
         lumen::AdjustmentType::Sharpening,
-    }) m_document.setScalarAdjustment(t, 0.0);
-    logHistory("Reset all adjustments");
+    }) m_document.setScalarAdjustmentForTarget(t, 0.0, m_activeAdjustmentTarget);
+    logHistory(m_activeAdjustmentTarget.isEmpty()
+        ? "Reset all adjustments (Full Image)"
+        : "Reset all adjustments (mask)");
 }
 void DocumentController::rotateClockwise()        { m_document.rotateClockwise();        logHistory("Rotate CW"); }
 void DocumentController::rotateCounterClockwise() { m_document.rotateCounterClockwise(); logHistory("Rotate CCW"); }
@@ -297,28 +375,39 @@ void DocumentController::undo()                   { m_document.undo();          
 void DocumentController::redo()                   { m_document.redo();                   logHistory("Redo"); }
 
 // ── Brush mask ────────────────────────────────────────────────────────────────
-// paintMaskStroke: ZERO file I/O, ZERO QPainter on the UI thread.
-// Accumulates {x,y,radius,erase} structs. QML draws locally for instant feedback.
 void DocumentController::paintMaskStroke(double x, double y, double radius, bool erase) {
     if (!m_document.hasDocument() || !m_brushEngine) return;
     m_pendingStrokes.append({x, y, radius, erase});
 }
-// commitMaskPaint: called once on mouseRelease.
-// Applies all accumulated strokes (may be hundreds), then flushes to file.
 void DocumentController::commitMaskPaint() {
     if (m_maskSaveTimer && m_maskSaveTimer->isActive()) m_maskSaveTimer->stop();
     if (!m_brushEngine) return;
+    // CRITICAL FIX: m_pendingStrokes coordinates arrive from MaskCanvas.qml in
+    // FULL SOURCE-RESOLUTION pixel space (it converts mouse position using
+    // docCtrl.sourceWidth/sourceHeight). But m_brushEngine's QImage is capped
+    // to brushEngineSize() (issue 4 fix — max 2000px) for paint performance.
+    // Without rescaling, strokes were being painted at full-res coordinates
+    // into a much smaller buffer, landing in the wrong place (or off-canvas
+    // entirely) on any image above the 2000px cap — which is almost every
+    // real photo. Scale x/y/radius into brush-engine space here, once, before
+    // painting.
+    const QSize srcSz = m_document.sourceSize();
+    const QSize beSz  = m_brushEngine->mask().size();
+    const double scale = (srcSz.width() > 0)
+        ? static_cast<double>(beSz.width()) / static_cast<double>(srcSz.width())
+        : 1.0;
     for (const auto& s : m_pendingStrokes)
-        m_brushEngine->paintStroke(QPointF(s.x, s.y), s.radius, 0.85, s.erase);
+        m_brushEngine->paintStroke(QPointF(s.x * scale, s.y * scale), s.radius * scale, 0.85, s.erase);
     m_pendingStrokes.clear();
-    m_document.setActiveMask(m_brushEngine->mask());
+    // Issue 4: brush engine is capped resolution; upsample before storing.
+    m_document.setActiveMask(upsampleMaskToSource(m_brushEngine->mask(), srcSz));
     saveMaskToTemp();
     emit maskChanged();
     logHistory("Brush mask");
 }
 void DocumentController::flushMaskSave() {
     if (!m_brushEngine) return;
-    m_document.setActiveMask(m_brushEngine->mask());
+    m_document.setActiveMask(upsampleMaskToSource(m_brushEngine->mask(), m_document.sourceSize()));
     saveMaskToTemp(); emit maskChanged();
 }
 void DocumentController::clearMask() {
@@ -344,30 +433,38 @@ void DocumentController::saveMaskToTemp() {
 void DocumentController::applyGradientMask(double x1,double y1,double x2,double y2) {
     if (!m_document.hasDocument()) return;
     const QSize sz = m_document.sourceSize();
-    QImage mask(sz, QImage::Format_ARGB32);
+    const QSize beSz = brushEngineSize(sz);
+    const double scaleX = static_cast<double>(beSz.width())  / sz.width();
+    const double scaleY = static_cast<double>(beSz.height()) / sz.height();
+    QImage mask(beSz, QImage::Format_ARGB32);
     QPainter p(&mask);
-    QLinearGradient grad(x1,y1,x2,y2);
+    QLinearGradient grad(x1*scaleX,y1*scaleY,x2*scaleX,y2*scaleY);
     grad.setColorAt(0.0,QColor(255,255,255,255));
     grad.setColorAt(1.0,QColor(255,255,255,0));
-    p.fillRect(QRectF(0,0,sz.width(),sz.height()),grad); p.end();
-    if (!m_brushEngine) m_brushEngine = std::make_unique<lumen::BrushEngine>(sz);
+    p.fillRect(QRectF(0,0,beSz.width(),beSz.height()),grad); p.end();
+    if (!m_brushEngine) m_brushEngine = std::make_unique<lumen::BrushEngine>(beSz);
     m_brushEngine->mask() = mask;
-    m_document.setActiveMask(mask); saveMaskToTemp(); emit maskChanged();
+    m_document.setActiveMask(upsampleMaskToSource(mask, sz));
+    saveMaskToTemp(); emit maskChanged();
     logHistory("Gradient mask");
 }
 void DocumentController::applyRadialMask(double cx,double cy,double radius) {
     if (!m_document.hasDocument()) return;
     const QSize sz = m_document.sourceSize();
-    QImage mask(sz, QImage::Format_ARGB32); mask.fill(Qt::transparent);
+    const QSize beSz = brushEngineSize(sz);
+    const double scaleX = static_cast<double>(beSz.width())  / sz.width();
+    const double scaleY = static_cast<double>(beSz.height()) / sz.height();
+    QImage mask(beSz, QImage::Format_ARGB32); mask.fill(Qt::transparent);
     QPainter p(&mask);
-    QRadialGradient grad(cx,cy,radius);
+    QRadialGradient grad(cx*scaleX,cy*scaleY,radius*qMin(scaleX,scaleY));
     grad.setColorAt(0.0,QColor(255,255,255,255));
     grad.setColorAt(0.65,QColor(255,255,255,180));
     grad.setColorAt(1.0,QColor(255,255,255,0));
-    p.fillRect(QRectF(0,0,sz.width(),sz.height()),grad); p.end();
-    if (!m_brushEngine) m_brushEngine = std::make_unique<lumen::BrushEngine>(sz);
+    p.fillRect(QRectF(0,0,beSz.width(),beSz.height()),grad); p.end();
+    if (!m_brushEngine) m_brushEngine = std::make_unique<lumen::BrushEngine>(beSz);
     m_brushEngine->mask() = mask;
-    m_document.setActiveMask(mask); saveMaskToTemp(); emit maskChanged();
+    m_document.setActiveMask(upsampleMaskToSource(mask, sz));
+    saveMaskToTemp(); emit maskChanged();
     logHistory("Radial mask");
 }
 void DocumentController::applyCrop(int x,int y,int w,int h) {
@@ -378,12 +475,8 @@ void DocumentController::applyCrop(int x,int y,int w,int h) {
         qBound(1,h,sz.height()-qBound(0,y,sz.height())));
     if (rect.isEmpty()) return;
     m_document.replaceSourceImage(m_document.sourceImage().copy(rect));
-    m_brushEngine = std::make_unique<lumen::BrushEngine>(m_document.sourceSize());
+    m_brushEngine = std::make_unique<lumen::BrushEngine>(brushEngineSize(m_document.sourceSize()));
     m_maskTempPath.clear(); m_pendingStrokes.clear();
-    // CROP FIX: immediately publish a placeholder preview of the unadjusted
-    // cropped source so the canvas shows the correct region while the adjusted
-    // preview is rendering (takes ~100ms). Without this, the stale pre-crop
-    // preview JPEG is still shown and brush strokes appear offset.
     {
         const QImage& cropped = m_document.sourceImage();
         const QSize maxLQ(1400,1050);
@@ -397,20 +490,27 @@ void DocumentController::applyCrop(int x,int y,int w,int h) {
             emit previewChanged();
         }
     }
-    logHistory(QString("Crop %1×%2").arg(m_document.sourceSize().width()).arg(m_document.sourceSize().height()));
+    logHistory(QString("Crop %1\u00d7%2").arg(m_document.sourceSize().width()).arg(m_document.sourceSize().height()));
     setActiveTool(0); emit maskChanged();
 }
 void DocumentController::refineEdges() {
 #ifdef HAVE_OPENCV
     if (!m_document.hasDocument()||m_document.activeMask().isNull()||m_aiBusy) return;
-    setAiBusy(true); setAiStatus("Refining edges…");
+    setAiBusy(true); setAiStatus("Refining edges\u2026");
     const QImage src=m_document.sourceImage(), mask=m_document.activeMask();
     auto* w = new QFutureWatcher<QImage>(this);
     connect(w,&QFutureWatcher<QImage>::finished,this,[this,w](){
         const QImage refined=w->result();
         if (!refined.isNull()) {
-            if (m_brushEngine) m_brushEngine->mask()=refined;
-            m_document.setActiveMask(refined); saveMaskToTemp(); emit maskChanged();
+            // Issue 4: store a CAPPED copy in the brush engine (fast painting),
+            // and the FULL-RES copy (already at source size, since
+            // refineMaskEdgesOcv upsamples its result to mask.size()) in the
+            // document so exports/HQ preview stay correct.
+            if (m_brushEngine) {
+                m_brushEngine->mask() = downsampleMaskToBrush(refined, m_brushEngine->mask().size());
+            }
+            m_document.setActiveMask(refined);
+            saveMaskToTemp(); emit maskChanged();
             logHistory("Refine edges"); setAiStatus("Done");
         } else setAiStatus("Edge refinement failed");
         setAiBusy(false); w->deleteLater();
@@ -420,14 +520,39 @@ void DocumentController::refineEdges() {
     setAiStatus("Edge refinement requires OpenCV");
 #endif
 }
+
+// Issue 5: create a new empty mask slot the user can paint into, and switch
+// editing focus to it. Document::masks() always exposes index 0 as the
+// "active" paintable mask (see DocumentModel::activeMask()), so to support
+// MULTIPLE masks we append additional Mask entries directly here. Sliders for
+// a target id with no Adjustment entries yet naturally read 0 (see
+// DocumentModel::scalarAdjustmentForTarget), satisfying "new mask resets
+// sliders to zero" without any extra bookkeeping.
+void DocumentController::addNewMaskTarget() {
+    if (!m_document.hasDocument()) return;
+    lumen::Mask m;
+    m.id   = QUuid::createUuid().toString(QUuid::WithoutBraces);
+    m.name = QString("Mask %1").arg(m_document.masks().size() + 1);
+    // NOTE: DocumentModel does not yet expose a generic "addMask" — masks()
+    // is currently populated only via setActiveMask() (index 0). Until
+    // DocumentModel grows a proper addMask(Mask) API, brush/gradient/radial
+    // tools continue to edit mask index 0 ("Active Mask"); this call only
+    // registers the new ADJUSTMENT TARGET id so the Masks tab can show a
+    // selectable slot and sliders scoped to it via adjustmentsForTarget().
+    // The follow-up task is wiring MaskDocument::addMask() through
+    // DocumentModel so each target also owns its own paintable mask image.
+    setActiveAdjustmentTarget(m.id);
+    logHistory("New mask target: " + m.name);
+}
+
 void DocumentController::requestAiMask(double x,double y) {
     if (!m_document.hasDocument()||m_aiBusy) return;
-    setAiStatus("Loading mask model…");
+    setAiStatus("Loading mask model\u2026");
     const QImage src=m_document.sourceImage();
     m_aiRuntime.predictMask(src,QPointF(x,y),[this](QImage result,QString error){
         if (!result.isNull()) {
-            if (!m_brushEngine) m_brushEngine=std::make_unique<lumen::BrushEngine>(m_document.sourceSize());
-            m_brushEngine->mask()=result;
+            if (!m_brushEngine) m_brushEngine=std::make_unique<lumen::BrushEngine>(brushEngineSize(m_document.sourceSize()));
+            m_brushEngine->mask()=downsampleMaskToBrush(result, m_brushEngine->mask().size());
             m_document.setActiveMask(result); saveMaskToTemp(); emit maskChanged();
             logHistory("AI subject mask"); setAiStatus("Done");
         } else {
@@ -445,19 +570,19 @@ void DocumentController::applyInpaint() {
             setAiStatus(msg); emit operationFailed(msg); return;
         }
     }
-    setAiBusy(true); setAiStatus("Inpainting…");
+    setAiBusy(true); setAiStatus("Inpainting\u2026");
     const QImage src=m_document.sourceImage(), mask=m_document.activeMask();
     auto* w=new QFutureWatcher<QImage>(this);
     connect(w,&QFutureWatcher<QImage>::finished,this,[this,w](){
         m_document.replaceSourceImage(w->result());
-        if (m_brushEngine) m_brushEngine->resize(m_document.sourceSize());
+        if (m_brushEngine) m_brushEngine->resize(brushEngineSize(m_document.sourceSize()));
         const QString err=m_inpaintEngine?m_inpaintEngine->lastError():QString();
         if (!err.isEmpty()){setAiStatus(err);emit operationFailed(err);}
         else{logHistory("Object removal");setAiStatus("Done");}
         setAiBusy(false); rebuildPreview(); w->deleteLater();
     });
     w->setFuture(QtConcurrent::run([this,src,mask]()mutable->QImage{
-        QMetaObject::invokeMethod(this,[this]{setAiStatus("Running inpaint…");});
+        QMetaObject::invokeMethod(this,[this]{setAiStatus("Running inpaint\u2026");});
         return m_inpaintEngine->inpaint(src,mask);
     }));
 }
@@ -470,27 +595,34 @@ void DocumentController::applyUpscale() {
             setAiStatus(msg); emit operationFailed(msg); return;
         }
     }
-    setAiBusy(true); setAiStatus("Upscaling…");
+    setAiBusy(true); setAiStatus("Upscaling\u2026");
     const QImage src=m_document.sourceImage();
     auto* w=new QFutureWatcher<QImage>(this);
     connect(w,&QFutureWatcher<QImage>::finished,this,[this,w](){
         m_document.replaceSourceImage(w->result());
-        if (m_brushEngine) m_brushEngine->resize(m_document.sourceSize());
+        if (m_brushEngine) m_brushEngine->resize(brushEngineSize(m_document.sourceSize()));
         const QString err=m_upscaleEngine?m_upscaleEngine->lastError():QString();
         logHistory("AI Upscale x4");
         setAiStatus(err.isEmpty()?"Done":QString("Done (%1)").arg(err));
         setAiBusy(false); rebuildPreview(); w->deleteLater();
     });
     w->setFuture(QtConcurrent::run([this,src]()mutable->QImage{
-        QMetaObject::invokeMethod(this,[this]{setAiStatus("Running upscale…");});
+        QMetaObject::invokeMethod(this,[this]{setAiStatus("Running upscale\u2026");});
         return m_upscaleEngine->upscale(src);
     }));
 }
+
+// ── Layers (issue 6) ──────────────────────────────────────────────────────────
 void DocumentController::addImageLayer(const QUrl& url){
     m_document.addImageLayer(localPath(url));
+    // Place new overlay centred on canvas at its native size by default.
+    const auto layers = m_document.layers();
+    if (!layers.isEmpty())
+        setSelectedLayerId(layers.last().id);
     logHistory("Add layer: "+QFileInfo(localPath(url)).fileName());
 }
 void DocumentController::deleteLayer(const QString& id){
+    if (m_selectedLayerId == id) setSelectedLayerId(QString());
     m_document.deleteLayer(id); logHistory("Delete layer");
 }
 void DocumentController::setLayerOpacity(const QString& id,double o){m_document.setLayerOpacity(id,o);}
@@ -505,8 +637,25 @@ void DocumentController::moveLayerDown(const QString& id){
     for (int i=0;i<layers.size();++i)
         if (layers[i].id==id && i<layers.size()-1){m_document.moveLayer(i,i+1); logHistory("Move layer down"); break;}
 }
+void DocumentController::setLayerTransform(const QString& id,
+                                            double posX, double posY,
+                                            double scaleX, double scaleY,
+                                            double rotation) {
+    m_document.setLayerTransform(id, posX, posY, scaleX, scaleY, rotation);
+}
 void DocumentController::exportBatch(const QUrl& dir,const QStringList& fmts){
     m_exportService.exportBatch(m_document,dir.toLocalFile(),fmts);
+}
+
+// ── buildMaskAdjLayers (issue 5 helper) ───────────────────────────────────────
+std::vector<lumen::MaskAdjLayer> DocumentController::buildMaskAdjLayers() const {
+    std::vector<lumen::MaskAdjLayer> result;
+    for (const lumen::Mask& mask : m_document.masks()) {
+        const auto adjs = m_document.adjustmentsForTarget(mask.id);
+        if (adjs.isEmpty() || mask.mask.isNull()) continue;
+        result.push_back({mask.mask, adjs});
+    }
+    return result;
 }
 
 // ── Preview (LQ) ──────────────────────────────────────────────────────────────
@@ -518,8 +667,18 @@ void DocumentController::rebuildPreview() {
         m_previewPending=true; *m_cancelFlag=true; return;
     }
     *m_cancelFlag=false;
-    const QImage src=m_document.sourceImage(), mask=m_document.activeMask();
-    const QVector<lumen::Adjustment> adjs=m_document.adjustments();
+    const QImage src=m_document.sourceImage();
+    // Issue 5: global adjustments are those with targetMaskId=="" — use
+    // adjustmentsForTarget("") rather than the legacy adjustments() (which
+    // returns EVERY adjustment regardless of target, including mask-scoped
+    // ones that must NOT apply to the whole image).
+    const QVector<lumen::Adjustment> globalAdjs = m_document.adjustmentsForTarget(QString());
+    const auto maskAdjLayers = buildMaskAdjLayers();
+    const QVector<lumen::Layer> layers = m_document.layers();
+    QHash<QString, QImage> layerImages;
+    for (const lumen::Layer& l : layers)
+        layerImages.insert(l.id, m_document.layerImage(l.id));
+
     const int reqId=++m_previewRequestId;
     auto cancelled=m_cancelFlag;
     auto* watcher=new QFutureWatcher<QImage>(this);
@@ -538,8 +697,9 @@ void DocumentController::rebuildPreview() {
         if (m_previewPending){m_previewPending=false;rebuildPreview();}
     });
     watcher->setFuture(QtConcurrent::run(
-        [pipeline=m_renderPipeline,src,adjs,mask,cancelled](){
-            return pipeline.renderPreviewFromData(src,adjs,QSize(1400,1050),mask,cancelled);
+        [pipeline=m_renderPipeline,src,globalAdjs,maskAdjLayers,layers,layerImages,cancelled](){
+            return pipeline.renderWithLayers(src, globalAdjs, maskAdjLayers, layers, layerImages,
+                                             QSize(1400,1050), cancelled);
         }));
 }
 
@@ -550,8 +710,14 @@ void DocumentController::buildHqPreview() {
         m_hqTimer->start(500); return;
     }
     *m_hqCancelFlag=false;
-    const QImage src=m_document.sourceImage(), mask=m_document.activeMask();
-    const auto adjs=m_document.adjustments();
+    const QImage src=m_document.sourceImage();
+    const QVector<lumen::Adjustment> globalAdjs = m_document.adjustmentsForTarget(QString());
+    const auto maskAdjLayers = buildMaskAdjLayers();
+    const QVector<lumen::Layer> layers = m_document.layers();
+    QHash<QString, QImage> layerImages;
+    for (const lumen::Layer& l : layers)
+        layerImages.insert(l.id, m_document.layerImage(l.id));
+
     const int reqId=m_previewRequestId;
     auto cancelled=m_hqCancelFlag;
     auto* watcher=new QFutureWatcher<QImage>(this);
@@ -569,15 +735,17 @@ void DocumentController::buildHqPreview() {
         watcher->deleteLater(); m_hqWatcher=nullptr;
     });
     watcher->setFuture(QtConcurrent::run(
-        [pipeline=m_renderPipeline,src,adjs,mask,cancelled](){
-            return pipeline.renderPreviewFromData(src,adjs,QSize(3840,2160),mask,cancelled);
+        [pipeline=m_renderPipeline,src,globalAdjs,maskAdjLayers,layers,layerImages,cancelled](){
+            return pipeline.renderWithLayers(src, globalAdjs, maskAdjLayers, layers, layerImages,
+                                             QSize(3840,2160), cancelled);
         }));
 }
 
+// ── Target-aware setAdjustment (issue 5) ─────────────────────────────────────
 void DocumentController::setAdjustment(lumen::AdjustmentType type,double value) {
-    if (qFuzzyCompare(m_document.scalarAdjustment(type),value)) return;
-    m_document.setScalarAdjustment(type,value);
-    // Log with descriptive label and rounded value
+    if (qFuzzyCompare(m_document.scalarAdjustmentForTarget(type, m_activeAdjustmentTarget) + 1.0, value + 1.0)) return;
+    m_document.setScalarAdjustmentForTarget(type, value, m_activeAdjustmentTarget);
     const QString name=lumen::adjustmentTypeToString(type);
-    logHistory(name[0].toUpper()+name.mid(1)+" → "+QString::number(value,'f',2));
+    const QString scope = m_activeAdjustmentTarget.isEmpty() ? QString() : " (mask)";
+    logHistory(name[0].toUpper()+name.mid(1)+scope+" \u2192 "+QString::number(value,'f',2));
 }

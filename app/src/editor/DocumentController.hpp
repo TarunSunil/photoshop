@@ -51,6 +51,13 @@ class DocumentController final : public QObject {
     Q_PROPERTY(QStringList  recentFiles READ recentFiles NOTIFY recentFilesChanged)
     Q_PROPERTY(bool hasPendingRecovery READ hasPendingRecovery NOTIFY recoveryChanged)
     Q_PROPERTY(bool cropActive READ cropActive NOTIFY cropActiveChanged)
+    // Issue 5: which target ("" = full image, else a mask id) the sliders edit.
+    Q_PROPERTY(QString activeAdjustmentTarget READ activeAdjustmentTarget
+               WRITE setActiveAdjustmentTarget NOTIFY activeAdjustmentTargetChanged)
+    // Issue 5: list of selectable targets for the Masks tab combo (Full Image + each mask)
+    Q_PROPERTY(QVariantList adjustmentTargets READ adjustmentTargets NOTIFY maskChanged)
+    // Issue 6: currently selected overlay layer id for transform editing ("" = none)
+    Q_PROPERTY(QString selectedLayerId READ selectedLayerId WRITE setSelectedLayerId NOTIFY selectedLayerChanged)
 public:
     explicit DocumentController(QObject* parent = nullptr);
 
@@ -62,6 +69,7 @@ public:
     [[nodiscard]] bool    showOriginal() const;
     void setShowOriginal(bool v);
 
+    // These now read/write through the CURRENT activeAdjustmentTarget (issue 5).
     [[nodiscard]] double brightness()    const;  void setBrightness(double v);
     [[nodiscard]] double exposure()      const;  void setExposure(double v);
     [[nodiscard]] double contrast()      const;  void setContrast(double v);
@@ -90,6 +98,15 @@ public:
     [[nodiscard]] bool    hasPendingRecovery() const;
     [[nodiscard]] bool    cropActive()   const;
 
+    // Issue 5
+    [[nodiscard]] QString activeAdjustmentTarget() const;
+    void setActiveAdjustmentTarget(const QString& targetMaskId);
+    [[nodiscard]] QVariantList adjustmentTargets() const;
+
+    // Issue 6
+    [[nodiscard]] QString selectedLayerId() const;
+    void setSelectedLayerId(const QString& id);
+
     Q_INVOKABLE bool openImage(const QUrl& url);
     Q_INVOKABLE bool saveProject(const QUrl& url);
     Q_INVOKABLE bool loadProject(const QUrl& url);
@@ -109,6 +126,10 @@ public:
     Q_INVOKABLE void applyRadialMask(double cx, double cy, double radius);
     Q_INVOKABLE void applyCrop(int x, int y, int w, int h);
     Q_INVOKABLE void refineEdges();
+    // Issue 5: create a brand-new empty mask slot and switch the editing
+    // target to it. Sliders read 0 for a target with no adjustments yet,
+    // so this alone satisfies "sliders reset for new mask".
+    Q_INVOKABLE void addNewMaskTarget();
     // AI
     Q_INVOKABLE void requestAiMask(double x, double y);
     Q_INVOKABLE void applyInpaint();
@@ -120,6 +141,11 @@ public:
     Q_INVOKABLE void setLayerVisible(const QString& id, bool visible);
     Q_INVOKABLE void moveLayerUp(const QString& id);
     Q_INVOKABLE void moveLayerDown(const QString& id);
+    // Issue 6: per-layer transform (position/scale/rotation)
+    Q_INVOKABLE void setLayerTransform(const QString& id,
+                                        double posX, double posY,
+                                        double scaleX, double scaleY,
+                                        double rotation);
     Q_INVOKABLE void exportBatch(const QUrl& directory, const QStringList& formats);
     // Recovery
     Q_INVOKABLE void recoverProject();
@@ -140,12 +166,15 @@ signals:
     void recentFilesChanged();
     void recoveryChanged();
     void cropActiveChanged();
+    void activeAdjustmentTargetChanged();
+    void selectedLayerChanged();
 
 private:
     struct StrokePoint { double x, y, radius; bool erase; };
 
     void rebuildPreview();
     void buildHqPreview();
+    // Issue 5: target-aware adjustment plumbing (replaces setAdjustment(type,value))
     void setAdjustment(lumen::AdjustmentType type, double value);
     void logHistory(const QString& label);
     void addRecentFile(const QString& path);
@@ -157,6 +186,9 @@ private:
     void autoSave();
     void checkRecovery();
     QString autosavePath() const;
+    // Builds the MaskAdjLayer vector for all masks that have local adjustments,
+    // for use by renderWithLayers().
+    [[nodiscard]] std::vector<lumen::MaskAdjLayer> buildMaskAdjLayers() const;
 
     lumen::DocumentModel   m_document;
     lumen::RenderPipeline  m_renderPipeline;
@@ -190,4 +222,9 @@ private:
     bool     m_hasPendingRecovery = false;
     bool     m_cropActive        = false;
     QStringList m_historyLog;
+
+    // Issue 5
+    QString  m_activeAdjustmentTarget;   // "" = Full Image, else mask id
+    // Issue 6
+    QString  m_selectedLayerId;
 };
