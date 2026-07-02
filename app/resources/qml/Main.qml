@@ -383,6 +383,21 @@ ApplicationWindow {
                                 Item { Layout.fillWidth:true; Layout.preferredHeight:46
                                     Label { anchors.left:parent.left; anchors.leftMargin:16; anchors.verticalCenter:parent.verticalCenter
                                         text:"Adjustments"; color:"#e2e8f0"; font.pixelSize:16; font.weight:Font.DemiBold } }
+                                // Issue 5: shows which target the sliders below are currently editing.
+                                // Kept in sync with the Masks tab selector further down.
+                                RowLayout { Layout.leftMargin:12; Layout.rightMargin:12; Layout.fillWidth:true; spacing:6
+                                    Label { text:"Editing:"; color:"#3a4566"; font.pixelSize:10 }
+                                    Label {
+                                        text: {
+                                            const list = documentController.adjustmentTargets;
+                                            for (let i = 0; i < list.length; ++i)
+                                                if (list[i].id === documentController.activeAdjustmentTarget) return list[i].name;
+                                            return "Full Image";
+                                        }
+                                        color:"#6366f1"; font.pixelSize:10; font.weight:Font.DemiBold
+                                        Layout.fillWidth:true; elide:Text.ElideRight
+                                    }
+                                }
                                 Label{text:"TRANSFORM";color:"#3a4566";font.pixelSize:10;Layout.leftMargin:16}
                                 GridLayout { Layout.leftMargin:12; Layout.rightMargin:12; Layout.fillWidth:true; columns:2; rowSpacing:5; columnSpacing:5
                                     Button{text:"\u21ba Left";  Layout.fillWidth:true;implicitHeight:28;enabled:documentController.hasDocument;onClicked:documentController.rotateCounterClockwise()
@@ -415,6 +430,10 @@ ApplicationWindow {
                                 AdjustmentSlider{label:"Whites";     from:-100;to:100; value:documentController.whites;      onMoved:(v)=>documentController.whites     =v}
                                 // Issue 3 fix: Blacks slider range clamped to -7..+7 (maps to -100..+100 internally).
                                 // The raw -100..+100 range was far too strong; this limits it to a usable zone.
+                                // NOTE: the backend gain math itself was also fixed (see RenderPipeline.cpp) —
+                                // the additive offset was missing a /100 normalization that every sibling
+                                // adjustment (contrast, highlights, shadows, whites) already has, causing
+                                // even tiny slider moves to blow every pixel to full white/black.
                                 AdjustmentSlider{label:"Blacks"; from:-7; to:7;
                                     value:documentController.blacks * 7.0 / 100.0
                                     onMoved:(v) => documentController.blacks = v * 100.0 / 7.0 }
@@ -559,12 +578,54 @@ ApplicationWindow {
 
                         // MASKS
                         Item {
-                            ColumnLayout{anchors.fill:parent;anchors.margins:6;spacing:4
+                            ColumnLayout{anchors.fill:parent;anchors.margins:6;spacing:6
                                 RowLayout{
                                     Label{text:"Masks";color:"#c8d0e0";font.pixelSize:11;font.weight:Font.DemiBold;Layout.fillWidth:true}
                                     Button{text:"Clear";flat:true;implicitHeight:22;enabled:documentController.hasMask
                                         onClicked:documentController.clearMask()
                                         contentItem:Label{text:"Clear";color:"#f07070";font.pixelSize:11;horizontalAlignment:Text.AlignHCenter}}
+                                }
+                                // Issue 5: real target selector. Full Image is always index 0
+                                // (id ""); every mask created via addNewMaskTarget() or paint/
+                                // gradient/radial tools appears after it. Selecting an entry
+                                // sets documentController.activeAdjustmentTarget, which every
+                                // slider in the Adjustments panel immediately re-reads.
+                                RowLayout{Layout.fillWidth:true;spacing:6
+                                    ComboBox{
+                                        id: targetCombo
+                                        Layout.fillWidth:true
+                                        model: documentController.adjustmentTargets
+                                        textRole: "name"
+                                        enabled: documentController.hasDocument
+                                        // Re-evaluated whenever adjustmentTargets or activeAdjustmentTarget
+                                        // change (both are NOTIFYing Q_PROPERTYs) — keeps the combo in sync
+                                        // when addNewMaskTarget() switches the active target programmatically.
+                                        currentIndex: {
+                                            const list = documentController.adjustmentTargets;
+                                            for (let i = 0; i < list.length; ++i)
+                                                if (list[i].id === documentController.activeAdjustmentTarget) return i;
+                                            return 0;
+                                        }
+                                        // 'activated' only fires from direct user interaction, not from the
+                                        // programmatic currentIndex binding above, so this cannot loop.
+                                        onActivated: (index) => {
+                                            const list = documentController.adjustmentTargets;
+                                            if (index >= 0 && index < list.length)
+                                                documentController.activeAdjustmentTarget = list[index].id;
+                                        }
+                                        background:Rectangle{color:"#171c2a";radius:6;border.color:"#252d45"}
+                                        contentItem: Label{
+                                            text: targetCombo.displayText; color:"#c8d0e0"; font.pixelSize:11
+                                            leftPadding:8; verticalAlignment:Text.AlignVCenter
+                                        }
+                                    }
+                                    Button{
+                                        text:"+ New Mask"; implicitHeight:28
+                                        enabled: documentController.hasDocument
+                                        onClicked: documentController.addNewMaskTarget()
+                                        background:Rectangle{color:parent.hovered?"#252d6a":"#1c2058";radius:6;border.color:"#3d41a0"}
+                                        contentItem:Label{text:"+ New Mask";color:"#c7d2fe";font.pixelSize:11;horizontalAlignment:Text.AlignHCenter;leftPadding:6;rightPadding:6}
+                                    }
                                 }
                                 ListView{Layout.fillWidth:true;Layout.fillHeight:true;clip:true
                                     model:documentController.maskList

@@ -217,7 +217,7 @@ QImage RenderPipeline::applyAdjustments(QImage image,const QVector<Adjustment>& 
     const double hl  = scalarAdj(adjustments,AdjustmentType::Highlights)/100.0;
     const double sh  = scalarAdj(adjustments,AdjustmentType::Shadows)/100.0;
     const double wg  = 1.0+scalarAdj(adjustments,AdjustmentType::Whites)*0.005;
-    const double bof = scalarAdj(adjustments,AdjustmentType::Blacks)*0.15*65535.0;
+    const double bof = (scalarAdj(adjustments,AdjustmentType::Blacks)/100.0)*0.15*65535.0;
     const double sg  = 1.0+scalarAdj(adjustments,AdjustmentType::Saturation)/100.0;
     const double vib = scalarAdj(adjustments,AdjustmentType::Vibrance)/100.0;
     const double tmp = scalarAdj(adjustments,AdjustmentType::Temperature);
