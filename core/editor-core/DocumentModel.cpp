@@ -233,22 +233,59 @@ QImage DocumentModel::layerImage(const QString& layerId) const
     return m_sourceImage;
 }
 
-const QImage& DocumentModel::activeMask() const
+QImage DocumentModel::maskImage(const QString& maskId) const
 {
-    if (!m_masks.isEmpty()) return m_masks.first().mask;
-    static const QImage nullMask;
-    return nullMask;
+    if (maskId.isEmpty()) return {};
+    for (const Mask& m : m_masks)
+        if (m.id == maskId) return m.mask;
+    return {};
 }
 
-void DocumentModel::setActiveMask(const QImage& mask)
+void DocumentModel::setMaskImage(const QString& maskId, const QImage& image)
 {
-    if (m_masks.isEmpty()) {
-        Mask m; m.id = makeId(); m.name = "Active Mask"; m.mask = mask;
-        m_masks.push_back(m);
-    } else {
-        m_masks.first().mask = mask;
+    if (maskId.isEmpty()) return;
+    for (Mask& m : m_masks) {
+        if (m.id == maskId) {
+            m.mask = image;
+            emit changed();
+            return;
+        }
     }
+    // Defensive fallback: the target should always have been created via
+    // addMask() before anything paints into it, but if that invariant is
+    // ever violated, create the entry now rather than silently dropping
+    // the stroke.
+    Mask m;
+    m.id   = maskId;
+    m.name = QString("Mask %1").arg(m_masks.size() + 1);
+    m.mask = image;
+    m_masks.push_back(m);
     emit changed();
+}
+
+QString DocumentModel::addMask(const QString& name)
+{
+    Mask m;
+    m.id   = makeId();
+    m.name = name.isEmpty() ? QString("Mask %1").arg(m_masks.size() + 1) : name;
+    m_masks.push_back(m);
+    emit changed();
+    return m.id;
+}
+
+void DocumentModel::removeMask(const QString& id)
+{
+    if (id.isEmpty()) return;
+    const qsizetype before = m_masks.size();
+    m_masks.removeIf([&](const Mask& m) { return m.id == id; });
+    if (m_masks.size() == before) return; // nothing removed
+    m_adjustments.removeIf([&](const Adjustment& a) { return a.targetMaskId == id; });
+    emit changed();
+}
+
+QImage DocumentModel::activeMask() const
+{
+    return m_masks.isEmpty() ? QImage() : m_masks.first().mask;
 }
 
 bool DocumentModel::canUndo() const { return !m_undoStack.isEmpty(); }

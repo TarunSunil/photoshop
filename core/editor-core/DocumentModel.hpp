@@ -46,8 +46,22 @@ public:
     [[nodiscard]] bool    canRedo()      const;
     [[nodiscard]] bool    isDownsampled() const;
 
-    void setActiveMask(const QImage& mask);
-    [[nodiscard]] const QImage& activeMask() const;
+    // ── Multi-mask management ────────────────────────────────────────────────
+    // Each Mask entry is independently paintable and can carry its own local
+    // adjustments via adjustmentsForTarget(mask.id). Replaces the old
+    // setActiveMask()/activeMask() pair, which always read/wrote m_masks[0]
+    // regardless of which mask the user had selected.
+    [[nodiscard]] QImage maskImage(const QString& maskId) const;
+    void setMaskImage(const QString& maskId, const QImage& image);
+    QString addMask(const QString& name = QString());
+    // Removes the mask AND every Adjustment targeting it, so deleting a mask
+    // never leaves orphaned per-mask adjustments behind.
+    void removeMask(const QString& id);
+
+    // Legacy read-only accessor kept only for RenderPipeline's unused legacy
+    // renderPreview()/renderPreviewFromData() overloads. Nothing in
+    // DocumentController calls this anymore as of the multi-mask rework.
+    [[nodiscard]] QImage activeMask() const;
 
     void rotateClockwise();
     void rotateCounterClockwise();
