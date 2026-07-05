@@ -160,27 +160,37 @@ void RenderPipeline::compositeOverlayLayers(
 
 QImage RenderPipeline::renderFullResolution(const DocumentModel& doc) const {
     if (!doc.hasDocument()) return {};
-    auto layers=doc.layers();
-    if (layers.isEmpty()) return applyAdjustments(doc.sourceImage(),doc.adjustmentsForLayer(QString()),doc.activeMask());
-    std::sort(layers.begin(),layers.end(),[](const Layer& a,const Layer& b){return a.order<b.order;});
-    QImage canvas(doc.sourceImage().size(),QImage::Format_RGBA64); canvas.fill(Qt::transparent);
-    const QVector<Adjustment> ga=doc.adjustmentsForLayer(QString());
-    const QImage am=doc.activeMask();
-    for (const Layer& l : layers) {
-        if (!l.visible) continue;
-        QImage li=doc.layerImage(l.id); if (li.isNull()) continue;
-        QVector<Adjustment> a=ga; a.append(doc.adjustmentsForLayer(l.id));
-        li=applyAdjustments(li.convertToFormat(QImage::Format_RGBA64),a,am);
-        blendOnto(canvas,li,l.blendMode,l.opacity);
-    }
-    // Apply per-mask adjustments on top of composited result
+
+    // Global adjustments are those with targetMaskId=="" — adjustmentsForLayer()
+    // filters on targetLayerId instead, which every slider-set adjustment leaves
+    // empty, so it was returning EVERY adjustment (global AND mask-scoped) and
+    // applying it to the whole image. That double-applied mask-scoped edits
+    // (once here, once more in the old per-mask loop below) and made exported
+    // files not match the on-screen preview, which already uses
+    // adjustmentsForTarget("") correctly. Use the same call here.
+    const QVector<Adjustment> globalAdjustments = doc.adjustmentsForTarget(QString());
+
+    std::vector<MaskAdjLayer> maskAdjLayers;
     for (const Mask& mask : doc.masks()) {
-        if (mask.id.isEmpty() || mask.mask.isNull()) continue;
-        const auto maskAdjs = doc.adjustmentsForTarget(mask.id);
-        if (!maskAdjs.isEmpty())
-            canvas = applyAdjustments(canvas, maskAdjs, mask.mask);
+        if (mask.mask.isNull()) continue;
+        const QVector<Adjustment> maskAdjs = doc.adjustmentsForTarget(mask.id);
+        if (maskAdjs.isEmpty()) continue;
+        maskAdjLayers.push_back({mask.mask, maskAdjs});
     }
-    return canvas;
+
+    const QVector<Layer> layers = doc.layers();
+    QHash<QString, QImage> layerImages;
+    for (const Layer& layer : layers)
+        layerImages.insert(layer.id, doc.layerImage(layer.id));
+
+    // QSize() is deliberately invalid (not QSize(0,0)) so renderWithLayers'
+    // "only downscale if maximumSize.isValid()" check is skipped entirely,
+    // producing a native-resolution render through the exact same
+    // adjustment/mask/overlay pipeline DocumentController::rebuildPreview()
+    // and buildHqPreview() already use for the on-screen preview -- including
+    // compositeOverlayLayers(), which this export path never called before.
+    return renderWithLayers(doc.sourceImage(), globalAdjustments, maskAdjLayers,
+                             layers, layerImages, QSize());
 }
 
 // ── Blend onto canvas ─────────────────────────────────────────────────────────
