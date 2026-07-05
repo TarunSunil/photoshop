@@ -8,6 +8,7 @@
 #include "ai-core/UpscaleEngine.hpp"
 #include "storage/ProjectStore.hpp"
 #include <QFutureWatcher>
+#include <QHash>
 #include <QImage>
 #include <QObject>
 #include <QStringList>
@@ -179,7 +180,18 @@ private:
     void logHistory(const QString& label);
     void addRecentFile(const QString& path);
     [[nodiscard]] QString localPath(const QUrl& url) const;
-    void saveMaskToTemp();
+    // Returns the mask id that paint tools (brush/gradient/radial/AI mask)
+    // should write into. If no mask is currently selected (activeAdjustmentTarget
+    // == "" / Full Image), creates a new mask and switches the active target to
+    // it, so pressing the Brush tool always has somewhere real to paint instead
+    // of silently writing into a fake/unregistered target.
+    [[nodiscard]] QString ensurePaintTarget();
+    // Reloads m_brushEngine's paint surface from the given mask's stored pixels
+    // (or clears it if targetId is empty/has no mask yet) so switching which
+    // mask is being edited doesn't paint new strokes on top of stale content
+    // left over from whichever mask was active before.
+    void syncBrushEngineToTarget(const QString& targetId);
+    void saveMaskToTemp(const QString& maskId);
     void flushMaskSave();
     void setAiBusy(bool busy);
     void setAiStatus(const QString& status);
@@ -212,7 +224,7 @@ private:
     int      m_activeTool        = 0;
     std::unique_ptr<lumen::BrushEngine> m_brushEngine;
     QVector<StrokePoint> m_pendingStrokes;
-    QString  m_maskTempPath;
+    QHash<QString, QString> m_maskTempPaths;   // maskId -> temp PNG preview path
     int      m_maskVersion       = 0;
     bool     m_aiBusy            = false;
     QString  m_aiStatus;

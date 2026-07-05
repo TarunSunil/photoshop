@@ -186,10 +186,10 @@ void DocumentController::setNoiseReduction(double v){ setAdjustment(lumen::Adjus
 void DocumentController::setSharpening(double v)    { setAdjustment(lumen::AdjustmentType::Sharpening,   v); }
 
 int  DocumentController::activeTool()  const { return m_activeTool; }
-bool DocumentController::hasMask()     const { return !m_document.activeMask().isNull(); }
+bool DocumentController::hasMask()     const { return !m_document.maskImage(m_activeAdjustmentTarget).isNull(); }
 QString DocumentController::maskUrl()  const {
-    return m_maskTempPath.isEmpty() ? QString()
-        : QUrl::fromLocalFile(m_maskTempPath).toString();
+    const QString path = m_maskTempPaths.value(m_activeAdjustmentTarget);
+    return path.isEmpty() ? QString() : QUrl::fromLocalFile(path).toString();
 }
 int  DocumentController::sourceWidth()  const { return m_document.sourceSize().width(); }
 int  DocumentController::sourceHeight() const { return m_document.sourceSize().height(); }
@@ -213,14 +213,13 @@ QStringList DocumentController::historyLog() const { return m_historyLog; }
 
 QVariantList DocumentController::maskList() const {
     QVariantList list;
-    const auto& masks = m_document.masks();
-    for (int i = 0; i < masks.size(); ++i) {
-        QVariantMap m;
-        m["id"]   = masks[i].id;
-        m["name"] = masks[i].name;
-        m["url"]  = (i == 0 && !m_maskTempPath.isEmpty())
-                    ? QUrl::fromLocalFile(m_maskTempPath).toString() : QString();
-        list.append(m);
+    for (const lumen::Mask& m : m_document.masks()) {
+        QVariantMap e;
+        e["id"]   = m.id;
+        e["name"] = m.name;
+        const QString path = m_maskTempPaths.value(m.id);
+        e["url"]  = path.isEmpty() ? QString() : QUrl::fromLocalFile(path).toString();
+        list.append(e);
     }
     return list;
 }
@@ -240,9 +239,12 @@ QVariantList DocumentController::adjustmentTargets() const {
 QString DocumentController::activeAdjustmentTarget() const { return m_activeAdjustmentTarget; }
 void DocumentController::setActiveAdjustmentTarget(const QString& targetMaskId) {
     if (m_activeAdjustmentTarget == targetMaskId) return;
+    if (m_maskSaveTimer && m_maskSaveTimer->isActive()) { m_maskSaveTimer->stop(); flushMaskSave(); }
     m_activeAdjustmentTarget = targetMaskId;
+    syncBrushEngineToTarget(m_activeAdjustmentTarget);
     emit activeAdjustmentTargetChanged();
     emit adjustmentsChanged();   // sliders must re-read values for the new target
+    emit maskChanged();          // hasMask/maskUrl/adjustmentTargets depend on the target too
 }
 
 QString DocumentController::selectedLayerId() const { return m_selectedLayerId; }
@@ -317,7 +319,8 @@ bool DocumentController::openImage(const QUrl& url) {
         emit operationFailed("Could not open image."); return false;
     }
     m_brushEngine = std::make_unique<lumen::BrushEngine>(brushEngineSize(m_document.sourceSize()));
-    m_maskTempPath.clear(); m_pendingStrokes.clear();
+    for (const QString& oldPath : std::as_const(m_maskTempPaths)) QFile::remove(oldPath);
+    m_maskTempPaths.clear(); m_pendingStrokes.clear();
     m_activeAdjustmentTarget.clear(); emit activeAdjustmentTargetChanged();
     m_selectedLayerId.clear(); emit selectedLayerChanged();
     emit maskChanged();
@@ -339,8 +342,12 @@ bool DocumentController::loadProject(const QUrl& url) {
         emit operationFailed("Could not load project."); return false;
     }
     m_brushEngine = std::make_unique<lumen::BrushEngine>(brushEngineSize(m_document.sourceSize()));
+    for (const QString& oldPath : std::as_const(m_maskTempPaths)) QFile::remove(oldPath);
+    m_maskTempPaths.clear();
     m_pendingStrokes.clear();
     m_activeAdjustmentTarget.clear(); emit activeAdjustmentTargetChanged();
+    syncBrushEngineToTarget(m_activeAdjustmentTarget);
+    emit maskChanged();
     logHistory("Project loaded");
     return true;
 }
@@ -391,6 +398,7 @@ void DocumentController::commitMaskPaint() {
     // entirely) on any image above the 2000px cap — which is almost every
     // real photo. Scale x/y/radius into brush-engine space here, once, before
     // painting.
+    const QString targetId = ensurePaintTarget();
     const QSize srcSz = m_document.sourceSize();
     const QSize beSz  = m_brushEngine->mask().size();
     const double scale = (srcSz.width() > 0)
@@ -400,38 +408,66 @@ void DocumentController::commitMaskPaint() {
         m_brushEngine->paintStroke(QPointF(s.x * scale, s.y * scale), s.radius * scale, 0.85, s.erase);
     m_pendingStrokes.clear();
     // Issue 4: brush engine is capped resolution; upsample before storing.
-    m_document.setActiveMask(upsampleMaskToSource(m_brushEngine->mask(), srcSz));
-    saveMaskToTemp();
+    m_document.setMaskImage(targetId, upsampleMaskToSource(m_brushEngine->mask(), srcSz));
+    saveMaskToTemp(targetId);
     emit maskChanged();
     logHistory("Brush mask");
 }
 void DocumentController::flushMaskSave() {
-    if (!m_brushEngine) return;
-    m_document.setActiveMask(upsampleMaskToSource(m_brushEngine->mask(), m_document.sourceSize()));
-    saveMaskToTemp(); emit maskChanged();
+    if (!m_brushEngine || m_activeAdjustmentTarget.isEmpty()) return;
+    m_document.setMaskImage(m_activeAdjustmentTarget,
+                             upsampleMaskToSource(m_brushEngine->mask(), m_document.sourceSize()));
+    saveMaskToTemp(m_activeAdjustmentTarget); emit maskChanged();
 }
 void DocumentController::clearMask() {
     if (m_maskSaveTimer->isActive()) m_maskSaveTimer->stop();
-    if (m_brushEngine) m_brushEngine->clear();
+    const QString target = m_activeAdjustmentTarget;
+    if (target.isEmpty()) return; // "Full Image" has no mask to delete
     m_pendingStrokes.clear();
-    m_document.setActiveMask(QImage());
-    m_maskTempPath.clear(); emit maskChanged();
-    logHistory("Clear mask");
+    m_document.removeMask(target);
+    const QString oldPath = m_maskTempPaths.take(target);
+    if (!oldPath.isEmpty()) QFile::remove(oldPath);
+    // Switches back to Full Image, resyncs the (now-empty) brush surface,
+    // and emits maskChanged/adjustmentsChanged for us.
+    setActiveAdjustmentTarget(QString());
+    logHistory("Delete mask");
 }
-void DocumentController::saveMaskToTemp() {
-    const QImage& mask = m_document.activeMask();
+void DocumentController::saveMaskToTemp(const QString& maskId) {
+    if (maskId.isEmpty()) return;
+    const QImage mask = m_document.maskImage(maskId);
     if (mask.isNull()) return;
     QImage dm = (mask.width() > 1600)
         ? mask.scaled(1600,1200,Qt::KeepAspectRatio,Qt::FastTransformation) : mask;
     const QString path = QStandardPaths::writableLocation(QStandardPaths::TempLocation)
         + QString("/lumenforge-mask-%1.png").arg(++m_maskVersion);
     if (dm.save(path,"PNG")) {
-        if (!m_maskTempPath.isEmpty()) QFile::remove(m_maskTempPath);
-        m_maskTempPath = path;
+        const QString oldPath = m_maskTempPaths.value(maskId);
+        if (!oldPath.isEmpty()) QFile::remove(oldPath);
+        m_maskTempPaths[maskId] = path;
     }
+}
+QString DocumentController::ensurePaintTarget() {
+    if (!m_activeAdjustmentTarget.isEmpty()) return m_activeAdjustmentTarget;
+    const QString id = m_document.addMask(QString("Mask %1").arg(m_document.masks().size() + 1));
+    setActiveAdjustmentTarget(id);
+    return id;
+}
+void DocumentController::syncBrushEngineToTarget(const QString& targetId) {
+    if (!m_brushEngine) return;
+    const QSize beSz = m_brushEngine->mask().size();
+    QImage buffer(beSz, QImage::Format_ARGB32);
+    buffer.fill(Qt::transparent);
+    const QImage existing = m_document.maskImage(targetId);
+    if (!existing.isNull()) {
+        QPainter p(&buffer);
+        p.drawImage(QRect(QPoint(0,0), beSz),
+                    existing.scaled(beSz, Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
+    }
+    m_brushEngine->mask() = buffer;
 }
 void DocumentController::applyGradientMask(double x1,double y1,double x2,double y2) {
     if (!m_document.hasDocument()) return;
+    const QString targetId = ensurePaintTarget();
     const QSize sz = m_document.sourceSize();
     const QSize beSz = brushEngineSize(sz);
     const double scaleX = static_cast<double>(beSz.width())  / sz.width();
@@ -444,12 +480,13 @@ void DocumentController::applyGradientMask(double x1,double y1,double x2,double 
     p.fillRect(QRectF(0,0,beSz.width(),beSz.height()),grad); p.end();
     if (!m_brushEngine) m_brushEngine = std::make_unique<lumen::BrushEngine>(beSz);
     m_brushEngine->mask() = mask;
-    m_document.setActiveMask(upsampleMaskToSource(mask, sz));
-    saveMaskToTemp(); emit maskChanged();
+    m_document.setMaskImage(targetId, upsampleMaskToSource(mask, sz));
+    saveMaskToTemp(targetId); emit maskChanged();
     logHistory("Gradient mask");
 }
 void DocumentController::applyRadialMask(double cx,double cy,double radius) {
     if (!m_document.hasDocument()) return;
+    const QString targetId = ensurePaintTarget();
     const QSize sz = m_document.sourceSize();
     const QSize beSz = brushEngineSize(sz);
     const double scaleX = static_cast<double>(beSz.width())  / sz.width();
@@ -463,8 +500,8 @@ void DocumentController::applyRadialMask(double cx,double cy,double radius) {
     p.fillRect(QRectF(0,0,beSz.width(),beSz.height()),grad); p.end();
     if (!m_brushEngine) m_brushEngine = std::make_unique<lumen::BrushEngine>(beSz);
     m_brushEngine->mask() = mask;
-    m_document.setActiveMask(upsampleMaskToSource(mask, sz));
-    saveMaskToTemp(); emit maskChanged();
+    m_document.setMaskImage(targetId, upsampleMaskToSource(mask, sz));
+    saveMaskToTemp(targetId); emit maskChanged();
     logHistory("Radial mask");
 }
 void DocumentController::applyCrop(int x,int y,int w,int h) {
@@ -474,9 +511,25 @@ void DocumentController::applyCrop(int x,int y,int w,int h) {
         qBound(1,w,sz.width()-qBound(0,x,sz.width())),
         qBound(1,h,sz.height()-qBound(0,y,sz.height())));
     if (rect.isEmpty()) return;
+    // Crop every mask's pixel data by the identical rect BEFORE replacing the
+    // source image, so marked regions stay aligned to the same content
+    // instead of drifting to absolute canvas coordinates post-crop. Masks are
+    // always stored at the current source resolution (see setMaskImage()
+    // call sites), so rect applies directly; intersected() is a defensive
+    // guard in case that invariant is ever violated (e.g. after an upscale).
+    for (const lumen::Mask& mask : m_document.masks()) {
+        if (mask.mask.isNull()) continue;
+        const QRect clamped = rect.intersected(mask.mask.rect());
+        m_document.setMaskImage(mask.id, clamped.isEmpty() ? QImage() : mask.mask.copy(clamped));
+    }
     m_document.replaceSourceImage(m_document.sourceImage().copy(rect));
     m_brushEngine = std::make_unique<lumen::BrushEngine>(brushEngineSize(m_document.sourceSize()));
-    m_maskTempPath.clear(); m_pendingStrokes.clear();
+    syncBrushEngineToTarget(m_activeAdjustmentTarget);
+    for (const QString& oldPath : std::as_const(m_maskTempPaths)) QFile::remove(oldPath);
+    m_maskTempPaths.clear(); m_pendingStrokes.clear();
+    // Regenerate temp preview files for whatever masks still exist, so the
+    // Masks tab thumbnails don't keep showing now-cropped-away content.
+    for (const lumen::Mask& mask : m_document.masks()) saveMaskToTemp(mask.id);
     {
         const QImage& cropped = m_document.sourceImage();
         const QSize maxLQ(1400,1050);
@@ -495,11 +548,12 @@ void DocumentController::applyCrop(int x,int y,int w,int h) {
 }
 void DocumentController::refineEdges() {
 #ifdef HAVE_OPENCV
-    if (!m_document.hasDocument()||m_document.activeMask().isNull()||m_aiBusy) return;
+    const QString targetId = m_activeAdjustmentTarget;
+    if (!m_document.hasDocument()||targetId.isEmpty()||m_document.maskImage(targetId).isNull()||m_aiBusy) return;
     setAiBusy(true); setAiStatus("Refining edges\u2026");
-    const QImage src=m_document.sourceImage(), mask=m_document.activeMask();
+    const QImage src=m_document.sourceImage(), mask=m_document.maskImage(targetId);
     auto* w = new QFutureWatcher<QImage>(this);
-    connect(w,&QFutureWatcher<QImage>::finished,this,[this,w](){
+    connect(w,&QFutureWatcher<QImage>::finished,this,[this,w,targetId](){
         const QImage refined=w->result();
         if (!refined.isNull()) {
             // Issue 4: store a CAPPED copy in the brush engine (fast painting),
@@ -509,8 +563,8 @@ void DocumentController::refineEdges() {
             if (m_brushEngine) {
                 m_brushEngine->mask() = downsampleMaskToBrush(refined, m_brushEngine->mask().size());
             }
-            m_document.setActiveMask(refined);
-            saveMaskToTemp(); emit maskChanged();
+            m_document.setMaskImage(targetId, refined);
+            saveMaskToTemp(targetId); emit maskChanged();
             logHistory("Refine edges"); setAiStatus("Done");
         } else setAiStatus("Edge refinement failed");
         setAiBusy(false); w->deleteLater();
@@ -521,28 +575,17 @@ void DocumentController::refineEdges() {
 #endif
 }
 
-// Issue 5: create a new empty mask slot the user can paint into, and switch
-// editing focus to it. Document::masks() always exposes index 0 as the
-// "active" paintable mask (see DocumentModel::activeMask()), so to support
-// MULTIPLE masks we append additional Mask entries directly here. Sliders for
-// a target id with no Adjustment entries yet naturally read 0 (see
+// Creates a real, independently-paintable mask via DocumentModel::addMask()
+// and switches editing focus to it. Sliders for a target id with no
+// Adjustment entries yet naturally read 0 (see
 // DocumentModel::scalarAdjustmentForTarget), satisfying "new mask resets
 // sliders to zero" without any extra bookkeeping.
 void DocumentController::addNewMaskTarget() {
     if (!m_document.hasDocument()) return;
-    lumen::Mask m;
-    m.id   = QUuid::createUuid().toString(QUuid::WithoutBraces);
-    m.name = QString("Mask %1").arg(m_document.masks().size() + 1);
-    // NOTE: DocumentModel does not yet expose a generic "addMask" — masks()
-    // is currently populated only via setActiveMask() (index 0). Until
-    // DocumentModel grows a proper addMask(Mask) API, brush/gradient/radial
-    // tools continue to edit mask index 0 ("Active Mask"); this call only
-    // registers the new ADJUSTMENT TARGET id so the Masks tab can show a
-    // selectable slot and sliders scoped to it via adjustmentsForTarget().
-    // The follow-up task is wiring MaskDocument::addMask() through
-    // DocumentModel so each target also owns its own paintable mask image.
-    setActiveAdjustmentTarget(m.id);
-    logHistory("New mask target: " + m.name);
+    const QString name = QString("Mask %1").arg(m_document.masks().size() + 1);
+    const QString id = m_document.addMask(name);
+    setActiveAdjustmentTarget(id);
+    logHistory("New mask: " + name);
 }
 
 void DocumentController::requestAiMask(double x,double y) {
@@ -551,9 +594,10 @@ void DocumentController::requestAiMask(double x,double y) {
     const QImage src=m_document.sourceImage();
     m_aiRuntime.predictMask(src,QPointF(x,y),[this](QImage result,QString error){
         if (!result.isNull()) {
+            const QString targetId = ensurePaintTarget();
             if (!m_brushEngine) m_brushEngine=std::make_unique<lumen::BrushEngine>(brushEngineSize(m_document.sourceSize()));
             m_brushEngine->mask()=downsampleMaskToBrush(result, m_brushEngine->mask().size());
-            m_document.setActiveMask(result); saveMaskToTemp(); emit maskChanged();
+            m_document.setMaskImage(targetId, result); saveMaskToTemp(targetId); emit maskChanged();
             logHistory("AI subject mask"); setAiStatus("Done");
         } else {
             const QString msg=error.isEmpty()?"AI mask prediction failed.":error;
@@ -562,7 +606,8 @@ void DocumentController::requestAiMask(double x,double y) {
     });
 }
 void DocumentController::applyInpaint() {
-    if (!m_document.hasDocument()||m_document.activeMask().isNull()||m_aiBusy) return;
+    const QString targetId = m_activeAdjustmentTarget;
+    if (!m_document.hasDocument()||targetId.isEmpty()||m_document.maskImage(targetId).isNull()||m_aiBusy) return;
     if (!m_inpaintEngine) {
         try { m_inpaintEngine=std::make_unique<lumen::InpaintEngine>(); }
         catch(const std::exception& e) {
@@ -571,7 +616,7 @@ void DocumentController::applyInpaint() {
         }
     }
     setAiBusy(true); setAiStatus("Inpainting\u2026");
-    const QImage src=m_document.sourceImage(), mask=m_document.activeMask();
+    const QImage src=m_document.sourceImage(), mask=m_document.maskImage(targetId);
     auto* w=new QFutureWatcher<QImage>(this);
     connect(w,&QFutureWatcher<QImage>::finished,this,[this,w](){
         m_document.replaceSourceImage(w->result());
