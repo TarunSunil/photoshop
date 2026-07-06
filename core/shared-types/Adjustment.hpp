@@ -41,6 +41,11 @@ struct Adjustment {
     QString        targetMaskId;
     bool           enabled       = true;
     int            order         = 0;
+
+    // Needed by DocumentModel's history transactions to detect whether a
+    // completed slider interaction actually changed anything (e.g. press
+    // without dragging) so a no-op undo step isn't pushed onto the stack.
+    bool operator==(const Adjustment&) const = default;
 };
 QString        adjustmentTypeToString(AdjustmentType type);
 AdjustmentType adjustmentTypeFromString(const QString& value);
