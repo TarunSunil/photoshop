@@ -121,6 +121,8 @@ DocumentController::DocumentController(QObject* parent)
     });
     connect(&m_document, &lumen::DocumentModel::historyChanged,
             this, &DocumentController::historyChanged);
+    connect(&m_document, &lumen::DocumentModel::structuralHistoryApplied,
+            this, &DocumentController::resyncAfterStructuralHistory);
     connect(&m_aiRuntime, &lumen::AiRuntime::busyChanged,
             this, [this](bool busy){ setAiBusy(busy); });
 
@@ -381,6 +383,23 @@ void DocumentController::flipVertical()           { m_document.flipVertical();  
 void DocumentController::undo()                   { m_document.undo();                   logHistory("Undo"); }
 void DocumentController::redo()                   { m_document.redo();                   logHistory("Redo"); }
 
+void DocumentController::beginAdjustmentEdit() {
+    if (m_adjustmentEditOpen) return;
+    m_adjustmentEditOpen = true;
+    m_document.beginHistoryTransaction("Adjustment");
+}
+void DocumentController::commitAdjustmentEdit() {
+    if (!m_adjustmentEditOpen) return;
+    m_adjustmentEditOpen = false;
+    // Pushes (at most) ONE undo step for the whole drag -- DocumentModel
+    // itself detects and skips a no-op interaction (press without moving).
+    m_document.commitHistoryTransaction();
+    if (!m_pendingAdjustmentLabel.isEmpty()) {
+        logHistory(m_pendingAdjustmentLabel);
+        m_pendingAdjustmentLabel.clear();
+    }
+}
+
 // ── Brush mask ────────────────────────────────────────────────────────────────
 void DocumentController::paintMaskStroke(double x, double y, double radius, bool erase) {
     if (!m_document.hasDocument() || !m_brushEngine) return;
@@ -465,6 +484,30 @@ void DocumentController::syncBrushEngineToTarget(const QString& targetId) {
     }
     m_brushEngine->mask() = buffer;
 }
+void DocumentController::resyncAfterStructuralHistory() {
+    // A crop/inpaint/upscale undo or redo just swapped sourceImage and/or
+    // masks out from under whatever was cached -- same resync applyCrop()
+    // already does going forward, needed here going backward/forward too.
+    m_brushEngine = std::make_unique<lumen::BrushEngine>(brushEngineSize(m_document.sourceSize()));
+
+    // The currently-selected mask target may not exist at this point in
+    // history (e.g. undoing past the crop/AI op that created it) -- fall
+    // back to Full Image rather than pointing at a dangling id.
+    bool targetStillExists = m_activeAdjustmentTarget.isEmpty();
+    for (const lumen::Mask& mask : m_document.masks())
+        if (mask.id == m_activeAdjustmentTarget) { targetStillExists = true; break; }
+    if (!targetStillExists) {
+        m_activeAdjustmentTarget.clear();
+        emit activeAdjustmentTargetChanged();
+        emit adjustmentsChanged();
+    }
+    syncBrushEngineToTarget(m_activeAdjustmentTarget);
+
+    for (const QString& oldPath : std::as_const(m_maskTempPaths)) QFile::remove(oldPath);
+    m_maskTempPaths.clear();
+    for (const lumen::Mask& mask : m_document.masks()) saveMaskToTemp(mask.id);
+    emit maskChanged();
+}
 void DocumentController::applyGradientMask(double x1,double y1,double x2,double y2) {
     if (!m_document.hasDocument()) return;
     const QString targetId = ensurePaintTarget();
@@ -511,6 +554,10 @@ void DocumentController::applyCrop(int x,int y,int w,int h) {
         qBound(1,w,sz.width()-qBound(0,x,sz.width())),
         qBound(1,h,sz.height()-qBound(0,y,sz.height())));
     if (rect.isEmpty()) return;
+    // Structural: also captures/restores sourceImage + masks, so Undo can
+    // fully reverse a crop (previously replaceSourceImage() never
+    // participated in undo/redo at all).
+    m_document.beginHistoryTransaction("Crop", /*structural=*/true);
     // Crop every mask's pixel data by the identical rect BEFORE replacing the
     // source image, so marked regions stay aligned to the same content
     // instead of drifting to absolute canvas coordinates post-crop. Masks are
@@ -523,6 +570,7 @@ void DocumentController::applyCrop(int x,int y,int w,int h) {
         m_document.setMaskImage(mask.id, clamped.isEmpty() ? QImage() : mask.mask.copy(clamped));
     }
     m_document.replaceSourceImage(m_document.sourceImage().copy(rect));
+    m_document.commitHistoryTransaction();
     m_brushEngine = std::make_unique<lumen::BrushEngine>(brushEngineSize(m_document.sourceSize()));
     syncBrushEngineToTarget(m_activeAdjustmentTarget);
     for (const QString& oldPath : std::as_const(m_maskTempPaths)) QFile::remove(oldPath);
@@ -619,9 +667,10 @@ void DocumentController::applyInpaint() {
     const QImage src=m_document.sourceImage(), mask=m_document.maskImage(targetId);
     auto* w=new QFutureWatcher<QImage>(this);
     connect(w,&QFutureWatcher<QImage>::finished,this,[this,w](){
+        m_document.beginHistoryTransaction("Object removal", /*structural=*/true);
         m_document.replaceSourceImage(w->result());
+        m_document.commitHistoryTransaction();
         if (m_brushEngine) m_brushEngine->resize(brushEngineSize(m_document.sourceSize()));
-        const QString err=m_inpaintEngine?m_inpaintEngine->lastError():QString();
         if (!err.isEmpty()){setAiStatus(err);emit operationFailed(err);}
         else{logHistory("Object removal");setAiStatus("Done");}
         setAiBusy(false); rebuildPreview(); w->deleteLater();
@@ -644,7 +693,9 @@ void DocumentController::applyUpscale() {
     const QImage src=m_document.sourceImage();
     auto* w=new QFutureWatcher<QImage>(this);
     connect(w,&QFutureWatcher<QImage>::finished,this,[this,w](){
+        m_document.beginHistoryTransaction("AI Upscale", /*structural=*/true);
         m_document.replaceSourceImage(w->result());
+        m_document.commitHistoryTransaction();
         if (m_brushEngine) m_brushEngine->resize(brushEngineSize(m_document.sourceSize()));
         const QString err=m_upscaleEngine?m_upscaleEngine->lastError():QString();
         logHistory("AI Upscale x4");
@@ -792,5 +843,16 @@ void DocumentController::setAdjustment(lumen::AdjustmentType type,double value) 
     m_document.setScalarAdjustmentForTarget(type, value, m_activeAdjustmentTarget);
     const QString name=lumen::adjustmentTypeToString(type);
     const QString scope = m_activeAdjustmentTarget.isEmpty() ? QString() : " (mask)";
-    logHistory(name[0].toUpper()+name.mid(1)+scope+" \u2192 "+QString::number(value,'f',2));
+    const QString label = name[0].toUpper()+name.mid(1)+scope+" \u2192 "+QString::number(value,'f',2);
+    if (m_adjustmentEditOpen) {
+        // Overwritten every tick during a drag -- only the LAST (final)
+        // value actually gets logged, in commitAdjustmentEdit().
+        m_pendingAdjustmentLabel = label;
+    } else {
+        // No drag in progress (e.g. the click-to-edit numeric TextInput, or
+        // a rotate/flip button): log immediately, matching pre-existing
+        // single-click behavior. DocumentModel's own AutoHistoryStep gives
+        // this exactly one undo step too, with no extra work needed here.
+        logHistory(label);
+    }
 }

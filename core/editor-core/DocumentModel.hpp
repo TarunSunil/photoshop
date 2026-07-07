@@ -46,6 +46,29 @@ public:
     [[nodiscard]] bool    canRedo()      const;
     [[nodiscard]] bool    isDownsampled() const;
 
+    // ── History transactions ─────────────────────────────────────────────────
+    // Replaces the old "one pushHistorySnapshot() call per mutation" design,
+    // which meant dragging a slider pushed one undo step per intermediate
+    // tick. Callers that know they're bracketing a single logical user
+    // interaction (a whole slider drag, a crop, an AI operation) call
+    // beginHistoryTransaction()/commitHistoryTransaction() around it, so the
+    // whole interaction becomes exactly one undo step. Callers that don't
+    // (rotate, flip, add layer, ...) get today's "one call = one undo step"
+    // behavior automatically -- see the private AutoHistoryStep guard.
+    //
+    // structural=true additionally captures/restores sourceImage and masks,
+    // not just adjustments -- required for crop/inpaint/upscale, which
+    // previously weren't part of undo/redo AT ALL (replaceSourceImage()
+    // never pushed any history). Plain adjustment edits stay cheap (no
+    // image data captured) since structural defaults to false.
+    void beginHistoryTransaction(const QString& label = QString(), bool structural = false);
+    void commitHistoryTransaction();
+    // Restores document state to what it was when the currently-open
+    // transaction began, without creating an undo entry. Not currently
+    // wired to any UI action; available for a future "cancel mid-drag" or
+    // Escape-key feature.
+    void cancelHistoryTransaction();
+
     // ── Multi-mask management ────────────────────────────────────────────────
     // Each Mask entry is independently paintable and can carry its own local
     // adjustments via adjustmentsForTarget(mask.id). Replaces the old
@@ -87,6 +110,13 @@ public:
 signals:
     void changed();
     void historyChanged();
+    // Emitted (in addition to changed()) when undo()/redo() restores a
+    // structural snapshot -- i.e. sourceImage and/or masks were swapped, not
+    // just adjustments. DocumentController listens for this to recreate
+    // m_brushEngine and regenerate mask temp-preview files, the same resync
+    // work applyCrop() already does going forward, now also needed going
+    // backward/forward through undo/redo.
+    void structuralHistoryApplied();
 
 private:
     // Returns the first adjustment matching type AND targetMaskId.
@@ -96,8 +126,45 @@ private:
     Adjustment*       findAdjustment(AdjustmentType type);
     const Adjustment* findAdjustment(AdjustmentType type) const;
     Layer*            findLayer(const QString& id);
-    void pushHistorySnapshot();
-    void restoreAdjustments(const QVector<Adjustment>& adjustments);
+
+    // One undo/redo step. Adjustment-only steps (the common case -- dragging
+    // a slider) leave sourceImage/masks default-constructed, which keeps
+    // most undo steps as cheap as a small QVector<Adjustment> copy; QImage
+    // and QVector<Mask> are implicitly shared besides, so even structural
+    // snapshots don't deep-copy pixel data until something actually diverges.
+    struct HistorySnapshot {
+        QVector<Adjustment> adjustments;
+        QImage        sourceImage;   // valid only when structural == true
+        QVector<Mask> masks;         // valid only when structural == true
+        bool          structural = false;
+        QString       label;
+    };
+    [[nodiscard]] HistorySnapshot captureSnapshot(const QString& label, bool structural) const;
+    void applySnapshot(const HistorySnapshot& snapshot);
+    // Returns false ("nothing to record") if the currently-open transaction
+    // didn't actually change anything -- e.g. a slider was pressed and
+    // released without moving -- so a no-op undo step isn't pushed.
+    [[nodiscard]] bool transactionChangedAnything() const;
+
+    // RAII guard giving any call site that doesn't know about explicit
+    // transactions today's "one call = one undo step" behavior for free: it
+    // opens a transaction only if one isn't already open (so it's a no-op
+    // nested inside an explicit beginHistoryTransaction()/commit() pair, e.g.
+    // a slider drag), and commits on scope exit.
+    class AutoHistoryStep {
+    public:
+        AutoHistoryStep(DocumentModel& doc, const QString& label, bool structural)
+            : m_doc(doc), m_owns(!doc.m_transactionOpen)
+        {
+            if (m_owns) m_doc.beginHistoryTransaction(label, structural);
+        }
+        ~AutoHistoryStep() { if (m_owns) m_doc.commitHistoryTransaction(); }
+        AutoHistoryStep(const AutoHistoryStep&) = delete;
+        AutoHistoryStep& operator=(const AutoHistoryStep&) = delete;
+    private:
+        DocumentModel& m_doc;
+        bool m_owns;
+    };
 
     QString   m_projectId;
     QString   m_sourcePath;
@@ -107,8 +174,10 @@ private:
     QVector<Mask>       m_masks;
     QVector<Adjustment> m_adjustments;
     QHash<QString, QImage> m_layerImages;
-    QVector<QVector<Adjustment>>  m_undoStack;
-    QVector<QVector<Adjustment>>  m_redoStack;
+    bool             m_transactionOpen = false;
+    HistorySnapshot  m_transactionSnapshot;   // valid only while m_transactionOpen
+    QVector<HistorySnapshot>      m_undoStack;
+    QVector<HistorySnapshot>      m_redoStack;
     QVector<QImage>               m_sourceImageHistory;
 };
 } // namespace lumen

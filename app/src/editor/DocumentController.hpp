@@ -119,6 +119,14 @@ public:
     Q_INVOKABLE void flipVertical();
     Q_INVOKABLE void undo();
     Q_INVOKABLE void redo();
+    // Bracket a single adjustment-slider drag gesture so the whole drag is
+    // one undo step and one History-log line, instead of one per tick.
+    // Wired to QML Slider's pressed/released transition (see Main.qml).
+    // Safe to call even for a discrete (non-drag) value change -- if these
+    // aren't called, setAdjustment() falls back to logging/committing
+    // immediately, matching pre-existing single-click behavior.
+    Q_INVOKABLE void beginAdjustmentEdit();
+    Q_INVOKABLE void commitAdjustmentEdit();
     // Mask tools
     Q_INVOKABLE void paintMaskStroke(double x, double y, double radius, bool erase);
     Q_INVOKABLE void commitMaskPaint();
@@ -201,6 +209,11 @@ private:
     // Builds the MaskAdjLayer vector for all masks that have local adjustments,
     // for use by renderWithLayers().
     [[nodiscard]] std::vector<lumen::MaskAdjLayer> buildMaskAdjLayers() const;
+    // Resyncs m_brushEngine and mask temp-preview files after a structural
+    // undo/redo (crop/inpaint/upscale) swaps sourceImage/masks out from under
+    // whatever was cached -- the same work applyCrop() already does forward,
+    // now also needed going backward/forward through history.
+    void resyncAfterStructuralHistory();
 
     lumen::DocumentModel   m_document;
     lumen::RenderPipeline  m_renderPipeline;
@@ -239,4 +252,9 @@ private:
     QString  m_activeAdjustmentTarget;   // "" = Full Image, else mask id
     // Issue 6
     QString  m_selectedLayerId;
+
+    // Grouped undo/redo for adjustment sliders (see beginAdjustmentEdit()).
+    bool     m_adjustmentEditOpen = false;
+    QString  m_pendingAdjustmentLabel;   // last (final) value's log line, written to
+                                          // m_historyLog only when the drag commits
 };

@@ -187,19 +187,24 @@ const Adjustment* DocumentModel::findAdjustment(AdjustmentType type) const
 void DocumentModel::setScalarAdjustmentForTarget(AdjustmentType type, double value, const QString& targetMaskId)
 {
     if (qFuzzyCompare(scalarAdjustmentForTarget(type, targetMaskId) + 1.0, value + 1.0)) return;
-    pushHistorySnapshot();
-    Adjustment* adj = findAdjustmentForTarget(type, targetMaskId);
-    if (!adj) {
-        Adjustment next;
-        next.id           = makeId();
-        next.type         = type;
-        next.targetMaskId = targetMaskId;
-        next.order        = m_adjustments.size();
-        m_adjustments.push_back(next);
-        adj = &m_adjustments.last();
+    {
+        // No-ops (doesn't open/commit its own transaction) when a caller
+        // already has one open via beginHistoryTransaction() -- e.g. a
+        // whole slider drag -- so that drag still ends up as one undo step
+        // no matter how many times this is called during it.
+        AutoHistoryStep step(*this, QString(), false);
+        Adjustment* adj = findAdjustmentForTarget(type, targetMaskId);
+        if (!adj) {
+            Adjustment next;
+            next.id           = makeId();
+            next.type         = type;
+            next.targetMaskId = targetMaskId;
+            next.order        = m_adjustments.size();
+            m_adjustments.push_back(next);
+            adj = &m_adjustments.last();
+        }
+        adj->parameters["value"] = value;
     }
-    adj->parameters["value"] = value;
-    m_redoStack.clear();
     emit changed(); emit historyChanged();
 }
 
@@ -311,14 +316,16 @@ void DocumentModel::flipVertical()
 void DocumentModel::undo()
 {
     if (!canUndo()) return;
-    m_redoStack.push_back(m_adjustments);
-    restoreAdjustments(m_undoStack.takeLast());
+    const HistorySnapshot target = m_undoStack.takeLast();
+    m_redoStack.push_back(captureSnapshot(target.label, target.structural));
+    applySnapshot(target);
 }
 void DocumentModel::redo()
 {
     if (!canRedo()) return;
-    m_undoStack.push_back(m_adjustments);
-    restoreAdjustments(m_redoStack.takeLast());
+    const HistorySnapshot target = m_redoStack.takeLast();
+    m_undoStack.push_back(captureSnapshot(target.label, target.structural));
+    applySnapshot(target);
 }
 
 // ── Layer management ──────────────────────────────────────────────────────────
@@ -327,7 +334,7 @@ void DocumentModel::addImageLayer(const QString& path)
 {
     QImage img; img.load(path);
     if (img.isNull()) return;
-    pushHistorySnapshot();
+    AutoHistoryStep step(*this, QString("Add layer"), false);
     Layer layer;
     layer.id    = makeId();
     layer.name  = QFileInfo(path).completeBaseName();
@@ -344,7 +351,7 @@ void DocumentModel::addImageLayer(const QString& path)
 void DocumentModel::moveLayer(int from, int to)
 {
     if (from < 0 || from >= m_layers.size() || to < 0 || to >= m_layers.size()) return;
-    pushHistorySnapshot();
+    AutoHistoryStep step(*this, QString("Move layer"), false);
     m_layers.move(from, to);
     for (int i = 0; i < m_layers.size(); ++i) m_layers[i].order = i;
     emit changed();
@@ -368,7 +375,7 @@ void DocumentModel::setLayerBlendMode(const QString& id, BlendMode mode)
 void DocumentModel::deleteLayer(const QString& id)
 {
     if (m_layers.size() <= 1) return;
-    pushHistorySnapshot();
+    AutoHistoryStep step(*this, QString("Delete layer"), false);
     m_layers.removeIf([&](const Layer& l){ return l.id == id; });
     m_layerImages.remove(id);
     emit changed();
@@ -390,18 +397,70 @@ void DocumentModel::setLayerTransform(const QString& id,
     }
 }
 
-// ── History ───────────────────────────────────────────────────────────────────
+// ── History transactions ────────────────────────────────────────────────────
 
-void DocumentModel::pushHistorySnapshot()
+void DocumentModel::beginHistoryTransaction(const QString& label, bool structural)
 {
-    m_undoStack.push_back(m_adjustments);
-    if (m_undoStack.size() > 100) m_undoStack.removeFirst();
+    if (m_transactionOpen) return; // nested begin -- first begin wins, matches AutoHistoryStep's expectations
+    m_transactionOpen = true;
+    m_transactionSnapshot = captureSnapshot(label, structural);
 }
 
-void DocumentModel::restoreAdjustments(const QVector<Adjustment>& adjs)
+bool DocumentModel::transactionChangedAnything() const
 {
-    m_adjustments = adjs;
+    if (m_transactionSnapshot.adjustments != m_adjustments) return true;
+    if (m_transactionSnapshot.structural
+        && m_transactionSnapshot.sourceImage.cacheKey() != m_sourceImage.cacheKey())
+        return true;
+    return false;
+}
+
+void DocumentModel::commitHistoryTransaction()
+{
+    if (!m_transactionOpen) return;
+    m_transactionOpen = false;
+    if (!transactionChangedAnything()) return; // e.g. slider pressed then released without moving
+    m_undoStack.push_back(m_transactionSnapshot);
+    if (m_undoStack.size() > 100) m_undoStack.removeFirst();
+    m_redoStack.clear();
+    emit historyChanged();
+}
+
+void DocumentModel::cancelHistoryTransaction()
+{
+    if (!m_transactionOpen) return;
+    m_transactionOpen = false;
+    m_adjustments = m_transactionSnapshot.adjustments;
+    if (m_transactionSnapshot.structural) {
+        m_sourceImage = m_transactionSnapshot.sourceImage;
+        m_masks       = m_transactionSnapshot.masks;
+    }
     emit changed(); emit historyChanged();
+}
+
+DocumentModel::HistorySnapshot DocumentModel::captureSnapshot(const QString& label, bool structural) const
+{
+    HistorySnapshot s;
+    s.adjustments = m_adjustments;
+    s.label       = label;
+    s.structural  = structural;
+    if (structural) {
+        s.sourceImage = m_sourceImage;
+        s.masks       = m_masks;
+    }
+    return s;
+}
+
+void DocumentModel::applySnapshot(const HistorySnapshot& s)
+{
+    m_adjustments = s.adjustments;
+    if (s.structural) {
+        m_sourceImage = s.sourceImage;
+        m_masks       = s.masks;
+    }
+    emit changed();
+    if (s.structural) emit structuralHistoryApplied();
+    emit historyChanged();
 }
 
 } // namespace lumen
