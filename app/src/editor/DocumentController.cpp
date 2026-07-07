@@ -671,6 +671,7 @@ void DocumentController::applyInpaint() {
         m_document.replaceSourceImage(w->result());
         m_document.commitHistoryTransaction();
         if (m_brushEngine) m_brushEngine->resize(brushEngineSize(m_document.sourceSize()));
+        const QString err = m_inpaintEngine ? m_inpaintEngine->lastError() : QString();
         if (!err.isEmpty()){setAiStatus(err);emit operationFailed(err);}
         else{logHistory("Object removal");setAiStatus("Done");}
         setAiBusy(false); rebuildPreview(); w->deleteLater();
