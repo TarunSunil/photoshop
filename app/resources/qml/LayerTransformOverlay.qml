@@ -7,51 +7,78 @@ import QtQuick
 // space clears it. Selected/unselected layers get a thin border so their
 // clickable regions are visible while the Transform tool is active.
 //
-// STAGE 2 (this file, current state): drag-to-move added on top of stage 1.
-// Pressing on a layer's box selects it (moved from onClicked to onPressed --
-// selection now happens immediately on press, before it's known whether the
-// gesture will become a drag); dragging beyond a small dead-zone moves the
-// layer by calling the already-existing
-// docCtrl.setLayerTransform(id, posX, posY, scaleX, scaleY, rotation)
-// invokable -- only posX/posY change here, scaleX/scaleY/rotation are always
-// passed through unchanged. Resize handles and a rotation handle are later
-// stages, added on top of this file.
+// STAGE 2 (this file): drag-to-move.
 //
-// Visible only when documentController.activeTool === 6 ("Transform"),
-// placed over the image preview at the same size as MaskCanvas/CropOverlay
-// (anchors.centerIn + matching width/height bound to imagePreview -- see
-// Main.qml).
+// ── Root-cause fix for the "drag lags / resets every tick" bug ───────────
+// The first version of this file put a MouseArea INSIDE each Repeater
+// delegate (one per layer) and tracked the drag gesture (pressRootX,
+// startPosX, dragging, etc.) as properties on THAT MouseArea. That looked
+// reasonable but was wrong for a subtle reason:
 //
-// Hit-testing deliberately uses native QML Item `rotation` +
-// `transformOrigin` instead of manual matrix math: each per-layer Item below
-// is positioned/sized/rotated using the exact same posX/posY/scaleX/scaleY/
-// rotation convention RenderPipeline::compositeOverlayLayers() already uses
-// to composite the layer for real (posX/posY in base-image pixels relative
-// to canvas center; scaleX/scaleY relative to the layer's own native pixel
-// size; rotation in degrees, clockwise). Because the Item's own `rotation`
-// property is what's rotated -- the same mechanism Qt Quick uses for its own
-// rendering -- its MouseArea's hit box automatically respects that rotation.
-// There is no separate rotated-hit-test math to keep in sync with the
-// render path.
+//   Every setLayerTransform() call emits DocumentModel::changed(), which
+//   (via DocumentController's forwarding lambda) emits layersChanged().
+//   documentController.layerModel is a plain Q_PROPERTY(QVariantList), so
+//   reading it again returns a BRAND NEW QVariantList/QVariantMap set --
+//   not the same object, just similar data. This file's own
+//   `overlayModel` then builds ANOTHER brand new JS array from that.
+//
+//   QML's Repeater, when bound to a plain JS array/var model (not a
+//   ListModel or QAbstractItemModel), does not do identity-preserving
+//   diffing across model reassignment -- it treats a new array object as
+//   an entirely new model and destroys + recreates ALL of its delegate
+//   Items. That includes whatever MouseArea lives inside each delegate,
+//   along with all of ITS properties (pressRootX, startPosX, dragging...)
+//   and its mouse grab.
+//
+//   So the previous design was destroying the very MouseArea that was in
+//   the middle of tracking the drag, on every single mouse-move tick
+//   (since every tick calls setLayerTransform(), which rebuilds the
+//   model, which tears down the Repeater's delegates). The drag would
+//   move a tiny amount, then silently lose its grab and reset -- exactly
+//   the "one short swipe per click-and-drag" symptom.
+//
+// The fix: hoist the ENTIRE interactive gesture (hit-testing, press,
+// drag-tracking) out of the Repeater into a single MouseArea covering the
+// whole overlay (`interactionArea` below), which is NOT part of the
+// Repeater and is therefore never destroyed by a model rebuild. Its
+// pressX/startPosX/dragging state survives every tick of the drag, because
+// the Item holding that state is stable for the whole gesture. The
+// Repeater is now purely presentational -- it just draws each layer's box
+// + selection border from the model, with no internal state of its own,
+// so it's completely fine for it to be torn down and rebuilt every tick
+// (it was never the thing tracking the drag).
+//
+// Because interactionArea itself never moves or gets recreated, mouse.x/
+// mouse.y reported by IT are already a stable, absolute coordinate frame
+// for the whole drag -- no mapToItem()/coordinate-remapping needed at all
+// (the previous version's mapToItem() call was solving a real problem in
+// principle, but on the wrong Item; it can't help if the MouseArea doing
+// the measuring keeps getting destroyed and losing its own stored
+// reference point).
+//
+// Hit-testing is now manual JS (hitTest() below) rather than relying on
+// Qt Quick's native per-Item rotation-aware hit-testing (which stage 1
+// used, back when each layer had its own MouseArea). It replicates the
+// exact placement convention RenderPipeline::compositeOverlayLayers()
+// uses (posX/posY in base-image pixels relative to canvas center; scaleX/
+// scaleY relative to native pixel size; rotation in degrees clockwise),
+// and un-rotates the click point around each box's center before the
+// bounds check, so rotated layers (stage 4, not yet built) will still
+// hit-test correctly once rotation exists.
 Item {
     id: root
     property var docCtrl: null
 
-    // Canvas-pixels-per-source-pixel. This overlay is sized to match
-    // imagePreview (documentController.sourceWidth/Height * zoom), so this
-    // recovers the same "scale" factor RenderPipeline::compositeOverlayLayers()
-    // calls `previewScale` -- uniform in X and Y since aspect ratio is
-    // always preserved when the preview image is sized.
+    // Canvas-pixels-per-source-pixel -- this overlay is sized to match
+    // imagePreview (sourceWidth/Height * zoom), so this recovers the same
+    // factor RenderPipeline calls `previewScale`.
     readonly property real canvasScale: (docCtrl && docCtrl.sourceWidth > 0)
         ? width / docCtrl.sourceWidth : 1.0
 
-    // documentController.layerModel is topmost-first (index 0 = highest
-    // order/most-recently-added-on-top). Reverse the list and drop the base
-    // layer (order 0, isBase -- not transformable) so the Repeater below
-    // adds the lowest-order overlay FIRST and the highest-order overlay
-    // LAST. Later Repeater siblings paint on top and win mouse-event
-    // priority when two overlays' boxes overlap, matching the actual visual
-    // stacking order the user sees.
+    // documentController.layerModel is topmost-first; reverse + drop the
+    // base layer so index 0 = lowest overlay order, last = topmost. Used
+    // both for Repeater paint order and for hit-test priority below
+    // (checked topmost-first).
     readonly property var overlayModel: {
         const list = docCtrl ? docCtrl.layerModel : [];
         const result = [];
@@ -60,20 +87,84 @@ Item {
         return result;
     }
 
-    // Clicking empty space (not on any layer's box) deselects. Declared
-    // BEFORE the Repeater so its per-layer Items paint on top and take
-    // click priority over this background catch-all.
+    // Single, STABLE MouseArea for the whole overlay -- see file header.
+    // This is what makes the drag gesture survive model rebuilds: it is a
+    // static child of `root`, never inside the Repeater, so it is never
+    // destroyed mid-drag the way a Repeater-delegate's own MouseArea was.
     MouseArea {
+        id: interactionArea
         anchors.fill: parent
-        onClicked: if (root.docCtrl) root.docCtrl.selectedLayerId = ""
+        cursorShape: dragging ? Qt.SizeAllCursor : Qt.ArrowCursor
+
+        property string dragLayerId: ""
+        property real   pressX:     0
+        property real   pressY:     0
+        property real   startPosX:  0
+        property real   startPosY:  0
+        property bool   dragging:   false
+
+        // Topmost-first hit test against each overlay layer's (possibly
+        // rotated) bounding box, in this Item's own (== root's) local
+        // coordinates.
+        function hitTest(px, py) {
+            const list = root.overlayModel;
+            for (let i = list.length - 1; i >= 0; --i) {
+                const l = list[i];
+                const w  = Math.max(1, l.imgWidth  * l.scaleX * root.canvasScale);
+                const h  = Math.max(1, l.imgHeight * l.scaleY * root.canvasScale);
+                const cx = root.width  * 0.5 + l.posX * root.canvasScale;
+                const cy = root.height * 0.5 + l.posY * root.canvasScale;
+                const dx = px - cx, dy = py - cy;
+                // Un-rotate the click point by -rotation around the box's
+                // center, then test against the axis-aligned box.
+                const rad  = -l.rotation * Math.PI / 180;
+                const cosR = Math.cos(rad), sinR = Math.sin(rad);
+                const localX = dx * cosR - dy * sinR;
+                const localY = dx * sinR + dy * cosR;
+                if (Math.abs(localX) <= w / 2 && Math.abs(localY) <= h / 2)
+                    return l;
+            }
+            return null;
+        }
+
+        onPressed: (mouse) => {
+            const hit = hitTest(mouse.x, mouse.y);
+            if (root.docCtrl) root.docCtrl.selectedLayerId = hit ? hit.realId : "";
+            dragLayerId = hit ? hit.realId : "";
+            pressX = mouse.x; pressY = mouse.y;
+            if (hit) { startPosX = hit.posX; startPosY = hit.posY; }
+            dragging = false;
+        }
+        onPositionChanged: (mouse) => {
+            if (!pressed || dragLayerId.length === 0) return;
+            const dx = mouse.x - pressX;
+            const dy = mouse.y - pressY;
+            // Dead-zone: a plain click (no real movement) must not emit a
+            // spurious near-zero setLayerTransform call.
+            if (!dragging && Math.abs(dx) < 2 && Math.abs(dy) < 2) return;
+            dragging = true;
+            // Re-read current scale/rotation each tick rather than caching
+            // a copy from press-time, in case they change mid-drag from
+            // elsewhere (e.g. a resize handle in a later stage).
+            let cur = null;
+            for (const l of root.overlayModel) { if (l.realId === dragLayerId) { cur = l; break; } }
+            if (!cur || !root.docCtrl) return;
+            const newPosX = startPosX + dx / root.canvasScale;
+            const newPosY = startPosY + dy / root.canvasScale;
+            root.docCtrl.setLayerTransform(dragLayerId, newPosX, newPosY,
+                                            cur.scaleX, cur.scaleY, cur.rotation);
+        }
+        onReleased: {
+            dragLayerId = "";
+            dragging = false;
+        }
     }
 
     Repeater {
         model: root.overlayModel
         delegate: Item {
             id: handle
-            readonly property string layerId: modelData.realId
-            readonly property bool   isSelected: root.docCtrl && root.docCtrl.selectedLayerId === layerId
+            readonly property bool isSelected: root.docCtrl && root.docCtrl.selectedLayerId === modelData.realId
 
             width:  Math.max(1, modelData.imgWidth  * modelData.scaleX * root.canvasScale)
             height: Math.max(1, modelData.imgHeight * modelData.scaleY * root.canvasScale)
@@ -82,60 +173,15 @@ Item {
             rotation: modelData.rotation
             transformOrigin: Item.Center
 
+            // Purely presentational: no MouseArea, no state of its own. It
+            // is fine for this Item to be destroyed and recreated on every
+            // model rebuild (i.e. every drag tick) -- unlike the previous
+            // design, nothing here needs to survive across ticks.
             Rectangle {
                 anchors.fill: parent
                 color: "transparent"
                 border.width: handle.isSelected ? 2 : 1
                 border.color: handle.isSelected ? "#6366f1" : "#ffffff33"
-            }
-
-            MouseArea {
-                id: dragArea
-                anchors.fill: parent
-                cursorShape: Qt.SizeAllCursor
-
-                // Drag-to-move. Deltas are measured in `root`'s coordinate
-                // space via mapToItem(), NOT this MouseArea's own local
-                // space. `handle` repositions itself mid-drag in response to
-                // our own setLayerTransform() calls below -- if we measured
-                // in local coordinates, each tick's delta would be relative
-                // to the box's already-just-moved position, silently
-                // re-zeroing the reference frame every tick and making the
-                // drag progressively lag behind the cursor. `root` itself
-                // never moves during a drag, so it's a stable reference
-                // regardless of how far the box has already travelled or
-                // how it's rotated.
-                property real pressRootX: 0
-                property real pressRootY: 0
-                property real startPosX:  0
-                property real startPosY:  0
-                property bool dragging:   false
-
-                onPressed: (mouse) => {
-                    if (root.docCtrl) root.docCtrl.selectedLayerId = handle.layerId;
-                    const p = mapToItem(root, mouse.x, mouse.y);
-                    pressRootX = p.x; pressRootY = p.y;
-                    startPosX  = modelData.posX; startPosY = modelData.posY;
-                    dragging   = false;
-                }
-                onPositionChanged: (mouse) => {
-                    if (!pressed) return;
-                    const p  = mapToItem(root, mouse.x, mouse.y);
-                    const dx = p.x - pressRootX;
-                    const dy = p.y - pressRootY;
-                    // Dead-zone: a plain click (no real movement) must not
-                    // emit a spurious near-zero setLayerTransform call --
-                    // keeps a simple "select" click from nudging the layer
-                    // by a fraction of a pixel of mouse jitter.
-                    if (!dragging && Math.abs(dx) < 2 && Math.abs(dy) < 2) return;
-                    dragging = true;
-                    const newPosX = startPosX + dx / root.canvasScale;
-                    const newPosY = startPosY + dy / root.canvasScale;
-                    if (root.docCtrl)
-                        root.docCtrl.setLayerTransform(handle.layerId, newPosX, newPosY,
-                                                        modelData.scaleX, modelData.scaleY,
-                                                        modelData.rotation);
-                }
             }
         }
     }
