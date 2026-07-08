@@ -2,13 +2,20 @@ import QtQuick
 
 // Layer Transform overlay.
 //
-// STAGE 1 (this file, current state): click-to-select only. Clicking an
-// overlay layer's bounding box on the canvas sets
-// documentController.selectedLayerId; clicking empty space clears it.
-// Selected/unselected layers get a thin border so their clickable regions
-// are visible while the Transform tool is active. No dragging, resizing, or
-// rotation yet -- those are later stages, added on top of this file once
-// selection itself is verified working end to end.
+// STAGE 1 (done): click-to-select. Clicking an overlay layer's bounding box
+// on the canvas sets documentController.selectedLayerId; clicking empty
+// space clears it. Selected/unselected layers get a thin border so their
+// clickable regions are visible while the Transform tool is active.
+//
+// STAGE 2 (this file, current state): drag-to-move added on top of stage 1.
+// Pressing on a layer's box selects it (moved from onClicked to onPressed --
+// selection now happens immediately on press, before it's known whether the
+// gesture will become a drag); dragging beyond a small dead-zone moves the
+// layer by calling the already-existing
+// docCtrl.setLayerTransform(id, posX, posY, scaleX, scaleY, rotation)
+// invokable -- only posX/posY change here, scaleX/scaleY/rotation are always
+// passed through unchanged. Resize handles and a rotation handle are later
+// stages, added on top of this file.
 //
 // Visible only when documentController.activeTool === 6 ("Transform"),
 // placed over the image preview at the same size as MaskCanvas/CropOverlay
@@ -83,8 +90,52 @@ Item {
             }
 
             MouseArea {
+                id: dragArea
                 anchors.fill: parent
-                onClicked: if (root.docCtrl) root.docCtrl.selectedLayerId = handle.layerId
+                cursorShape: Qt.SizeAllCursor
+
+                // Drag-to-move. Deltas are measured in `root`'s coordinate
+                // space via mapToItem(), NOT this MouseArea's own local
+                // space. `handle` repositions itself mid-drag in response to
+                // our own setLayerTransform() calls below -- if we measured
+                // in local coordinates, each tick's delta would be relative
+                // to the box's already-just-moved position, silently
+                // re-zeroing the reference frame every tick and making the
+                // drag progressively lag behind the cursor. `root` itself
+                // never moves during a drag, so it's a stable reference
+                // regardless of how far the box has already travelled or
+                // how it's rotated.
+                property real pressRootX: 0
+                property real pressRootY: 0
+                property real startPosX:  0
+                property real startPosY:  0
+                property bool dragging:   false
+
+                onPressed: (mouse) => {
+                    if (root.docCtrl) root.docCtrl.selectedLayerId = handle.layerId;
+                    const p = mapToItem(root, mouse.x, mouse.y);
+                    pressRootX = p.x; pressRootY = p.y;
+                    startPosX  = modelData.posX; startPosY = modelData.posY;
+                    dragging   = false;
+                }
+                onPositionChanged: (mouse) => {
+                    if (!pressed) return;
+                    const p  = mapToItem(root, mouse.x, mouse.y);
+                    const dx = p.x - pressRootX;
+                    const dy = p.y - pressRootY;
+                    // Dead-zone: a plain click (no real movement) must not
+                    // emit a spurious near-zero setLayerTransform call --
+                    // keeps a simple "select" click from nudging the layer
+                    // by a fraction of a pixel of mouse jitter.
+                    if (!dragging && Math.abs(dx) < 2 && Math.abs(dy) < 2) return;
+                    dragging = true;
+                    const newPosX = startPosX + dx / root.canvasScale;
+                    const newPosY = startPosY + dy / root.canvasScale;
+                    if (root.docCtrl)
+                        root.docCtrl.setLayerTransform(handle.layerId, newPosX, newPosY,
+                                                        modelData.scaleX, modelData.scaleY,
+                                                        modelData.rotation);
+                }
             }
         }
     }
