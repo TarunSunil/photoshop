@@ -10,6 +10,7 @@ qt_add_qml_module(LumenForge
         resources/qml/Main.qml
         resources/qml/MaskCanvas.qml
         resources/qml/CropOverlay.qml
+        resources/qml/LayerTransformOverlay.qml
 )
 target_link_libraries(LumenForge
     PRIVATE

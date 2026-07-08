@@ -207,6 +207,14 @@ QVariantList DocumentController::layerModel() const {
         m["isBase"] = (l.order == 0);
         m["posX"]=l.posX; m["posY"]=l.posY;
         m["scaleX"]=l.scaleX; m["scaleY"]=l.scaleY; m["rotation"]=l.rotation;
+        // Layer Transform Gizmo (stage 1): native pixel size of this layer's
+        // image, needed by LayerTransformOverlay.qml to compute the on-canvas
+        // bounding box for click-to-select hit-testing. Mirrors the exact
+        // convention RenderPipeline::compositeOverlayLayers() already uses
+        // (img.width()/height() * scaleX/scaleY * canvas-scale).
+        const QImage img = m_document.layerImage(l.id);
+        m["imgWidth"]  = img.width();
+        m["imgHeight"] = img.height();
         list.prepend(m);
     }
     return list;

@@ -100,6 +100,7 @@ ApplicationWindow {
     Shortcut { sequence: "G"; onActivated: if (documentController.hasDocument) documentController.activeTool = (documentController.activeTool===3?0:3) }
     Shortcut { sequence: "R"; onActivated: if (documentController.hasDocument) documentController.activeTool = (documentController.activeTool===4?0:4) }
     Shortcut { sequence: "C"; onActivated: if (documentController.hasDocument) documentController.activeTool = (documentController.activeTool===5?0:5) }
+    Shortcut { sequence: "T"; onActivated: if (documentController.hasDocument) documentController.activeTool = (documentController.activeTool===6?0:6) }
     Shortcut { sequence: "Return"
         enabled: documentController.activeTool===5 && documentController.hasDocument
         onActivated: cropOverlayItem.confirm() }
@@ -191,6 +192,7 @@ ApplicationWindow {
                                     {icon:"\u25ac",tip:"Gradient  [G]",     tool:3},
                                     {icon:"\u25ce",tip:"Radial  [R]",       tool:4},
                                     {icon:"\u2291",tip:"Crop  [C]",         tool:5},
+                                    {icon:"\u2b1a",tip:"Transform  [T]",    tool:6},
                                 ]
                                 delegate: Button {
                                     Layout.preferredWidth:46; Layout.preferredHeight:38
@@ -314,6 +316,13 @@ ApplicationWindow {
                                     width: imagePreview.width; height: imagePreview.height
                                     visible: documentController.hasDocument &&
                                              documentController.activeTool===5
+                                    docCtrl: documentController
+                                }
+                                LayerTransformOverlay {
+                                    id: layerTransformOverlayItem; anchors.centerIn: parent
+                                    width: imagePreview.width; height: imagePreview.height
+                                    visible: documentController.hasDocument &&
+                                             documentController.activeTool===6
                                     docCtrl: documentController
                                 }
                                 Label { anchors.centerIn:parent
@@ -534,8 +543,19 @@ ApplicationWindow {
                                 ListView { id:layerList; Layout.fillWidth:true; Layout.fillHeight:true; clip:true
                                     model: documentController.layerModel
                                     delegate: Rectangle {
-                                        width:layerList.width; height:28; color:"transparent"
+                                        width:layerList.width; height:28
+                                        // Layer Transform Gizmo (stage 1): highlight the row that
+                                        // matches documentController.selectedLayerId, and let
+                                        // clicking anywhere in the row (not just the Buttons/Slider)
+                                        // select it too -- gives a second, non-canvas way to select
+                                        // a layer, and a visual channel to confirm canvas-click
+                                        // selection is really reaching the backend.
+                                        color: modelData.realId === documentController.selectedLayerId ? "#1a2040" : "transparent"
                                         Rectangle{anchors.bottom:parent.bottom;width:parent.width;height:1;color:"#13161f"}
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            onClicked: documentController.selectedLayerId = modelData.realId
+                                        }
                                         RowLayout{anchors.fill:parent;anchors.margins:2;spacing:3
                                             Button{text:modelData.visible?"\u25c9":"\u25cb";flat:true;implicitWidth:22;implicitHeight:22
                                                 onClicked:documentController.setLayerVisible(modelData.realId,!modelData.visible)
