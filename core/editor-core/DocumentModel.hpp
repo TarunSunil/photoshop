@@ -134,6 +134,18 @@ private:
     // snapshots don't deep-copy pixel data until something actually diverges.
     struct HistorySnapshot {
         QVector<Adjustment> adjustments;
+        // Layer metadata (order, opacity, visibility, and -- what this
+        // fixes -- posX/posY/scaleX/scaleY/rotation). Captured/restored
+        // unconditionally, same as `adjustments`, NOT gated behind
+        // `structural`: Layer entries are lightweight value structs (no
+        // QImage inside Layer itself -- that lives separately in
+        // m_layerImages, untouched by history), so there's no cost reason
+        // to treat them as "expensive, structural-only" state the way
+        // sourceImage/masks are. This also retroactively fixes
+        // addImageLayer()/moveLayer()/deleteLayer(), which already wrap
+        // themselves in AutoHistoryStep but previously had nothing in the
+        // snapshot to actually restore.
+        QVector<Layer> layers;
         QImage        sourceImage;   // valid only when structural == true
         QVector<Mask> masks;         // valid only when structural == true
         bool          structural = false;

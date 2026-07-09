@@ -388,6 +388,19 @@ void DocumentModel::setLayerTransform(const QString& id,
                                        double rotation)
 {
     if (Layer* l = findLayer(id)) {
+        // AutoHistoryStep gives a single, standalone call to
+        // setLayerTransform() its own undo step (structural=false --
+        // posX/posY/scaleX/scaleY/rotation are a few doubles, not image
+        // data, same cost class as an adjustment edit). When a caller
+        // brackets a whole gesture with an explicit
+        // beginHistoryTransaction()/commitHistoryTransaction() pair (e.g. a
+        // future DocumentController::beginLayerTransformEdit()/
+        // commitLayerTransformEdit(), mirroring how beginAdjustmentEdit()/
+        // commitAdjustmentEdit() already bracket slider drags), this
+        // no-ops and the whole gesture collapses into that outer
+        // transaction's single step instead -- same mechanism, no separate
+        // history path.
+        AutoHistoryStep step(*this, QString("Transform layer"), false);
         l->posX     = posX;
         l->posY     = posY;
         l->scaleX   = scaleX;
@@ -409,6 +422,7 @@ void DocumentModel::beginHistoryTransaction(const QString& label, bool structura
 bool DocumentModel::transactionChangedAnything() const
 {
     if (m_transactionSnapshot.adjustments != m_adjustments) return true;
+    if (m_transactionSnapshot.layers != m_layers) return true;
     if (m_transactionSnapshot.structural
         && m_transactionSnapshot.sourceImage.cacheKey() != m_sourceImage.cacheKey())
         return true;
@@ -442,6 +456,7 @@ DocumentModel::HistorySnapshot DocumentModel::captureSnapshot(const QString& lab
 {
     HistorySnapshot s;
     s.adjustments = m_adjustments;
+    s.layers      = m_layers;
     s.label       = label;
     s.structural  = structural;
     if (structural) {
@@ -454,6 +469,7 @@ DocumentModel::HistorySnapshot DocumentModel::captureSnapshot(const QString& lab
 void DocumentModel::applySnapshot(const HistorySnapshot& s)
 {
     m_adjustments = s.adjustments;
+    m_layers      = s.layers;
     if (s.structural) {
         m_sourceImage = s.sourceImage;
         m_masks       = s.masks;

@@ -35,5 +35,14 @@ struct Layer {
     double    scaleX        = 1.0;
     double    scaleY        = 1.0;
     double    rotation      = 0.0;
+
+    // Needed by DocumentModel::transactionChangedAnything() to detect
+    // whether a layer-transform (or other layer-metadata) edit inside an
+    // open history transaction actually changed anything, the same way
+    // Adjustment::operator==(...) const = default already does for
+    // adjustment edits. All members here (QString, enums, double, bool,
+    // int, QColor, QRectF) already have operator==, so the default
+    // memberwise comparison is well-formed.
+    bool operator==(const Layer&) const = default;
 };
 } // namespace lumen
