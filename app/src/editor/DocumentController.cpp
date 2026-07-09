@@ -747,6 +747,40 @@ void DocumentController::setLayerTransform(const QString& id,
                                             double scaleX, double scaleY,
                                             double rotation) {
     m_document.setLayerTransform(id, posX, posY, scaleX, scaleY, rotation);
+    if (m_layerTransformEditOpen) {
+        // Overwritten every tick during a drag -- only the LAST tick's call
+        // actually gets logged, in commitLayerTransformEdit(). Unlike
+        // setAdjustment(), there's no qFuzzyCompare no-op guard needed here:
+        // the QML side (LayerTransformOverlay.qml) only calls
+        // setLayerTransform() after real cursor movement past its dead
+        // zone, so every call reaching this point already represents an
+        // actual change.
+        m_pendingLayerTransformLabel = "Transform layer";
+    } else {
+        // No drag in progress -- some other, non-gizmo caller invoked this
+        // directly. Log immediately; DocumentModel's own AutoHistoryStep
+        // (see setLayerTransform() there) still gives it exactly one undo
+        // step, same fallback relationship setAdjustment() has with
+        // DocumentModel's per-call AutoHistoryStep.
+        logHistory("Transform layer");
+    }
+}
+void DocumentController::beginLayerTransformEdit() {
+    if (m_layerTransformEditOpen) return;
+    m_layerTransformEditOpen = true;
+    m_document.beginHistoryTransaction("Transform layer");
+}
+void DocumentController::commitLayerTransformEdit() {
+    if (!m_layerTransformEditOpen) return;
+    m_layerTransformEditOpen = false;
+    // Pushes (at most) ONE undo step for the whole drag -- DocumentModel
+    // itself detects and skips a no-op interaction (press without moving),
+    // via transactionChangedAnything()'s layer check.
+    m_document.commitHistoryTransaction();
+    if (!m_pendingLayerTransformLabel.isEmpty()) {
+        logHistory(m_pendingLayerTransformLabel);
+        m_pendingLayerTransformLabel.clear();
+    }
 }
 void DocumentController::exportBatch(const QUrl& dir,const QStringList& fmts){
     m_exportService.exportBatch(m_document,dir.toLocalFile(),fmts);

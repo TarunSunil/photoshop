@@ -155,6 +155,18 @@ public:
                                         double posX, double posY,
                                         double scaleX, double scaleY,
                                         double rotation);
+    // Bracket a single layer-drag gesture (move now; resize/rotate in later
+    // stages, since they all go through the same setLayerTransform()) so the
+    // whole gesture is one undo step and one History-log line, instead of
+    // one per tick -- exactly mirrors beginAdjustmentEdit()/
+    // commitAdjustmentEdit() for sliders, using the same
+    // DocumentModel::beginHistoryTransaction()/commitHistoryTransaction()
+    // pair. Wired to LayerTransformOverlay.qml's press/release. Safe to
+    // call even when nothing actually moved -- DocumentModel's own
+    // transactionChangedAnything() (now layer-aware) skips a no-op
+    // interaction, same as it already does for adjustment drags.
+    Q_INVOKABLE void beginLayerTransformEdit();
+    Q_INVOKABLE void commitLayerTransformEdit();
     Q_INVOKABLE void exportBatch(const QUrl& directory, const QStringList& formats);
     // Recovery
     Q_INVOKABLE void recoverProject();
@@ -257,4 +269,10 @@ private:
     bool     m_adjustmentEditOpen = false;
     QString  m_pendingAdjustmentLabel;   // last (final) value's log line, written to
                                           // m_historyLog only when the drag commits
+
+    // Grouped undo/redo for layer transform drags (see
+    // beginLayerTransformEdit()) -- same pattern as the adjustment-edit
+    // members just above.
+    bool     m_layerTransformEditOpen = false;
+    QString  m_pendingLayerTransformLabel;
 };
