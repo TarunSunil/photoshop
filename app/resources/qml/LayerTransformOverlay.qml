@@ -132,7 +132,18 @@ Item {
             if (root.docCtrl) root.docCtrl.selectedLayerId = hit ? hit.realId : "";
             dragLayerId = hit ? hit.realId : "";
             pressX = mouse.x; pressY = mouse.y;
-            if (hit) { startPosX = hit.posX; startPosY = hit.posY; }
+            if (hit) {
+                startPosX = hit.posX; startPosY = hit.posY;
+                // Brackets the whole gesture (however many setLayerTransform()
+                // ticks it produces) into a single undo step, mirroring how
+                // Main.qml's AdjustmentSlider calls beginAdjustmentEdit()/
+                // commitAdjustmentEdit() on press/release. Safe even if the
+                // press turns out to be a plain click with no drag --
+                // DocumentModel's transactionChangedAnything() (now
+                // layer-aware) detects nothing changed and skips the undo
+                // step, same as it already does for a no-op slider press.
+                if (root.docCtrl) root.docCtrl.beginLayerTransformEdit();
+            }
             dragging = false;
         }
         onPositionChanged: (mouse) => {
@@ -155,6 +166,11 @@ Item {
                                             cur.scaleX, cur.scaleY, cur.rotation);
         }
         onReleased: {
+            // Safe to call unconditionally even if beginLayerTransformEdit()
+            // was never called this press (e.g. clicked empty space) --
+            // DocumentController guards on its own m_layerTransformEditOpen
+            // flag and no-ops.
+            if (root.docCtrl) root.docCtrl.commitLayerTransformEdit();
             dragLayerId = "";
             dragging = false;
         }
