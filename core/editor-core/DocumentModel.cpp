@@ -344,6 +344,35 @@ void DocumentModel::addImageLayer(const QString& path)
     // Do NOT scale to source size — that would stretch every added image to fill
     // the entire canvas, which defeats the "sticker on base" use case.
     m_layerImages[layer.id] = img.convertToFormat(QImage::Format_RGBA64);
+
+    // Adaptive initial spawn scale: lands the new layer at roughly
+    // TARGET_CANVAS_FRACTION of the base canvas WIDTH, computed from actual
+    // pixel dimensions rather than a fixed percentage -- but never upscales
+    // a layer beyond its own native resolution (qMin(..., 1.0)). The
+    // imported bitmap itself is completely untouched -- still stored at
+    // full native resolution above, in m_layerImages -- only the transform
+    // (scaleX/scaleY) is adjusted, so resizing later via the transform
+    // handles always operates on that same full-resolution source, never a
+    // downscaled copy.
+    //
+    // "Canvas" here means the base document image's pixel dimensions
+    // (m_sourceImage), not the live on-screen viewport/zoom level --
+    // consistent with how posX/posY/scaleX/scaleY are already documented in
+    // Layer.hpp as being in base-image pixel space, independent of zoom or
+    // window size. Using viewport pixels instead would make a newly added
+    // layer's size depend on the window size or zoom level at the moment it
+    // happened to be added, which would be inconsistent with every other
+    // transform value in the document and wouldn't survive a window resize.
+    constexpr double TARGET_CANVAS_FRACTION = 0.25; // ~25%, middle of the requested 20-30% band
+    double initialScale = 1.0;
+    if (img.width() > 0 && m_sourceImage.width() > 0) {
+        const double scaleToTargetFraction =
+            (m_sourceImage.width() * TARGET_CANVAS_FRACTION) / img.width();
+        initialScale = qMin(scaleToTargetFraction, 1.0);
+    }
+    layer.scaleX = initialScale;
+    layer.scaleY = initialScale;
+
     m_layers.push_back(layer);
     emit changed();
 }
