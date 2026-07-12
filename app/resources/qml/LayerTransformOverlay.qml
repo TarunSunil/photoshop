@@ -42,15 +42,48 @@ import QtQuick
 // frame -- the mouse position is un-rotated into that frame first (same
 // inverse-rotation used by hitTest()), the new box bounds are computed
 // there, and only the resulting CENTER OFFSET is rotated back out to
-// world/canvas space at the end. Rotation is always 0 today (stage 4, not
-// yet built, is the only way to set it), so in practice every cosR/sinR
-// below is currently 1/0 and this reduces to plain axis-aligned math --
-// but it means stage 4 does not need to come back and redo this file's
-// resize math once rotation exists.
+// world/canvas space at the end. This was written rotation-safe before
+// Stage 4 (rotation) existed, specifically so that once rotation could be
+// set, this file's resize math would not need to be revisited -- and
+// indeed it wasn't; see Stage 4 below.
 //
 // Resize (like move) is bracketed with begin/commitLayerTransformEdit(),
 // so a whole resize drag is one undo step, reusing the exact same
 // transaction machinery as move -- no separate mechanism.
+//
+// STAGE 4 (this file): rotation handle.
+// A small circle sits above the box's top edge, connected by a thin
+// stalk line, for the SELECTED layer only -- purely presentational,
+// drawn inside the existing `handleAnchor` Item (which already rotates
+// with the layer, so no manual sin/cos is needed for the drawing itself
+// -- only interactionArea's manual JS hit-testing needs to replicate the
+// rotation, same as it already does for the 8 resize handles).
+//
+// Dragging the handle computes an angle from the box CENTER to the
+// cursor and writes it straight to Layer::rotation via
+// setLayerTransform() -- position and scale are read fresh from the
+// model each tick and passed through unchanged, the same defensive
+// "don't trust a stale cached copy" approach the move handler already
+// uses for scale/rotation.
+//
+// A fixed angle OFFSET (mouse-angle-at-press minus the layer's rotation
+// at press) is captured once in onPressed and held for the whole
+// gesture, so the box rotates smoothly relative to wherever the user
+// actually grabbed the handle rather than snapping instantly to point
+// straight at the cursor.
+//
+// Holding Shift snaps to 15-degree increments. Unlike resize's
+// freeTransform flag (captured once at press and held for the whole
+// gesture), Shift here is sampled live on every onPositionChanged tick
+// -- a deliberate difference, not an inconsistency: rotate benefits from
+// being toggled mid-drag (rotate freely, then hold Shift near the end to
+// land exactly on a common angle), matching the rotate-snap behavior in
+// tools like Figma/Illustrator. Resize's aspect lock doesn't have the
+// same "fine-tune at the end" use case, which is why that one stayed
+// press-time-only.
+//
+// Reuses begin/commitLayerTransformEdit() for undo -- no new undo
+// mechanism, per the same rule Stage 3 already followed.
 Item {
     id: root
     property var docCtrl: null
@@ -85,6 +118,14 @@ Item {
         return null;
     }
 
+    // Stage 4: rotation handle geometry, in canvas/screen pixels (same
+    // fixed-pixel-regardless-of-zoom convention as the 10x10 resize
+    // handle squares and their HIT_R=9 hit radius below -- NOT multiplied
+    // by canvasScale again, since canvasScale is already folded into
+    // every box/handle position these are offset from).
+    readonly property real rotateHandleDistance: 28
+    readonly property real rotateHandleHitRadius: 10
+
     // Single, STABLE MouseArea for the whole overlay -- see file header.
     // Holds ALL interaction state (move drag AND resize drag) so nothing
     // is ever lost to a mid-gesture model rebuild.
@@ -95,15 +136,16 @@ Item {
         cursorShape: {
             if (mode === "resize") return cursorForHandle(activeHandle);
             if (mode === "move")   return Qt.SizeAllCursor;
-            // Not currently dragging: preview a resize cursor on hover over
-            // a handle, otherwise default arrow.
+            if (mode === "rotate") return Qt.ClosedHandCursor;
+            // Not currently dragging: preview a resize/rotate cursor on
+            // hover over a handle, otherwise default arrow.
             const hovered = root.selectedLayerData ? hitTestHandle(mouseX, mouseY) : "";
             return hovered.length > 0 ? cursorForHandle(hovered) : Qt.ArrowCursor;
         }
 
         property string dragLayerId:  ""
-        property string mode:         ""      // "" | "move" | "resize"
-        property string activeHandle: ""       // "" | nw/n/ne/e/se/s/sw/w
+        property string mode:         ""      // "" | "move" | "resize" | "rotate"
+        property string activeHandle: ""       // "" | nw/n/ne/e/se/s/sw/w/rotate
         property real   pressX:       0
         property real   pressY:       0
         property real   startPosX:    0
@@ -115,6 +157,7 @@ Item {
         property real   startImgH:    0
         property bool   freeTransform:false    // Shift held at press time (corner handles only)
         property bool   dragging:     false
+        property real   rotateAngleOffset: 0   // Stage 4: angle(center->pressMouse) - startRotation, held for the whole rotate gesture
 
         function cursorForHandle(h) {
             switch (h) {
@@ -122,6 +165,11 @@ Item {
             case "ne": case "sw": return Qt.SizeBDiagCursor;
             case "n":  case "s":  return Qt.SizeVerCursor;
             case "e":  case "w":  return Qt.SizeHorCursor;
+            // Stage 4: no native "rotate" cursor shape exists in Qt --
+            // OpenHand (hover) / ClosedHand (actively dragging, see
+            // cursorShape below) is the closest available "grab and
+            // turn" metaphor.
+            case "rotate":         return Qt.OpenHandCursor;
             default:               return Qt.ArrowCursor;
             }
         }
@@ -166,19 +214,47 @@ Item {
             const cosR = Math.cos(rad), sinR = Math.sin(rad);
             const handles = [
                 ["nw", -hw, -hh], ["n", 0, -hh], ["ne", hw, -hh], ["e", hw, 0],
-                ["se", hw, hh],   ["s", 0, hh],   ["sw", -hw, hh], ["w", -hw, 0]
+                ["se", hw, hh],   ["s", 0, hh],   ["sw", -hw, hh], ["w", -hw, 0],
+                // Stage 4: sits beyond the N handle along the same local
+                // up-axis, rotated out to world space by the same
+                // cosR/sinR as every other handle above.
+                ["rotate", 0, -hh - root.rotateHandleDistance]
             ];
             const HIT_R = 9;
             for (const [name, lx, ly] of handles) {
                 const wx = cx + (lx * cosR - ly * sinR);
                 const wy = cy + (lx * sinR + ly * cosR);
-                if (Math.hypot(px - wx, py - wy) <= HIT_R) return name;
+                const hitR = name === "rotate" ? root.rotateHandleHitRadius : HIT_R;
+                if (Math.hypot(px - wx, py - wy) <= hitR) return name;
             }
             return "";
         }
 
         onPressed: (mouse) => {
             const handle = root.selectedLayerData ? hitTestHandle(mouse.x, mouse.y) : "";
+            if (handle === "rotate") {
+                const l = root.selectedLayerData;
+                mode          = "rotate";
+                activeHandle  = "rotate";
+                dragLayerId   = l.realId;
+                startPosX     = l.posX;    startPosY     = l.posY;
+                startScaleX   = l.scaleX;  startScaleY   = l.scaleY;
+                startRotation = l.rotation;
+                startImgW     = l.imgWidth; startImgH    = l.imgHeight;
+                const cx = root.width  * 0.5 + startPosX * root.canvasScale;
+                const cy = root.height * 0.5 + startPosY * root.canvasScale;
+                // Fixed offset held for the whole gesture -- see file
+                // header's Stage 4 note on why this isn't recomputed
+                // every tick.
+                rotateAngleOffset = Math.atan2(mouse.y - cy, mouse.x - cx) * 180 / Math.PI - startRotation;
+                pressX = mouse.x; pressY = mouse.y;
+                dragging = false;
+                // Brackets the whole rotate gesture into one undo step --
+                // same mechanism as move/resize, see onReleased.
+                if (root.docCtrl) root.docCtrl.beginLayerTransformEdit();
+                return;
+            }
+
             if (handle.length > 0) {
                 const l = root.selectedLayerData;
                 mode          = "resize";
@@ -220,6 +296,7 @@ Item {
         onPositionChanged: (mouse) => {
             if (!pressed || dragLayerId.length === 0) return;
             if (mode === "resize") { doResize(mouse.x, mouse.y); return; }
+            if (mode === "rotate") { doRotate(mouse.x, mouse.y, mouse.modifiers); return; }
 
             const dx = mouse.x - pressX;
             const dy = mouse.y - pressY;
@@ -338,6 +415,49 @@ Item {
                                             newScaleX, newScaleY, startRotation);
         }
 
+        // Stage 4: rotation. Position and scale are re-read fresh from
+        // the live model each tick and passed through UNCHANGED -- same
+        // "don't trust a stale press-time copy for whatever this gesture
+        // isn't changing" approach the move handler already uses for
+        // scale/rotation (see its "cur" lookup above). Only rotation
+        // itself is computed, from the fixed angle offset captured in
+        // onPressed.
+        function doRotate(mouseX, mouseY, modifiers) {
+            if (!root.docCtrl) return;
+
+            const dx = mouseX - pressX, dy = mouseY - pressY;
+            // Dead-zone, same 2px threshold and reasoning as the move
+            // handler: a plain click (no real movement) must not emit a
+            // spurious near-zero rotation change.
+            if (!dragging && Math.abs(dx) < 2 && Math.abs(dy) < 2) return;
+            dragging = true;
+
+            let cur = null;
+            for (const l of root.overlayModel) { if (l.realId === dragLayerId) { cur = l; break; } }
+            if (!cur) return;
+
+            const cx = root.width  * 0.5 + cur.posX * root.canvasScale;
+            const cy = root.height * 0.5 + cur.posY * root.canvasScale;
+            const angleDeg = Math.atan2(mouseY - cy, mouseX - cx) * 180 / Math.PI;
+            let newRotation = angleDeg - rotateAngleOffset;
+            // Normalize into [0, 360) -- keeps the value bounded across a
+            // long multi-turn drag and makes the snap rounding below
+            // behave predictably.
+            newRotation = ((newRotation % 360) + 360) % 360;
+
+            // Live modifier check (sampled every tick) -- see file
+            // header's Stage 4 note on why this differs from resize's
+            // press-time-only freeTransform.
+            if (modifiers & Qt.ShiftModifier) {
+                const SNAP_DEG = 15;
+                newRotation = Math.round(newRotation / SNAP_DEG) * SNAP_DEG;
+                if (newRotation >= 360) newRotation -= 360;
+            }
+
+            root.docCtrl.setLayerTransform(dragLayerId, cur.posX, cur.posY,
+                                            cur.scaleX, cur.scaleY, newRotation);
+        }
+
         onReleased: {
             // Safe to call unconditionally even if beginLayerTransformEdit()
             // was never called this press (e.g. clicked empty space) --
@@ -413,6 +533,30 @@ Item {
                 x: handleAnchor.hw * modelData.lx - width  / 2
                 y: handleAnchor.hh * modelData.ly - height / 2
             }
+        }
+
+        // Stage 4: rotation handle -- a thin stalk plus a circular grip,
+        // local offset (0, -hh - rotateHandleDistance), same convention
+        // as the 8 squares just above. Purely presentational, no
+        // MouseArea/state of its own -- all interaction lives in
+        // interactionArea; QML's own `rotation` on handleAnchor rotates
+        // these along with everything else, no manual sin/cos needed
+        // here (unlike interactionArea's hitTestHandle, which must
+        // replicate the rotation manually for its own hit-testing).
+        Rectangle {
+            width: 1
+            height: root.rotateHandleDistance
+            color: "#ffffff88"
+            x: -0.5
+            y: -handleAnchor.hh - root.rotateHandleDistance
+        }
+        Rectangle {
+            width: 14; height: 14; radius: 7
+            color: "#ffffff"
+            border.color: "#6366f1"
+            border.width: 1.5
+            x: -width / 2
+            y: -handleAnchor.hh - root.rotateHandleDistance - height / 2
         }
     }
 }
