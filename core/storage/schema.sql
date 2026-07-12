@@ -21,7 +21,12 @@ CREATE TABLE layers (
     opacity REAL NOT NULL,
     visible INTEGER NOT NULL,
     locked INTEGER NOT NULL,
-    order_index INTEGER NOT NULL
+    order_index INTEGER NOT NULL,
+    pos_x REAL NOT NULL DEFAULT 0,
+    pos_y REAL NOT NULL DEFAULT 0,
+    scale_x REAL NOT NULL DEFAULT 1,
+    scale_y REAL NOT NULL DEFAULT 1,
+    rotation REAL NOT NULL DEFAULT 0
 );
 
 CREATE TABLE masks (

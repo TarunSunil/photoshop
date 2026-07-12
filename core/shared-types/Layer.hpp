@@ -12,6 +12,14 @@ struct Layer {
     LayerKind kind          = LayerKind::Image;
     BlendMode blendMode     = BlendMode::Normal;
     QString   sourceAssetId;
+    // Original file path this layer's image was loaded from (overlay
+    // layers only, set by DocumentModel::addImageLayer()) -- empty for
+    // the base layer, whose path lives in DocumentModel::sourcePath()
+    // instead. ProjectStore uses this at save time to create this
+    // layer's own source_assets row (the exact same mechanism the base
+    // image already uses, just applied per overlay layer), and
+    // DocumentModel::restoreLayer() sets it back when a project reloads.
+    QString   sourcePath;
     double    opacity       = 1.0;
     bool      visible       = true;
     bool      locked        = false;

@@ -92,7 +92,19 @@ bool DocumentModel::openSourceImage(const QString& path)
     base.id            = makeId();
     base.name          = QFileInfo(path).completeBaseName();
     base.kind          = LayerKind::Image;
-    base.sourceAssetId = m_projectId;
+    // Fixed, well-known id -- matches the "source" row ProjectStore
+    // always writes to source_assets for the base image (see
+    // ProjectStore::saveProject()/loadProject()). Previously this was
+    // m_projectId (a fresh random UUID, and one never read by anything
+    // else in the codebase -- see m_projectId's other two uses, both just
+    // generating/clearing it), which meant nothing could reliably tell
+    // "this saved layer row is the base layer" apart from an overlay
+    // layer when reloading a project. loadProject()'s overlay-layer
+    // restore loop depends on this exact value to skip re-creating the
+    // base layer a second time, rather than relying on order_index (the
+    // base layer can be reordered like any other via Main.qml's Move
+    // Up/Down buttons, which have no isBase guard).
+    base.sourceAssetId = "source";
     m_layers.push_back(base);
     m_layerImages[base.id] = m_sourceImage;
     emit changed();
@@ -340,6 +352,12 @@ void DocumentModel::addImageLayer(const QString& path)
     layer.name  = QFileInfo(path).completeBaseName();
     layer.kind  = LayerKind::Image;
     layer.order = m_layers.size();
+    // Persistence fix: remember where this layer's pixel data came from
+    // so ProjectStore::saveProject() can create a source_assets row for
+    // it (the same mechanism the base image already uses) -- previously
+    // nothing recorded this anywhere, so overlay layers had no asset
+    // reference to save and were silently dropped on reload.
+    layer.sourcePath = QFileInfo(path).absoluteFilePath();
     // Issue 6: keep layer at its own native resolution; transforms handle placement.
     // Do NOT scale to source size — that would stretch every added image to fill
     // the entire canvas, which defeats the "sticker on base" use case.
@@ -374,6 +392,21 @@ void DocumentModel::addImageLayer(const QString& path)
     layer.scaleY = initialScale;
 
     m_layers.push_back(layer);
+    emit changed();
+}
+
+// Restores a single overlay layer exactly as previously saved (id,
+// transform, and metadata preserved verbatim) plus its pixel data.
+// Deliberately bypasses AutoHistoryStep/history entirely: a freshly
+// loaded project should start with empty undo/redo, not one synthetic
+// "add layer" step per restored layer -- unlike addImageLayer(), which is
+// a real user action and should be undoable. Used only by
+// ProjectStore::loadProject(), after openSourceImage() has already reset
+// the document down to just its base layer.
+void DocumentModel::restoreLayer(const Layer& layer, const QImage& image)
+{
+    m_layers.push_back(layer);
+    m_layerImages[layer.id] = image.convertToFormat(QImage::Format_RGBA64);
     emit changed();
 }
 

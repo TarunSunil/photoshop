@@ -95,6 +95,13 @@ public:
 
     // Layer management
     void addImageLayer(const QString& path);
+    // Re-adds a single overlay layer exactly as previously saved (id,
+    // transform, and metadata preserved verbatim) plus its pixel data.
+    // Used only by ProjectStore::loadProject() while rebuilding the
+    // overlay-layer stack after openSourceImage() has already reset the
+    // document to just its base layer -- see restoreLayer()'s definition
+    // for why this deliberately bypasses history/AutoHistoryStep.
+    void restoreLayer(const Layer& layer, const QImage& image);
     void moveLayer(int fromIndex, int toIndex);
     void setLayerOpacity(const QString& id, double opacity);
     void setLayerVisible(const QString& id, bool visible);
