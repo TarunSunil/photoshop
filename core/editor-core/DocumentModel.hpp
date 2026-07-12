@@ -155,6 +155,20 @@ private:
         QVector<Layer> layers;
         QImage        sourceImage;   // valid only when structural == true
         QVector<Mask> masks;         // valid only when structural == true
+        // Overlay layer pixel data, keyed by Layer::id -- valid only when
+        // structural == true. Added to fix a real bug: deleteLayer()
+        // removes the deleted layer's entry from m_layerImages, but that
+        // removal was previously untracked by history entirely (see the
+        // comment above -- "m_layerImages, untouched by history" was a
+        // known, deliberate simplification). Undoing a delete restored the
+        // layer's METADATA (posX/posY/scaleX/scaleY/etc., via `layers`
+        // above) but not its pixel data, so layerImage() fell back to
+        // returning the base source image for that id -- rendering the
+        // base photo, transformed exactly like the deleted layer, in its
+        // place. deleteLayer() now opens a structural=true transaction so
+        // this field captures/restores m_layerImages the same way
+        // sourceImage/masks already do for crop/inpaint/upscale.
+        QHash<QString, QImage> layerImages;
         bool          structural = false;
         QString       label;
     };

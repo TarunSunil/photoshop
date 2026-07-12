@@ -88,6 +88,32 @@ Item {
     id: root
     property var docCtrl: null
 
+    // Defensive cleanup: Main.qml hides this whole overlay (visible: false)
+    // whenever the Transform tool stops being active -- including via a
+    // keyboard shortcut (Escape, or the B/E/G/R/C/T tool-switch keys in
+    // Main.qml) fired while the mouse button is still physically held down
+    // over a resize/rotate/move gesture in progress. Whether Qt Quick
+    // itself always releases interactionArea's active mouse grab purely
+    // from this visibility change isn't something this file wants to
+    // depend on either way -- explicitly finalizing here guarantees
+    // begin/commitLayerTransformEdit() always pairs up. Without this, an
+    // unclosed beginLayerTransformEdit() would leave DocumentModel's
+    // transaction permanently open (see beginHistoryTransaction()'s
+    // "nested begin -- first begin wins" guard), silently swallowing
+    // every undo step for the rest of the session -- so this cleanup
+    // costs nothing when the grab was already released normally, and
+    // guards against a severe failure mode when it wasn't.
+    onVisibleChanged: {
+        if (!visible && interactionArea.dragLayerId.length > 0) {
+            interactionArea.ungrabMouse();
+            if (root.docCtrl) root.docCtrl.commitLayerTransformEdit();
+            interactionArea.dragLayerId  = "";
+            interactionArea.mode         = "";
+            interactionArea.activeHandle = "";
+            interactionArea.dragging     = false;
+        }
+    }
+
     // Canvas-pixels-per-source-pixel -- this overlay is sized to match
     // imagePreview (sourceWidth/Height * zoom), so this recovers the same
     // factor RenderPipeline calls `previewScale`.

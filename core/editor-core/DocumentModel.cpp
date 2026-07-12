@@ -437,7 +437,11 @@ void DocumentModel::setLayerBlendMode(const QString& id, BlendMode mode)
 void DocumentModel::deleteLayer(const QString& id)
 {
     if (m_layers.size() <= 1) return;
-    AutoHistoryStep step(*this, QString("Delete layer"), false);
+    // structural=true so the pre-delete snapshot's layerImages field (see
+    // HistorySnapshot) captures this layer's pixel data before it's
+    // removed below, and undo() restores it -- see HistorySnapshot's
+    // comment on layerImages for the bug this fixes.
+    AutoHistoryStep step(*this, QString("Delete layer"), true);
     m_layers.removeIf([&](const Layer& l){ return l.id == id; });
     m_layerImages.remove(id);
     emit changed();
@@ -510,6 +514,7 @@ void DocumentModel::cancelHistoryTransaction()
     if (m_transactionSnapshot.structural) {
         m_sourceImage = m_transactionSnapshot.sourceImage;
         m_masks       = m_transactionSnapshot.masks;
+        m_layerImages = m_transactionSnapshot.layerImages;
     }
     emit changed(); emit historyChanged();
 }
@@ -522,8 +527,9 @@ DocumentModel::HistorySnapshot DocumentModel::captureSnapshot(const QString& lab
     s.label       = label;
     s.structural  = structural;
     if (structural) {
-        s.sourceImage = m_sourceImage;
-        s.masks       = m_masks;
+        s.sourceImage  = m_sourceImage;
+        s.masks        = m_masks;
+        s.layerImages  = m_layerImages;
     }
     return s;
 }
@@ -535,6 +541,7 @@ void DocumentModel::applySnapshot(const HistorySnapshot& s)
     if (s.structural) {
         m_sourceImage = s.sourceImage;
         m_masks       = s.masks;
+        m_layerImages = s.layerImages;
     }
     emit changed();
     if (s.structural) emit structuralHistoryApplied();
