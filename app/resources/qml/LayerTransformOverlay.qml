@@ -349,6 +349,18 @@ Item {
 
         function doResize(mouseX, mouseY) {
             if (!root.docCtrl) return;
+            // Dead-zone, same 2px threshold and reasoning as move/doRotate:
+            // a plain click on a resize handle (no real movement) must not
+            // emit a spurious near-zero resize. This was previously
+            // missing here -- doResize was the only one of the three
+            // gesture handlers (move, doResize, doRotate) without it,
+            // meaning a click-and-release on a resize handle with even
+            // sub-pixel mouse jitter between press and release could
+            // register a spurious "Transform layer" undo step where the
+            // equivalent click on the move hit-area or rotate handle
+            // correctly no-ops.
+            const ddx0 = mouseX - pressX, ddy0 = mouseY - pressY;
+            if (!dragging && Math.abs(ddx0) < 2 && Math.abs(ddy0) < 2) return;
             dragging = true;
 
             const startW = Math.max(1, startImgW * startScaleX * root.canvasScale);
