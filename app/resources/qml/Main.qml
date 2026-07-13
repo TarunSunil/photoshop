@@ -583,12 +583,22 @@ ApplicationWindow {
                             ListView {
                                 anchors.fill:parent; clip:true
                                 model: documentController.historyLog
+                                // historyLog is now oldest-first (a live read of
+                                // the actual undo stack, in the order those
+                                // actions were performed -- see historyLabels()),
+                                // so the CURRENT/most-recent entry is the LAST
+                                // one, not index 0 as it was when this list was
+                                // newest-first. Auto-scroll there whenever a new
+                                // entry is added, otherwise it would land
+                                // silently off-screen below the visible area.
+                                onCountChanged: positionViewAtEnd()
                                 delegate: Rectangle {
                                     width:ListView.view.width; height:22
-                                    color: index===0?"#1a2040":"transparent"
+                                    readonly property bool isCurrent: index===ListView.view.count-1
+                                    color: isCurrent?"#1a2040":"transparent"
                                     RowLayout{anchors.fill:parent;anchors.leftMargin:10;anchors.rightMargin:6;spacing:8
-                                        Rectangle{width:5;height:5;radius:2.5;color:index===0?"#6366f1":"#3a4566"}
-                                        Label{text:modelData;color:index===0?"#c8d0e0":"#6b7a99";font.pixelSize:11;Layout.fillWidth:true;elide:Text.ElideRight}
+                                        Rectangle{width:5;height:5;radius:2.5;color:parent.parent.isCurrent?"#6366f1":"#3a4566"}
+                                        Label{text:modelData;color:parent.parent.isCurrent?"#c8d0e0":"#6b7a99";font.pixelSize:11;Layout.fillWidth:true;elide:Text.ElideRight}
                                     }
                                 }
                                 Label{anchors.centerIn:parent;visible:documentController.historyLog.length===0
@@ -741,6 +751,20 @@ ApplicationWindow {
         Slider { id:sl; Layout.fillWidth:true; implicitHeight:18
             from:sliderRoot.from; to:sliderRoot.to; value:sliderRoot.value
             enabled:documentController.hasDocument
+            // Brackets the whole drag into one undo step with the FINAL
+            // value's descriptive label (e.g. "Exposure: 1.50"), instead
+            // of one undo step (and one History-panel entry) per tick --
+            // see DocumentController::beginAdjustmentEdit()/
+            // commitAdjustmentEdit() and DocumentModel's per-tick label
+            // refresh. pressed is a plain bool property, so onPressedChanged
+            // is the standard QtQuick Controls idiom for "drag started"
+            // (true) / "drag ended" (false) -- mirrors exactly how
+            // LayerTransformOverlay.qml already brackets move/resize/rotate
+            // gestures with begin/commitLayerTransformEdit().
+            onPressedChanged: {
+                if (pressed) documentController.beginAdjustmentEdit();
+                else documentController.commitAdjustmentEdit();
+            }
             onMoved:sliderRoot.moved(value)
             background:Rectangle{x:sl.leftPadding;y:sl.topPadding+sl.availableHeight/2-height/2
                 width:sl.availableWidth;height:3;radius:1.5;color:"#1a1e2e"

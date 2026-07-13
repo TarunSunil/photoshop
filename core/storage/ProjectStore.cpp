@@ -3,6 +3,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QFile>
+#include <QFileInfo>
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QUuid>
@@ -14,6 +15,21 @@ namespace {
 QString connectionName()
 {
     return QString("lumenforge-project-%1").arg(QUuid::createUuid().toString(QUuid::WithoutBraces));
+}
+
+// Masks are painted/generated in-app (brush strokes, gradient/radial
+// fills) rather than loaded from a pre-existing user file the way overlay
+// layers are -- there's no original file path to just remember and
+// reference the way Layer::sourcePath does. Instead each mask's pixel
+// data is written to its own sidecar PNG next to the project file, named
+// deterministically from the project file's own name plus the mask's id
+// so re-saving the same project overwrites the same file rather than
+// accumulating copies. masks.asset_path (schema) / Mask::assetPath
+// already existed for exactly this, just never populated.
+QString maskSidecarPath(const QString& projectPath, const QString& maskId)
+{
+    const QFileInfo info(projectPath);
+    return info.absolutePath() + "/" + info.completeBaseName() + "_mask_" + maskId + ".png";
 }
 
 bool exec(QSqlQuery& query, const QString& sql)
@@ -132,11 +148,24 @@ bool ProjectStore::saveProject(const DocumentModel& document, const QString& pat
             if (!ok) {
                 break;
             }
+            // A mask created but never painted (e.g. "+ New Mask" clicked
+            // then abandoned) has a null QImage -- nothing to write, and
+            // restoreMask() below already handles an empty asset_path by
+            // restoring the mask with no pixel data, matching this
+            // pre-save state exactly.
+            QString maskAssetPath;
+            if (!mask.mask.isNull()) {
+                maskAssetPath = maskSidecarPath(path, mask.id);
+                if (!mask.mask.save(maskAssetPath, "PNG")) {
+                    ok = false;
+                    break;
+                }
+            }
             query.prepare("INSERT INTO masks (id, name, kind, asset_path, feather_radius, inverted) VALUES (?, ?, ?, ?, ?, ?)");
             query.addBindValue(mask.id);
             query.addBindValue(mask.name);
             query.addBindValue("brush");
-            query.addBindValue(mask.assetPath);
+            query.addBindValue(maskAssetPath);
             query.addBindValue(mask.featherRadius);
             query.addBindValue(mask.inverted ? 1 : 0);
             ok = query.exec();
@@ -232,6 +261,37 @@ bool ProjectStore::loadProject(DocumentModel& document, const QString& path) con
                 layer.scaleY        = query.value(10).toDouble();
                 layer.rotation      = query.value(11).toDouble();
                 document.restoreLayer(layer, img);
+            }
+        }
+
+        // Restore masks -- same previously-missing story as overlay
+        // layers, adapted for the fact that masks are painted/generated
+        // in-app rather than loaded from a pre-existing file: each mask's
+        // pixel data was written to its own sidecar PNG at save time (see
+        // saveProject()/maskSidecarPath()). A mask saved with an empty
+        // asset_path (never painted before save) restores with no pixel
+        // data, matching its pre-save state; a mask whose sidecar file is
+        // missing/unreadable (e.g. moved or deleted since save) still
+        // restores its other metadata -- id, name, feather radius,
+        // inverted flag -- rather than being dropped entirely, since an
+        // empty mask slot is a normal, already-supported state (the same
+        // one "+ New Mask" produces before any painting happens).
+        if (ok && query.exec("SELECT id, name, asset_path, feather_radius, inverted FROM masks")) {
+            while (query.next()) {
+                Mask mask;
+                mask.id            = query.value(0).toString();
+                mask.name          = query.value(1).toString();
+                mask.kind          = MaskKind::Brush;
+                mask.assetPath     = query.value(2).toString();
+                mask.featherRadius = query.value(3).toDouble();
+                mask.inverted      = query.value(4).toInt() != 0;
+                if (!mask.assetPath.isEmpty()) {
+                    QImage img;
+                    if (img.load(mask.assetPath)) {
+                        mask.mask = img;
+                    }
+                }
+                document.restoreMask(mask);
             }
         }
 

@@ -6,6 +6,7 @@
 #include <QImage>
 #include <QObject>
 #include <QString>
+#include <QStringList>
 #include <QVector>
 namespace lumen {
 class DocumentModel final : public QObject {
@@ -30,11 +31,14 @@ public:
 
     // Issue 5: per-target (full-image vs per-mask) adjustment access
     [[nodiscard]] QVector<Adjustment> adjustmentsForTarget(const QString& targetMaskId) const;
-    void   setScalarAdjustmentForTarget(AdjustmentType type, double value, const QString& targetMaskId);
+    // label, if empty, is auto-generated from type+value (e.g.
+    // "Exposure: 1.50") -- see the .cpp. Callers with a better description
+    // (rotate/flip, "Reset all adjustments") can pass one explicitly.
+    void   setScalarAdjustmentForTarget(AdjustmentType type, double value, const QString& targetMaskId, const QString& label = QString());
     [[nodiscard]] double scalarAdjustmentForTarget(AdjustmentType type, const QString& targetMaskId) const;
 
     // Legacy (targetMaskId = "")
-    void   setScalarAdjustment(AdjustmentType type, double value);
+    void   setScalarAdjustment(AdjustmentType type, double value, const QString& label = QString());
     [[nodiscard]] double scalarAdjustment(AdjustmentType type) const;
 
     // ── Layers ────────────────────────────────────────────────────────────────
@@ -45,6 +49,15 @@ public:
     [[nodiscard]] bool    canUndo()      const;
     [[nodiscard]] bool    canRedo()      const;
     [[nodiscard]] bool    isDownsampled() const;
+    // The undo stack's entry labels, oldest first -- i.e. the exact
+    // chronological sequence of actions that produced the CURRENT
+    // document state. This is the actual source of truth for a
+    // Photoshop-style History panel: undo() shortens this list (by
+    // popping the most recent entry), redo() lengthens it again (by
+    // pushing the same entry back with its original label) -- nothing
+    // else needs to special-case undo/redo, since the panel is just a
+    // live read of this list.
+    [[nodiscard]] QStringList historyLabels() const;
 
     // ── History transactions ─────────────────────────────────────────────────
     // Replaces the old "one pushHistorySnapshot() call per mutation" design,
@@ -62,7 +75,12 @@ public:
     // never pushed any history). Plain adjustment edits stay cheap (no
     // image data captured) since structural defaults to false.
     void beginHistoryTransaction(const QString& label = QString(), bool structural = false);
-    void commitHistoryTransaction();
+    // finalLabel, if non-empty, overwrites the transaction's label right
+    // before it's pushed onto the undo stack -- for callers whose best
+    // description of the action is only known at the END of it (e.g.
+    // applyCrop() knows the final pixel dimensions only after cropping),
+    // rather than at beginHistoryTransaction() time.
+    void commitHistoryTransaction(const QString& finalLabel = QString());
     // Restores document state to what it was when the currently-open
     // transaction began, without creating an undo entry. Not currently
     // wired to any UI action; available for a future "cancel mid-drag" or
@@ -80,6 +98,14 @@ public:
     // Removes the mask AND every Adjustment targeting it, so deleting a mask
     // never leaves orphaned per-mask adjustments behind.
     void removeMask(const QString& id);
+    // Re-adds a single mask exactly as previously saved (id, name,
+    // feather/inverted, and pixel data all preserved verbatim). Used only
+    // by ProjectStore::loadProject(), after openSourceImage() has already
+    // reset the document to an empty mask list. Deliberately bypasses
+    // AutoHistoryStep/history entirely -- same reasoning as
+    // DocumentModel::restoreLayer(): a freshly loaded project should start
+    // with empty undo/redo, not synthetic entries per restored mask.
+    void restoreMask(const Mask& mask);
 
     // Legacy read-only accessor kept only for RenderPipeline's unused legacy
     // renderPreview()/renderPreviewFromData() overloads. Nothing in
@@ -189,7 +215,23 @@ private:
         AutoHistoryStep(DocumentModel& doc, const QString& label, bool structural)
             : m_doc(doc), m_owns(!doc.m_transactionOpen)
         {
-            if (m_owns) m_doc.beginHistoryTransaction(label, structural);
+            if (m_owns) {
+                m_doc.beginHistoryTransaction(label, structural);
+            } else if (!label.isEmpty()) {
+                // Nested inside an outer, caller-owned transaction (e.g. a
+                // slider drag bracketed by beginAdjustmentEdit()/
+                // commitAdjustmentEdit()). Refresh the ALREADY-OPEN
+                // transaction's label to this call's more specific/current
+                // description, so the entry that eventually gets committed
+                // reflects the LAST tick's value (e.g. "Exposure: 1.50")
+                // rather than whatever generic placeholder the outer
+                // transaction was opened with. Purely a label update --
+                // doesn't touch ownership or the captured pre-mutation
+                // snapshot data, and is a harmless no-op for callers (like
+                // layer-transform drags) that pass the same literal label
+                // on every tick anyway.
+                m_doc.m_transactionSnapshot.label = label;
+            }
         }
         ~AutoHistoryStep() { if (m_owns) m_doc.commitHistoryTransaction(); }
         AutoHistoryStep(const AutoHistoryStep&) = delete;

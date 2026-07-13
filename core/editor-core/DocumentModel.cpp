@@ -196,15 +196,30 @@ const Adjustment* DocumentModel::findAdjustment(AdjustmentType type) const
 
 // ── Target-aware scalar adjustment (issue 5) ──────────────────────────────────
 
-void DocumentModel::setScalarAdjustmentForTarget(AdjustmentType type, double value, const QString& targetMaskId)
+void DocumentModel::setScalarAdjustmentForTarget(AdjustmentType type, double value, const QString& targetMaskId, const QString& label)
 {
     if (qFuzzyCompare(scalarAdjustmentForTarget(type, targetMaskId) + 1.0, value + 1.0)) return;
     {
         // No-ops (doesn't open/commit its own transaction) when a caller
         // already has one open via beginHistoryTransaction() -- e.g. a
         // whole slider drag -- so that drag still ends up as one undo step
-        // no matter how many times this is called during it.
-        AutoHistoryStep step(*this, QString(), false);
+        // no matter how many times this is called during it. Whether or
+        // not that's the case, the label still gets passed through: if
+        // this call owns the transaction, it becomes that entry's label;
+        // if it's nested inside an outer one, it REFRESHES that outer
+        // transaction's label to this call's value (see AutoHistoryStep) --
+        // which is exactly how a slider drag ends up committing with the
+        // FINAL tick's descriptive text ("Exposure: 1.50") rather than
+        // the generic placeholder the drag was opened with.
+        QString effectiveLabel = label;
+        if (effectiveLabel.isEmpty()) {
+            QString name = adjustmentTypeToString(type);
+            if (!name.isEmpty()) name[0] = name[0].toUpper();
+            effectiveLabel = targetMaskId.isEmpty()
+                ? QString("%1: %2").arg(name).arg(value, 0, 'f', 2)
+                : QString("%1 (mask): %2").arg(name).arg(value, 0, 'f', 2);
+        }
+        AutoHistoryStep step(*this, effectiveLabel, false);
         Adjustment* adj = findAdjustmentForTarget(type, targetMaskId);
         if (!adj) {
             Adjustment next;
@@ -228,9 +243,9 @@ double DocumentModel::scalarAdjustmentForTarget(AdjustmentType type, const QStri
 
 // ── Legacy scalar adjustment (delegates to targetMaskId="") ──────────────────
 
-void DocumentModel::setScalarAdjustment(AdjustmentType type, double value)
+void DocumentModel::setScalarAdjustment(AdjustmentType type, double value, const QString& label)
 {
-    setScalarAdjustmentForTarget(type, value, QString());
+    setScalarAdjustmentForTarget(type, value, QString(), label);
 }
 
 double DocumentModel::scalarAdjustment(AdjustmentType type) const
@@ -300,6 +315,12 @@ void DocumentModel::removeMask(const QString& id)
     emit changed();
 }
 
+void DocumentModel::restoreMask(const Mask& mask)
+{
+    m_masks.push_back(mask);
+    emit changed();
+}
+
 QImage DocumentModel::activeMask() const
 {
     return m_masks.isEmpty() ? QImage() : m_masks.first().mask;
@@ -308,20 +329,28 @@ QImage DocumentModel::activeMask() const
 bool DocumentModel::canUndo() const { return !m_undoStack.isEmpty(); }
 bool DocumentModel::canRedo() const { return !m_redoStack.isEmpty(); }
 
+QStringList DocumentModel::historyLabels() const
+{
+    QStringList labels;
+    labels.reserve(m_undoStack.size());
+    for (const HistorySnapshot& s : m_undoStack) labels.push_back(s.label);
+    return labels;
+}
+
 // ── Transform adjustments ─────────────────────────────────────────────────────
 
 void DocumentModel::rotateClockwise()
 { setScalarAdjustment(AdjustmentType::RotationDegrees,
-    (int(scalarAdjustment(AdjustmentType::RotationDegrees)) + 90) % 360); }
+    (int(scalarAdjustment(AdjustmentType::RotationDegrees)) + 90) % 360, "Rotate CW"); }
 void DocumentModel::rotateCounterClockwise()
 { setScalarAdjustment(AdjustmentType::RotationDegrees,
-    (int(scalarAdjustment(AdjustmentType::RotationDegrees)) + 270) % 360); }
+    (int(scalarAdjustment(AdjustmentType::RotationDegrees)) + 270) % 360, "Rotate CCW"); }
 void DocumentModel::flipHorizontal()
 { setScalarAdjustment(AdjustmentType::FlipHorizontal,
-    scalarAdjustment(AdjustmentType::FlipHorizontal) > 0.5 ? 0.0 : 1.0); }
+    scalarAdjustment(AdjustmentType::FlipHorizontal) > 0.5 ? 0.0 : 1.0, "Flip Horizontal"); }
 void DocumentModel::flipVertical()
 { setScalarAdjustment(AdjustmentType::FlipVertical,
-    scalarAdjustment(AdjustmentType::FlipVertical) > 0.5 ? 0.0 : 1.0); }
+    scalarAdjustment(AdjustmentType::FlipVertical) > 0.5 ? 0.0 : 1.0, "Flip Vertical"); }
 
 // ── Undo / redo ───────────────────────────────────────────────────────────────
 
@@ -346,10 +375,11 @@ void DocumentModel::addImageLayer(const QString& path)
 {
     QImage img; img.load(path);
     if (img.isNull()) return;
-    AutoHistoryStep step(*this, QString("Add layer"), false);
+    const QString name = QFileInfo(path).completeBaseName();
+    AutoHistoryStep step(*this, QString("Add layer: %1").arg(name), false);
     Layer layer;
     layer.id    = makeId();
-    layer.name  = QFileInfo(path).completeBaseName();
+    layer.name  = name;
     layer.kind  = LayerKind::Image;
     layer.order = m_layers.size();
     // Persistence fix: remember where this layer's pixel data came from
@@ -495,10 +525,11 @@ bool DocumentModel::transactionChangedAnything() const
     return false;
 }
 
-void DocumentModel::commitHistoryTransaction()
+void DocumentModel::commitHistoryTransaction(const QString& finalLabel)
 {
     if (!m_transactionOpen) return;
     m_transactionOpen = false;
+    if (!finalLabel.isEmpty()) m_transactionSnapshot.label = finalLabel;
     if (!transactionChangedAnything()) return; // e.g. slider pressed then released without moving
     m_undoStack.push_back(m_transactionSnapshot);
     if (m_undoStack.size() > 100) m_undoStack.removeFirst();

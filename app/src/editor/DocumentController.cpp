@@ -119,8 +119,14 @@ DocumentController::DocumentController(QObject* parent)
         *m_hqCancelFlag = true;
         m_previewDebounce->start();
     });
-    connect(&m_document, &lumen::DocumentModel::historyChanged,
-            this, &DocumentController::historyChanged);
+    connect(&m_document, &lumen::DocumentModel::historyChanged, this, [this]() {
+        // historyLog is now a direct, live read of m_document's actual
+        // undo stack (see historyLog() below) -- it needs to refresh
+        // exactly whenever that stack does, which historyChanged already
+        // signals for every commit/undo/redo. No separate bookkeeping.
+        emit historyChanged();
+        emit historyLogChanged();
+    });
     connect(&m_document, &lumen::DocumentModel::structuralHistoryApplied,
             this, &DocumentController::resyncAfterStructuralHistory);
     connect(&m_aiRuntime, &lumen::AiRuntime::busyChanged,
@@ -219,7 +225,18 @@ QVariantList DocumentController::layerModel() const {
     }
     return list;
 }
-QStringList DocumentController::historyLog() const { return m_historyLog; }
+// historyLog is a direct, live view of m_document's actual undo stack --
+// oldest action first, matching the order they were actually performed in.
+// This used to be a separately-maintained QStringList (m_historyLog) that
+// every action manually appended to via logHistory(), completely
+// decoupled from the real undo/redo mechanism -- which is exactly why
+// Undo/Redo used to show up as their OWN new entries instead of the panel
+// reflecting the state actually being undone/redone to. There is no
+// separate bookkeeping left to get out of sync: undo() shortens the real
+// stack, redo() lengthens it again, and this getter (re-evaluated
+// whenever historyLogChanged fires, see the constructor) just reads
+// whatever is there.
+QStringList DocumentController::historyLog() const { return m_document.historyLabels(); }
 
 QVariantList DocumentController::maskList() const {
     QVariantList list;
@@ -271,11 +288,6 @@ QStringList DocumentController::recentFiles() const {
 bool DocumentController::hasPendingRecovery() const { return m_hasPendingRecovery; }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-void DocumentController::logHistory(const QString& label) {
-    m_historyLog.prepend(label);
-    if (m_historyLog.size() > 100) m_historyLog.removeLast();
-    emit historyLogChanged();
-}
 void DocumentController::addRecentFile(const QString& path) {
     QSettings s("LumenForge","LumenForge");
     QStringList r = s.value("recentFiles").toStringList();
@@ -337,14 +349,12 @@ bool DocumentController::openImage(const QUrl& url) {
     QFile::remove(autosavePath());
     m_hasPendingRecovery = false; emit recoveryChanged();
     addRecentFile(m_document.sourcePath());
-    logHistory("Opened " + QFileInfo(path).fileName());
     return true;
 }
 bool DocumentController::saveProject(const QUrl& url) {
     if (!m_projectStore.saveProject(m_document, localPath(url))) {
         emit operationFailed("Could not save project."); return false;
     }
-    logHistory("Project saved");
     return true;
 }
 bool DocumentController::loadProject(const QUrl& url) {
@@ -358,19 +368,24 @@ bool DocumentController::loadProject(const QUrl& url) {
     m_activeAdjustmentTarget.clear(); emit activeAdjustmentTargetChanged();
     syncBrushEngineToTarget(m_activeAdjustmentTarget);
     emit maskChanged();
-    logHistory("Project loaded");
     return true;
 }
 bool DocumentController::exportImage(const QUrl& url) {
     if (!m_exportService.exportImage(m_document, localPath(url))) {
         emit operationFailed("Could not export image."); return false;
     }
-    logHistory("Exported " + QFileInfo(localPath(url)).fileName());
     return true;
 }
 void DocumentController::resetAdjustments() {
     // Reset only the CURRENTLY ACTIVE target (issue 5) — resetting the full
     // image must not wipe out per-mask edits and vice versa.
+    // Wrapped in one explicit transaction so resetting several adjustment
+    // types at once (each of which would otherwise open/commit its own
+    // transaction independently) becomes a single History entry and a
+    // single undo step, not one per type that happened to be non-zero.
+    const QString label = m_activeAdjustmentTarget.isEmpty()
+        ? "Reset all adjustments (Full Image)" : "Reset all adjustments (mask)";
+    m_document.beginHistoryTransaction(label);
     for (auto t : {
         lumen::AdjustmentType::Brightness, lumen::AdjustmentType::Exposure,
         lumen::AdjustmentType::Contrast,   lumen::AdjustmentType::Saturation,
@@ -379,17 +394,16 @@ void DocumentController::resetAdjustments() {
         lumen::AdjustmentType::Vibrance,   lumen::AdjustmentType::Temperature,
         lumen::AdjustmentType::Tint, lumen::AdjustmentType::NoiseReduction,
         lumen::AdjustmentType::Sharpening,
-    }) m_document.setScalarAdjustmentForTarget(t, 0.0, m_activeAdjustmentTarget);
-    logHistory(m_activeAdjustmentTarget.isEmpty()
-        ? "Reset all adjustments (Full Image)"
-        : "Reset all adjustments (mask)");
+    }) m_document.setScalarAdjustmentForTarget(t, 0.0, m_activeAdjustmentTarget, label);
+    m_document.commitHistoryTransaction();
 }
-void DocumentController::rotateClockwise()        { m_document.rotateClockwise();        logHistory("Rotate CW"); }
-void DocumentController::rotateCounterClockwise() { m_document.rotateCounterClockwise(); logHistory("Rotate CCW"); }
-void DocumentController::flipHorizontal()         { m_document.flipHorizontal();         logHistory("Flip Horizontal"); }
-void DocumentController::flipVertical()           { m_document.flipVertical();           logHistory("Flip Vertical"); }
-void DocumentController::undo()                   { m_document.undo();                   logHistory("Undo"); }
-void DocumentController::redo()                   { m_document.redo();                   logHistory("Redo"); }
+void DocumentController::rotateClockwise()        { m_document.rotateClockwise(); }
+void DocumentController::rotateCounterClockwise() { m_document.rotateCounterClockwise(); }
+void DocumentController::flipHorizontal()         { m_document.flipHorizontal(); }
+void DocumentController::flipVertical()           { m_document.flipVertical(); }
+void DocumentController::undo()                   { m_document.undo(); }
+void DocumentController::redo()                   { m_document.redo(); }
+
 
 void DocumentController::beginAdjustmentEdit() {
     if (m_adjustmentEditOpen) return;
@@ -401,11 +415,11 @@ void DocumentController::commitAdjustmentEdit() {
     m_adjustmentEditOpen = false;
     // Pushes (at most) ONE undo step for the whole drag -- DocumentModel
     // itself detects and skips a no-op interaction (press without moving).
+    // The committed entry's label is already the LAST tick's descriptive
+    // text (e.g. "Exposure: 1.50") -- setScalarAdjustmentForTarget()
+    // refreshes it on every tick via AutoHistoryStep's nested-label
+    // update, so there's nothing left to do here.
     m_document.commitHistoryTransaction();
-    if (!m_pendingAdjustmentLabel.isEmpty()) {
-        logHistory(m_pendingAdjustmentLabel);
-        m_pendingAdjustmentLabel.clear();
-    }
 }
 
 // ── Brush mask ────────────────────────────────────────────────────────────────
@@ -438,7 +452,6 @@ void DocumentController::commitMaskPaint() {
     m_document.setMaskImage(targetId, upsampleMaskToSource(m_brushEngine->mask(), srcSz));
     saveMaskToTemp(targetId);
     emit maskChanged();
-    logHistory("Brush mask");
 }
 void DocumentController::flushMaskSave() {
     if (!m_brushEngine || m_activeAdjustmentTarget.isEmpty()) return;
@@ -457,7 +470,6 @@ void DocumentController::clearMask() {
     // Switches back to Full Image, resyncs the (now-empty) brush surface,
     // and emits maskChanged/adjustmentsChanged for us.
     setActiveAdjustmentTarget(QString());
-    logHistory("Delete mask");
 }
 void DocumentController::saveMaskToTemp(const QString& maskId) {
     if (maskId.isEmpty()) return;
@@ -533,7 +545,6 @@ void DocumentController::applyGradientMask(double x1,double y1,double x2,double 
     m_brushEngine->mask() = mask;
     m_document.setMaskImage(targetId, upsampleMaskToSource(mask, sz));
     saveMaskToTemp(targetId); emit maskChanged();
-    logHistory("Gradient mask");
 }
 void DocumentController::applyRadialMask(double cx,double cy,double radius) {
     if (!m_document.hasDocument()) return;
@@ -553,7 +564,6 @@ void DocumentController::applyRadialMask(double cx,double cy,double radius) {
     m_brushEngine->mask() = mask;
     m_document.setMaskImage(targetId, upsampleMaskToSource(mask, sz));
     saveMaskToTemp(targetId); emit maskChanged();
-    logHistory("Radial mask");
 }
 void DocumentController::applyCrop(int x,int y,int w,int h) {
     if (!m_document.hasDocument()) return;
@@ -578,7 +588,13 @@ void DocumentController::applyCrop(int x,int y,int w,int h) {
         m_document.setMaskImage(mask.id, clamped.isEmpty() ? QImage() : mask.mask.copy(clamped));
     }
     m_document.replaceSourceImage(m_document.sourceImage().copy(rect));
-    m_document.commitHistoryTransaction();
+    // Final label needs the post-crop size, which is only known now (crop
+    // replaced the source image on the line above) -- commitHistoryTransaction()'s
+    // optional override exists for exactly this "known only at the end"
+    // case, so the pushed undo entry reads e.g. "Crop 4000×3000" directly,
+    // no separate logging step needed.
+    m_document.commitHistoryTransaction(
+        QString("Crop %1\u00d7%2").arg(m_document.sourceSize().width()).arg(m_document.sourceSize().height()));
     m_brushEngine = std::make_unique<lumen::BrushEngine>(brushEngineSize(m_document.sourceSize()));
     syncBrushEngineToTarget(m_activeAdjustmentTarget);
     for (const QString& oldPath : std::as_const(m_maskTempPaths)) QFile::remove(oldPath);
@@ -599,7 +615,6 @@ void DocumentController::applyCrop(int x,int y,int w,int h) {
             emit previewChanged();
         }
     }
-    logHistory(QString("Crop %1\u00d7%2").arg(m_document.sourceSize().width()).arg(m_document.sourceSize().height()));
     setActiveTool(0); emit maskChanged();
 }
 void DocumentController::refineEdges() {
@@ -621,7 +636,7 @@ void DocumentController::refineEdges() {
             }
             m_document.setMaskImage(targetId, refined);
             saveMaskToTemp(targetId); emit maskChanged();
-            logHistory("Refine edges"); setAiStatus("Done");
+            setAiStatus("Done");
         } else setAiStatus("Edge refinement failed");
         setAiBusy(false); w->deleteLater();
     });
@@ -641,7 +656,6 @@ void DocumentController::addNewMaskTarget() {
     const QString name = QString("Mask %1").arg(m_document.masks().size() + 1);
     const QString id = m_document.addMask(name);
     setActiveAdjustmentTarget(id);
-    logHistory("New mask: " + name);
 }
 
 void DocumentController::requestAiMask(double x,double y) {
@@ -654,7 +668,7 @@ void DocumentController::requestAiMask(double x,double y) {
             if (!m_brushEngine) m_brushEngine=std::make_unique<lumen::BrushEngine>(brushEngineSize(m_document.sourceSize()));
             m_brushEngine->mask()=downsampleMaskToBrush(result, m_brushEngine->mask().size());
             m_document.setMaskImage(targetId, result); saveMaskToTemp(targetId); emit maskChanged();
-            logHistory("AI subject mask"); setAiStatus("Done");
+            setAiStatus("Done");
         } else {
             const QString msg=error.isEmpty()?"AI mask prediction failed.":error;
             setAiStatus(msg); emit operationFailed(msg);
@@ -681,7 +695,7 @@ void DocumentController::applyInpaint() {
         if (m_brushEngine) m_brushEngine->resize(brushEngineSize(m_document.sourceSize()));
         const QString err = m_inpaintEngine ? m_inpaintEngine->lastError() : QString();
         if (!err.isEmpty()){setAiStatus(err);emit operationFailed(err);}
-        else{logHistory("Object removal");setAiStatus("Done");}
+        else{setAiStatus("Done");}
         setAiBusy(false); rebuildPreview(); w->deleteLater();
     });
     w->setFuture(QtConcurrent::run([this,src,mask]()mutable->QImage{
@@ -702,12 +716,11 @@ void DocumentController::applyUpscale() {
     const QImage src=m_document.sourceImage();
     auto* w=new QFutureWatcher<QImage>(this);
     connect(w,&QFutureWatcher<QImage>::finished,this,[this,w](){
-        m_document.beginHistoryTransaction("AI Upscale", /*structural=*/true);
+        m_document.beginHistoryTransaction("AI Upscale \u00d74", /*structural=*/true);
         m_document.replaceSourceImage(w->result());
         m_document.commitHistoryTransaction();
         if (m_brushEngine) m_brushEngine->resize(brushEngineSize(m_document.sourceSize()));
         const QString err=m_upscaleEngine?m_upscaleEngine->lastError():QString();
-        logHistory("AI Upscale x4");
         setAiStatus(err.isEmpty()?"Done":QString("Done (%1)").arg(err));
         setAiBusy(false); rebuildPreview(); w->deleteLater();
     });
@@ -724,46 +737,28 @@ void DocumentController::addImageLayer(const QUrl& url){
     const auto layers = m_document.layers();
     if (!layers.isEmpty())
         setSelectedLayerId(layers.last().id);
-    logHistory("Add layer: "+QFileInfo(localPath(url)).fileName());
 }
 void DocumentController::deleteLayer(const QString& id){
     if (m_selectedLayerId == id) setSelectedLayerId(QString());
-    m_document.deleteLayer(id); logHistory("Delete layer");
+    m_document.deleteLayer(id);
 }
 void DocumentController::setLayerOpacity(const QString& id,double o){m_document.setLayerOpacity(id,o);}
 void DocumentController::setLayerVisible(const QString& id,bool v){m_document.setLayerVisible(id,v);}
 void DocumentController::moveLayerUp(const QString& id){
     const auto& layers=m_document.layers();
     for (int i=0;i<layers.size();++i)
-        if (layers[i].id==id && i>0){m_document.moveLayer(i,i-1); logHistory("Move layer up"); break;}
+        if (layers[i].id==id && i>0){m_document.moveLayer(i,i-1); break;}
 }
 void DocumentController::moveLayerDown(const QString& id){
     const auto& layers=m_document.layers();
     for (int i=0;i<layers.size();++i)
-        if (layers[i].id==id && i<layers.size()-1){m_document.moveLayer(i,i+1); logHistory("Move layer down"); break;}
+        if (layers[i].id==id && i<layers.size()-1){m_document.moveLayer(i,i+1); break;}
 }
 void DocumentController::setLayerTransform(const QString& id,
                                             double posX, double posY,
                                             double scaleX, double scaleY,
                                             double rotation) {
     m_document.setLayerTransform(id, posX, posY, scaleX, scaleY, rotation);
-    if (m_layerTransformEditOpen) {
-        // Overwritten every tick during a drag -- only the LAST tick's call
-        // actually gets logged, in commitLayerTransformEdit(). Unlike
-        // setAdjustment(), there's no qFuzzyCompare no-op guard needed here:
-        // the QML side (LayerTransformOverlay.qml) only calls
-        // setLayerTransform() after real cursor movement past its dead
-        // zone, so every call reaching this point already represents an
-        // actual change.
-        m_pendingLayerTransformLabel = "Transform layer";
-    } else {
-        // No drag in progress -- some other, non-gizmo caller invoked this
-        // directly. Log immediately; DocumentModel's own AutoHistoryStep
-        // (see setLayerTransform() there) still gives it exactly one undo
-        // step, same fallback relationship setAdjustment() has with
-        // DocumentModel's per-call AutoHistoryStep.
-        logHistory("Transform layer");
-    }
 }
 void DocumentController::beginLayerTransformEdit() {
     if (m_layerTransformEditOpen) return;
@@ -777,10 +772,6 @@ void DocumentController::commitLayerTransformEdit() {
     // itself detects and skips a no-op interaction (press without moving),
     // via transactionChangedAnything()'s layer check.
     m_document.commitHistoryTransaction();
-    if (!m_pendingLayerTransformLabel.isEmpty()) {
-        logHistory(m_pendingLayerTransformLabel);
-        m_pendingLayerTransformLabel.clear();
-    }
 }
 void DocumentController::exportBatch(const QUrl& dir,const QStringList& fmts){
     m_exportService.exportBatch(m_document,dir.toLocalFile(),fmts);
@@ -883,19 +874,11 @@ void DocumentController::buildHqPreview() {
 // ── Target-aware setAdjustment (issue 5) ─────────────────────────────────────
 void DocumentController::setAdjustment(lumen::AdjustmentType type,double value) {
     if (qFuzzyCompare(m_document.scalarAdjustmentForTarget(type, m_activeAdjustmentTarget) + 1.0, value + 1.0)) return;
+    // DocumentModel::setScalarAdjustmentForTarget() now builds its own
+    // descriptive label from type+value ("Exposure: 1.50") and writes it
+    // straight into the real undo-stack entry -- whether that's a
+    // standalone entry (no drag in progress) or a refresh of the
+    // outer transaction opened by beginAdjustmentEdit() (mid-drag). No
+    // separate label bookkeeping is needed here anymore.
     m_document.setScalarAdjustmentForTarget(type, value, m_activeAdjustmentTarget);
-    const QString name=lumen::adjustmentTypeToString(type);
-    const QString scope = m_activeAdjustmentTarget.isEmpty() ? QString() : " (mask)";
-    const QString label = name[0].toUpper()+name.mid(1)+scope+" \u2192 "+QString::number(value,'f',2);
-    if (m_adjustmentEditOpen) {
-        // Overwritten every tick during a drag -- only the LAST (final)
-        // value actually gets logged, in commitAdjustmentEdit().
-        m_pendingAdjustmentLabel = label;
-    } else {
-        // No drag in progress (e.g. the click-to-edit numeric TextInput, or
-        // a rotate/flip button): log immediately, matching pre-existing
-        // single-click behavior. DocumentModel's own AutoHistoryStep gives
-        // this exactly one undo step too, with no extra work needed here.
-        logHistory(label);
-    }
 }

@@ -197,7 +197,6 @@ private:
     void buildHqPreview();
     // Issue 5: target-aware adjustment plumbing (replaces setAdjustment(type,value))
     void setAdjustment(lumen::AdjustmentType type, double value);
-    void logHistory(const QString& label);
     void addRecentFile(const QString& path);
     [[nodiscard]] QString localPath(const QUrl& url) const;
     // Returns the mask id that paint tools (brush/gradient/radial/AI mask)
@@ -258,7 +257,6 @@ private:
     QTimer*  m_maskSaveTimer     = nullptr;
     bool     m_hasPendingRecovery = false;
     bool     m_cropActive        = false;
-    QStringList m_historyLog;
 
     // Issue 5
     QString  m_activeAdjustmentTarget;   // "" = Full Image, else mask id
@@ -267,12 +265,9 @@ private:
 
     // Grouped undo/redo for adjustment sliders (see beginAdjustmentEdit()).
     bool     m_adjustmentEditOpen = false;
-    QString  m_pendingAdjustmentLabel;   // last (final) value's log line, written to
-                                          // m_historyLog only when the drag commits
 
     // Grouped undo/redo for layer transform drags (see
     // beginLayerTransformEdit()) -- same pattern as the adjustment-edit
     // members just above.
     bool     m_layerTransformEditOpen = false;
-    QString  m_pendingLayerTransformLabel;
 };
