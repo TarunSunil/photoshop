@@ -109,8 +109,7 @@ QImage RenderPipeline::renderWithLayers(
     // -- Step 4: composite overlay layers (issue 6), each applying its own
     //    layer-scoped masked adjustments to its own pixels first --------
     if (overlayLayers.size() > 1) {
-        compositeOverlayLayers(result, overlayLayers, layerImages, previewScale,
-                               baseSource.size(), maskAdjLayers);
+        compositeOverlayLayers(result, overlayLayers, layerImages, previewScale, maskAdjLayers);
     }
 
     return result;
@@ -118,12 +117,34 @@ QImage RenderPipeline::renderWithLayers(
 
 // ── Overlay layer compositing (issue 6) ───────────────────────────────────────
 
+QTransform RenderPipeline::canvasToLayerLocalTransform(
+    const Layer& layer, QSize baseImageSize, QSize nativeImgSize, bool* ok)
+{
+    if (ok) *ok = false;
+    if (nativeImgSize.width() <= 0 || nativeImgSize.height() <= 0)
+        return QTransform();
+
+    const double cxNative = baseImageSize.width()  * 0.5 + layer.posX;
+    const double cyNative = baseImageSize.height() * 0.5 + layer.posY;
+    const double dwNative = nativeImgSize.width()  * layer.scaleX;
+    const double dhNative = nativeImgSize.height() * layer.scaleY;
+    if (dwNative < 1.0 || dhNative < 1.0) return QTransform();
+
+    QTransform localToBase;
+    localToBase.translate(cxNative, cyNative);
+    if (!qFuzzyIsNull(layer.rotation)) localToBase.rotate(layer.rotation);
+    localToBase.translate(-dwNative * 0.5, -dhNative * 0.5);
+    localToBase.scale(dwNative / nativeImgSize.width(), dhNative / nativeImgSize.height());
+
+    if (ok) *ok = true;
+    return localToBase.inverted();
+}
+
 void RenderPipeline::compositeOverlayLayers(
     QImage& canvas,
     const QVector<Layer>& layers,
     const QHash<QString, QImage>& layerImages,
     double scale,
-    QSize baseImageSize,
     const std::vector<MaskAdjLayer>& maskAdjLayers) const
 {
     // Sort by order so base (order==0) is bottom, overlays are on top.
@@ -142,43 +163,23 @@ void RenderPipeline::compositeOverlayLayers(
         if (img.isNull()) continue;
 
         // Apply this layer's OWN masked adjustments to its OWN pixels
-        // before compositing -- masks are always painted/stored at
-        // base-image native pixel resolution (MaskCanvas.qml is sized to
-        // the base canvas regardless of which layer is selected, and
-        // DocumentController always upsamples to document.sourceSize()),
-        // so a layer-scoped mask has to be warped from base-image pixel
-        // space into THIS layer's own native pixel space first. That warp
-        // is the exact INVERSE of the placement transform this same loop
-        // already uses below to draw the layer onto the canvas -- built
-        // here at NATIVE, unscaled resolution (deliberately ignoring the
-        // preview `scale` factor, since both `img` and every mask are
-        // already at native resolution; only the final draw onto `canvas`
-        // needs to account for preview scale, unchanged further down).
+        // before compositing. Layer-scoped masks are already baked into
+        // THIS layer's own native pixel space at paint-commit time (see
+        // DocumentController::bakeMaskForTarget()) -- they are applied
+        // directly here, with no further warping, and are therefore
+        // naturally carried along by the SAME placement transform used
+        // to draw `img` onto the canvas below. This is the fix for
+        // "overlay masks don't follow the overlay": the previous design
+        // re-derived the mask's placement from the layer's CURRENT
+        // transform on every render (via what's now
+        // canvasToLayerLocalTransform()), which meant moving the layer
+        // sampled "whatever's now under the new position" instead of the
+        // mask staying attached to the layer's own surface.
         for (const auto& ml : maskAdjLayers) {
             if (ml.targetLayerId != layer.id || ml.adjustments.isEmpty() || ml.mask.isNull()) continue;
-
-            const double cxNative = baseImageSize.width()  * 0.5 + layer.posX;
-            const double cyNative = baseImageSize.height() * 0.5 + layer.posY;
-            const double dwNative = img.width()  * layer.scaleX;
-            const double dhNative = img.height() * layer.scaleY;
-            if (dwNative < 1.0 || dhNative < 1.0) continue;
-
-            QTransform localToBase;
-            localToBase.translate(cxNative, cyNative);
-            if (!qFuzzyIsNull(layer.rotation)) localToBase.rotate(layer.rotation);
-            localToBase.translate(-dwNative * 0.5, -dhNative * 0.5);
-            localToBase.scale(dwNative / img.width(), dhNative / img.height());
-            const QTransform baseToLocal = localToBase.inverted();
-
-            QImage localMask(img.width(), img.height(), QImage::Format_ARGB32);
-            localMask.fill(Qt::transparent);
-            {
-                QPainter mp(&localMask);
-                mp.setRenderHint(QPainter::SmoothPixmapTransform, true);
-                mp.setTransform(baseToLocal);
-                mp.drawImage(QRectF(0, 0, ml.mask.width(), ml.mask.height()), ml.mask);
-            }
-
+            const QImage localMask = (ml.mask.size() == img.size())
+                ? ml.mask
+                : ml.mask.scaled(img.size(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
             img = applyAdjustments(img, ml.adjustments, localMask);
         }
 

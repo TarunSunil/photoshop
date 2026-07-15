@@ -306,11 +306,21 @@ bool ProjectStore::loadProject(DocumentModel& document, const QString& path) con
             }
         }
 
-        if (ok && query.exec("SELECT type, parameters FROM adjustments WHERE enabled = 1 ORDER BY order_index")) {
+        // Restore adjustments, preserving which target (Full Image or a
+        // specific mask) each one belongs to. Previously this used the
+        // legacy GLOBAL-ONLY setScalarAdjustment(), which always writes
+        // with targetMaskId="" regardless of the row's actual
+        // target_mask_id -- meaning every mask-scoped adjustment (now
+        // including layer-scoped ones) got silently reapplied as if it
+        // were a full-image adjustment, and multiple adjustments of the
+        // same type but different targets would overwrite each other in
+        // whatever order they were read.
+        if (ok && query.exec("SELECT type, parameters, target_mask_id FROM adjustments WHERE enabled = 1 ORDER BY order_index")) {
             while (query.next()) {
                 const AdjustmentType type = adjustmentTypeFromString(query.value(0).toString());
                 const QJsonObject parameters = QJsonDocument::fromJson(query.value(1).toString().toUtf8()).object();
-                document.setScalarAdjustment(type, parameters.value("value").toDouble(0.0));
+                const QString targetMaskId = query.value(2).toString();
+                document.setScalarAdjustmentForTarget(type, parameters.value("value").toDouble(0.0), targetMaskId);
             }
         }
 

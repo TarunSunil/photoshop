@@ -218,6 +218,38 @@ private:
     // mask is being edited doesn't paint new strokes on top of stale content
     // left over from whichever mask was active before.
     void syncBrushEngineToTarget(const QString& targetId);
+    // Root-cause fix for "overlay masks don't follow the overlay": a
+    // layer-scoped mask's pixel data is baked into its owning layer's own
+    // native pixel space (rather than staying in fixed base-image canvas
+    // space) at paint-commit time, using that layer's CURRENT transform.
+    // From then on the render pipeline applies it directly (see
+    // RenderPipeline::canvasToLayerLocalTransform()), so the mask is
+    // naturally carried along by whatever transform the layer has at
+    // render time, instead of being re-sampled against it every render.
+    //
+    // bakeMaskForTarget:   canvas/base-image space -> layer-local space (storage)
+    // unbakeMaskFromTarget: layer-local space -> canvas space (for continued
+    //                       painting -- MaskCanvas.qml always works in
+    //                       canvas space regardless of which layer a mask
+    //                       belongs to)
+    // Both are no-ops (return the input unchanged) for base-image-scoped
+    // masks (targetLayerId empty), which is the only kind that existed
+    // before layer-aware masking and needs no conversion either way.
+    [[nodiscard]] QImage bakeMaskForTarget(const QString& maskId, const QImage& canvasSpaceMask) const;
+    [[nodiscard]] QImage unbakeMaskFromTarget(const QString& maskId, const QImage& storedMask) const;
+    // Shared warp used by both directions above: draws `source` through
+    // `transform` into a fresh transparent image of `outputSize`.
+    [[nodiscard]] QImage warpMask(const QImage& source, const QTransform& transform, QSize outputSize) const;
+    // Resolves a mask id to its owning Layer (false if base-scoped, or if
+    // the owning layer no longer exists).
+    [[nodiscard]] bool findMaskOwnerLayer(const QString& maskId, lumen::Layer& outLayer) const;
+    // Clears m_activeAdjustmentTarget (falling back to Full Image) if it
+    // currently points to a mask id that no longer exists in the
+    // document -- e.g. because the layer that owned it was just deleted,
+    // or a structural undo/redo stepped past whatever created it. Shared
+    // by deleteLayer() and resyncAfterStructuralHistory(), which both
+    // need exactly this check.
+    void clearAdjustmentTargetIfDangling();
     void saveMaskToTemp(const QString& maskId);
     void flushMaskSave();
     void setAiBusy(bool busy);

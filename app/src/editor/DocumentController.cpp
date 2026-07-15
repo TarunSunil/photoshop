@@ -286,6 +286,16 @@ void DocumentController::setActiveAdjustmentTarget(const QString& targetMaskId) 
     if (m_activeAdjustmentTarget == targetMaskId) return;
     if (m_maskSaveTimer && m_maskSaveTimer->isActive()) { m_maskSaveTimer->stop(); flushMaskSave(); }
     m_activeAdjustmentTarget = targetMaskId;
+    // Root-cause fix: m_selectedLayerId (the Transform gizmo's selection)
+    // is reused to decide which layer a NEWLY PAINTED mask belongs to
+    // (see ensurePaintTarget()). Explicitly switching to "Full Image"
+    // here is a clear signal the user's editing focus has moved off any
+    // specific overlay -- without this, a stale selectedLayerId left over
+    // from earlier overlay work would silently scope the next "base"
+    // mask the user paints to that overlay instead, even though nothing
+    // on screen still shows it selected.
+    if (targetMaskId.isEmpty() && !m_selectedLayerId.isEmpty())
+        setSelectedLayerId(QString());
     syncBrushEngineToTarget(m_activeAdjustmentTarget);
     emit activeAdjustmentTargetChanged();
     emit adjustmentsChanged();   // sliders must re-read values for the new target
@@ -453,6 +463,58 @@ void DocumentController::paintMaskStroke(double x, double y, double radius, bool
     if (!m_document.hasDocument() || !m_brushEngine) return;
     m_pendingStrokes.append({x, y, radius, erase});
 }
+bool DocumentController::findMaskOwnerLayer(const QString& maskId, lumen::Layer& outLayer) const {
+    QString targetLayerId;
+    for (const lumen::Mask& m : m_document.masks())
+        if (m.id == maskId) { targetLayerId = m.targetLayerId; break; }
+    if (targetLayerId.isEmpty()) return false;
+    for (const lumen::Layer& l : m_document.layers())
+        if (l.id == targetLayerId) { outLayer = l; return true; }
+    return false; // owning layer no longer exists (shouldn't normally happen -- deleteLayer() cleans up its masks)
+}
+
+QImage DocumentController::warpMask(const QImage& source, const QTransform& transform, QSize outputSize) const {
+    QImage result(outputSize, QImage::Format_ARGB32);
+    result.fill(Qt::transparent);
+    QPainter p(&result);
+    p.setRenderHint(QPainter::SmoothPixmapTransform, true);
+    p.setTransform(transform);
+    p.drawImage(QRectF(0, 0, source.width(), source.height()), source);
+    return result;
+}
+
+QImage DocumentController::bakeMaskForTarget(const QString& maskId, const QImage& canvasSpaceMask) const {
+    lumen::Layer owner;
+    if (!findMaskOwnerLayer(maskId, owner)) return canvasSpaceMask; // base image -- already correct space
+    const QImage layerImg = m_document.layerImage(owner.id);
+    if (layerImg.isNull()) return canvasSpaceMask;
+    bool ok = false;
+    const QTransform canvasToLocal = lumen::RenderPipeline::canvasToLayerLocalTransform(
+        owner, m_document.sourceSize(), layerImg.size(), &ok);
+    if (!ok) return canvasSpaceMask;
+    return warpMask(canvasSpaceMask, canvasToLocal, layerImg.size());
+}
+
+QImage DocumentController::unbakeMaskFromTarget(const QString& maskId, const QImage& storedMask) const {
+    lumen::Layer owner;
+    if (!findMaskOwnerLayer(maskId, owner)) return storedMask; // base image -- already canvas space
+    if (storedMask.isNull()) return storedMask;
+    bool ok = false;
+    const QTransform canvasToLocal = lumen::RenderPipeline::canvasToLayerLocalTransform(
+        owner, m_document.sourceSize(), storedMask.size(), &ok);
+    if (!ok) return storedMask;
+    return warpMask(storedMask, canvasToLocal.inverted(), m_document.sourceSize());
+}
+
+void DocumentController::clearAdjustmentTargetIfDangling() {
+    if (m_activeAdjustmentTarget.isEmpty()) return;
+    for (const lumen::Mask& mask : m_document.masks())
+        if (mask.id == m_activeAdjustmentTarget) return; // still exists, nothing to do
+    m_activeAdjustmentTarget.clear();
+    emit activeAdjustmentTargetChanged();
+    emit adjustmentsChanged();
+}
+
 void DocumentController::commitMaskPaint() {
     if (m_maskSaveTimer && m_maskSaveTimer->isActive()) m_maskSaveTimer->stop();
     if (!m_brushEngine) return;
@@ -475,14 +537,18 @@ void DocumentController::commitMaskPaint() {
         m_brushEngine->paintStroke(QPointF(s.x * scale, s.y * scale), s.radius * scale, 0.85, s.erase);
     m_pendingStrokes.clear();
     // Issue 4: brush engine is capped resolution; upsample before storing.
-    m_document.setMaskImage(targetId, upsampleMaskToSource(m_brushEngine->mask(), srcSz));
+    const QImage canvasSpaceMask = upsampleMaskToSource(m_brushEngine->mask(), srcSz);
+    // Bake into the target's own layer-local space if it's layer-scoped
+    // (no-op for base-image-scoped masks) -- see bakeMaskForTarget()'s
+    // comment for why.
+    m_document.setMaskImage(targetId, bakeMaskForTarget(targetId, canvasSpaceMask));
     saveMaskToTemp(targetId);
     emit maskChanged();
 }
 void DocumentController::flushMaskSave() {
     if (!m_brushEngine || m_activeAdjustmentTarget.isEmpty()) return;
-    m_document.setMaskImage(m_activeAdjustmentTarget,
-                             upsampleMaskToSource(m_brushEngine->mask(), m_document.sourceSize()));
+    const QImage canvasSpaceMask = upsampleMaskToSource(m_brushEngine->mask(), m_document.sourceSize());
+    m_document.setMaskImage(m_activeAdjustmentTarget, bakeMaskForTarget(m_activeAdjustmentTarget, canvasSpaceMask));
     saveMaskToTemp(m_activeAdjustmentTarget); emit maskChanged();
 }
 void DocumentController::clearMask() {
@@ -529,9 +595,16 @@ void DocumentController::syncBrushEngineToTarget(const QString& targetId) {
     buffer.fill(Qt::transparent);
     const QImage existing = m_document.maskImage(targetId);
     if (!existing.isNull()) {
+        // If this mask is layer-scoped, its STORED content lives in that
+        // layer's own native pixel space (see bakeMaskForTarget()) --
+        // convert it back to canvas space before loading it into the
+        // brush engine's canvas-space paint buffer, so it lines up
+        // visually with the layer's current on-screen position/rotation
+        // for continued painting. No-op for base-image-scoped masks.
+        const QImage canvasSpaceExisting = unbakeMaskFromTarget(targetId, existing);
         QPainter p(&buffer);
         p.drawImage(QRect(QPoint(0,0), beSz),
-                    existing.scaled(beSz, Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
+                    canvasSpaceExisting.scaled(beSz, Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
     }
     m_brushEngine->mask() = buffer;
 }
@@ -544,14 +617,7 @@ void DocumentController::resyncAfterStructuralHistory() {
     // The currently-selected mask target may not exist at this point in
     // history (e.g. undoing past the crop/AI op that created it) -- fall
     // back to Full Image rather than pointing at a dangling id.
-    bool targetStillExists = m_activeAdjustmentTarget.isEmpty();
-    for (const lumen::Mask& mask : m_document.masks())
-        if (mask.id == m_activeAdjustmentTarget) { targetStillExists = true; break; }
-    if (!targetStillExists) {
-        m_activeAdjustmentTarget.clear();
-        emit activeAdjustmentTargetChanged();
-        emit adjustmentsChanged();
-    }
+    clearAdjustmentTargetIfDangling();
     syncBrushEngineToTarget(m_activeAdjustmentTarget);
 
     for (const QString& oldPath : std::as_const(m_maskTempPaths)) QFile::remove(oldPath);
@@ -574,7 +640,8 @@ void DocumentController::applyGradientMask(double x1,double y1,double x2,double 
     p.fillRect(QRectF(0,0,beSz.width(),beSz.height()),grad); p.end();
     if (!m_brushEngine) m_brushEngine = std::make_unique<lumen::BrushEngine>(beSz);
     m_brushEngine->mask() = mask;
-    m_document.setMaskImage(targetId, upsampleMaskToSource(mask, sz));
+    const QImage canvasSpaceMask = upsampleMaskToSource(mask, sz);
+    m_document.setMaskImage(targetId, bakeMaskForTarget(targetId, canvasSpaceMask));
     saveMaskToTemp(targetId); emit maskChanged();
 }
 void DocumentController::applyRadialMask(double cx,double cy,double radius) {
@@ -593,7 +660,8 @@ void DocumentController::applyRadialMask(double cx,double cy,double radius) {
     p.fillRect(QRectF(0,0,beSz.width(),beSz.height()),grad); p.end();
     if (!m_brushEngine) m_brushEngine = std::make_unique<lumen::BrushEngine>(beSz);
     m_brushEngine->mask() = mask;
-    m_document.setMaskImage(targetId, upsampleMaskToSource(mask, sz));
+    const QImage canvasSpaceMask = upsampleMaskToSource(mask, sz);
+    m_document.setMaskImage(targetId, bakeMaskForTarget(targetId, canvasSpaceMask));
     saveMaskToTemp(targetId); emit maskChanged();
 }
 void DocumentController::applyCrop(int x,int y,int w,int h) {
@@ -772,6 +840,20 @@ void DocumentController::addImageLayer(const QUrl& url){
 void DocumentController::deleteLayer(const QString& id){
     if (m_selectedLayerId == id) setSelectedLayerId(QString());
     m_document.deleteLayer(id);
+    // DocumentModel::deleteLayer() removes any masks scoped to this
+    // layer (see its own comment) via the generic changed() signal,
+    // which this controller's changed()-forwarding only maps to
+    // documentChanged/adjustmentsChanged/layersChanged -- NOT
+    // maskChanged, which is what maskList/adjustmentTargets/hasMask/
+    // maskUrl all depend on for their NOTIFY. Without this, those stay
+    // stale: a deleted layer's mask keeps showing up in the Masks
+    // dropdown even though the underlying data is already gone. Also
+    // clear the active target if it pointed at one of the
+    // now-removed masks, same as resyncAfterStructuralHistory() already
+    // does for undo/redo of a structural change.
+    clearAdjustmentTargetIfDangling();
+    syncBrushEngineToTarget(m_activeAdjustmentTarget);
+    emit maskChanged();
 }
 void DocumentController::setLayerOpacity(const QString& id,double o){m_document.setLayerOpacity(id,o);}
 void DocumentController::setLayerVisible(const QString& id,bool v){m_document.setLayerVisible(id,v);}
