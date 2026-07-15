@@ -91,8 +91,13 @@ QImage RenderPipeline::renderWithLayers(
     QImage result = applyAdjustments(scaledSrc, globalAdjustments, {}, cancelled);
     if (result.isNull() || (cancelled && *cancelled)) return {};
 
-    // -- Step 3: apply per-mask local adjustments (issue 5) -------------------
+    // -- Step 3: apply per-mask local adjustments, BASE-IMAGE-scoped masks
+    //    only (issue 5). Masks scoped to a specific overlay layer (see
+    //    Mask::targetLayerId / MaskAdjLayer::targetLayerId) must never
+    //    affect the base composite -- those are applied to that layer's
+    //    own pixels inside compositeOverlayLayers() below instead. -------
     for (const auto& ml : maskAdjLayers) {
+        if (!ml.targetLayerId.isEmpty()) continue;
         if (cancelled && *cancelled) return {};
         if (ml.adjustments.isEmpty()) continue;
         QImage scaledMask = ml.mask.isNull() ? QImage()
@@ -101,9 +106,11 @@ QImage RenderPipeline::renderWithLayers(
         if (result.isNull()) return {};
     }
 
-    // -- Step 4: composite overlay layers (issue 6) ---------------------------
+    // -- Step 4: composite overlay layers (issue 6), each applying its own
+    //    layer-scoped masked adjustments to its own pixels first --------
     if (overlayLayers.size() > 1) {
-        compositeOverlayLayers(result, overlayLayers, layerImages, previewScale);
+        compositeOverlayLayers(result, overlayLayers, layerImages, previewScale,
+                               baseSource.size(), maskAdjLayers);
     }
 
     return result;
@@ -115,7 +122,9 @@ void RenderPipeline::compositeOverlayLayers(
     QImage& canvas,
     const QVector<Layer>& layers,
     const QHash<QString, QImage>& layerImages,
-    double scale) const
+    double scale,
+    QSize baseImageSize,
+    const std::vector<MaskAdjLayer>& maskAdjLayers) const
 {
     // Sort by order so base (order==0) is bottom, overlays are on top.
     QVector<Layer> sorted = layers;
@@ -129,8 +138,49 @@ void RenderPipeline::compositeOverlayLayers(
 
     for (const Layer& layer : sorted) {
         if (layer.order == 0 || !layer.visible) continue;  // skip base layer
-        const QImage img = layerImages.value(layer.id);
+        QImage img = layerImages.value(layer.id);
         if (img.isNull()) continue;
+
+        // Apply this layer's OWN masked adjustments to its OWN pixels
+        // before compositing -- masks are always painted/stored at
+        // base-image native pixel resolution (MaskCanvas.qml is sized to
+        // the base canvas regardless of which layer is selected, and
+        // DocumentController always upsamples to document.sourceSize()),
+        // so a layer-scoped mask has to be warped from base-image pixel
+        // space into THIS layer's own native pixel space first. That warp
+        // is the exact INVERSE of the placement transform this same loop
+        // already uses below to draw the layer onto the canvas -- built
+        // here at NATIVE, unscaled resolution (deliberately ignoring the
+        // preview `scale` factor, since both `img` and every mask are
+        // already at native resolution; only the final draw onto `canvas`
+        // needs to account for preview scale, unchanged further down).
+        for (const auto& ml : maskAdjLayers) {
+            if (ml.targetLayerId != layer.id || ml.adjustments.isEmpty() || ml.mask.isNull()) continue;
+
+            const double cxNative = baseImageSize.width()  * 0.5 + layer.posX;
+            const double cyNative = baseImageSize.height() * 0.5 + layer.posY;
+            const double dwNative = img.width()  * layer.scaleX;
+            const double dhNative = img.height() * layer.scaleY;
+            if (dwNative < 1.0 || dhNative < 1.0) continue;
+
+            QTransform localToBase;
+            localToBase.translate(cxNative, cyNative);
+            if (!qFuzzyIsNull(layer.rotation)) localToBase.rotate(layer.rotation);
+            localToBase.translate(-dwNative * 0.5, -dhNative * 0.5);
+            localToBase.scale(dwNative / img.width(), dhNative / img.height());
+            const QTransform baseToLocal = localToBase.inverted();
+
+            QImage localMask(img.width(), img.height(), QImage::Format_ARGB32);
+            localMask.fill(Qt::transparent);
+            {
+                QPainter mp(&localMask);
+                mp.setRenderHint(QPainter::SmoothPixmapTransform, true);
+                mp.setTransform(baseToLocal);
+                mp.drawImage(QRectF(0, 0, ml.mask.width(), ml.mask.height()), ml.mask);
+            }
+
+            img = applyAdjustments(img, ml.adjustments, localMask);
+        }
 
         painter.save();
         painter.setOpacity(layer.opacity);
@@ -175,7 +225,7 @@ QImage RenderPipeline::renderFullResolution(const DocumentModel& doc) const {
         if (mask.mask.isNull()) continue;
         const QVector<Adjustment> maskAdjs = doc.adjustmentsForTarget(mask.id);
         if (maskAdjs.isEmpty()) continue;
-        maskAdjLayers.push_back({mask.mask, maskAdjs});
+        maskAdjLayers.push_back({mask.mask, maskAdjs, mask.targetLayerId});
     }
 
     const QVector<Layer> layers = doc.layers();

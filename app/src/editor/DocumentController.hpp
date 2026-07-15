@@ -199,6 +199,14 @@ private:
     void setAdjustment(lumen::AdjustmentType type, double value);
     void addRecentFile(const QString& path);
     [[nodiscard]] QString localPath(const QUrl& url) const;
+    // Resolves a mask's Mask::targetLayerId to a display name -- "Base
+    // Image" for the (default) empty case, the owning layer's current
+    // name if it still exists, or a defensive fallback label if not
+    // (shouldn't normally be reachable since deleteLayer() already
+    // removes masks scoped to a layer being deleted). Shared by
+    // maskList() and adjustmentTargets(), the two places this needs
+    // showing in the UI.
+    [[nodiscard]] QString maskOwnerLayerName(const lumen::Mask& mask) const;
     // Returns the mask id that paint tools (brush/gradient/radial/AI mask)
     // should write into. If no mask is currently selected (activeAdjustmentTarget
     // == "" / Full Image), creates a new mask and switches the active target to

@@ -18,6 +18,8 @@ namespace lumen {
 struct MaskAdjLayer {
     QImage              mask;
     QVector<Adjustment> adjustments;
+    // Empty = base image (see Mask::targetLayerId, which this mirrors).
+    QString             targetLayerId;
 };
 
 class RenderPipeline {
@@ -63,10 +65,18 @@ private:
 
     // Composite overlay layers on top of canvas.
     // scale: factor from source coords to canvas coords (for preview downsample).
+    // baseImageSize: FULL native base-image pixel dimensions -- needed to
+    // correctly warp a layer-scoped mask (always painted/stored at
+    // base-image resolution) into that layer's own native pixel space,
+    // independent of any preview downscaling `scale` already applies.
+    // maskAdjLayers: the full set (base- AND layer-scoped); each overlay
+    // layer applies only the ones whose targetLayerId matches its own id.
     void compositeOverlayLayers(QImage& canvas,
                                 const QVector<Layer>& layers,
                                 const QHash<QString, QImage>& layerImages,
-                                double scale) const;
+                                double scale,
+                                QSize baseImageSize,
+                                const std::vector<MaskAdjLayer>& maskAdjLayers) const;
 
     static std::vector<double> buildCurveLut(const QJsonArray& points);
 };

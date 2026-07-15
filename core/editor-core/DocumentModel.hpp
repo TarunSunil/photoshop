@@ -80,7 +80,10 @@ public:
     // description of the action is only known at the END of it (e.g.
     // applyCrop() knows the final pixel dimensions only after cropping),
     // rather than at beginHistoryTransaction() time.
-    void commitHistoryTransaction(const QString& finalLabel = QString());
+    // asHistoryBoundary marks the pushed entry as a "clean state"
+    // checkpoint (see HistorySnapshot::isHistoryBoundary) -- currently
+    // only resetAdjustments() passes true.
+    void commitHistoryTransaction(const QString& finalLabel = QString(), bool asHistoryBoundary = false);
     // Restores document state to what it was when the currently-open
     // transaction began, without creating an undo entry. Not currently
     // wired to any UI action; available for a future "cancel mid-drag" or
@@ -94,7 +97,9 @@ public:
     // regardless of which mask the user had selected.
     [[nodiscard]] QImage maskImage(const QString& maskId) const;
     void setMaskImage(const QString& maskId, const QImage& image);
-    QString addMask(const QString& name = QString());
+    // targetLayerId: which layer this mask's adjustments apply to (empty =
+    // base image). See Mask::targetLayerId.
+    QString addMask(const QString& name = QString(), const QString& targetLayerId = QString());
     // Removes the mask AND every Adjustment targeting it, so deleting a mask
     // never leaves orphaned per-mask adjustments behind.
     void removeMask(const QString& id);
@@ -196,6 +201,19 @@ private:
         // sourceImage/masks already do for crop/inpaint/upscale.
         QHash<QString, QImage> layerImages;
         bool          structural = false;
+        // Marks this entry as a "clean state" checkpoint (currently only
+        // Reset All uses this). historyLabels() stops and excludes
+        // everything at or before the MOST RECENT such entry, so the
+        // History panel shows an empty timeline right after Reset All --
+        // matching "return to a clean, unedited state" -- while undo()/
+        // redo() treat it as a perfectly ordinary stack entry: undoing it
+        // still restores the exact pre-reset adjustments AND makes the
+        // panel show the full prior timeline again (since historyLabels()
+        // no longer sees a boundary in its way), and redoing it re-hides
+        // that timeline. No separate history mechanism -- this is the
+        // same m_undoStack/m_redoStack entries every other action uses,
+        // with one extra bit that only the DISPLAY function reads.
+        bool          isHistoryBoundary = false;
         QString       label;
     };
     [[nodiscard]] HistorySnapshot captureSnapshot(const QString& label, bool structural) const;

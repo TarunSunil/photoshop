@@ -238,6 +238,13 @@ QVariantList DocumentController::layerModel() const {
 // whatever is there.
 QStringList DocumentController::historyLog() const { return m_document.historyLabels(); }
 
+QString DocumentController::maskOwnerLayerName(const lumen::Mask& mask) const {
+    if (mask.targetLayerId.isEmpty()) return "Base Image";
+    for (const lumen::Layer& l : m_document.layers())
+        if (l.id == mask.targetLayerId) return l.name;
+    return "Deleted layer";
+}
+
 QVariantList DocumentController::maskList() const {
     QVariantList list;
     for (const lumen::Mask& m : m_document.masks()) {
@@ -246,6 +253,11 @@ QVariantList DocumentController::maskList() const {
         e["name"] = m.name;
         const QString path = m_maskTempPaths.value(m.id);
         e["url"]  = path.isEmpty() ? QString() : QUrl::fromLocalFile(path).toString();
+        // Which layer this mask's adjustments apply to (see
+        // Mask::targetLayerId), for display in the Masks panel -- without
+        // this there'd be no way to tell layer-scoped masks apart from
+        // base-image ones just by looking at the list.
+        e["ownerLayerName"] = maskOwnerLayerName(m);
         list.append(e);
     }
     return list;
@@ -257,7 +269,13 @@ QVariantList DocumentController::adjustmentTargets() const {
     QVariantMap full; full["id"] = QString(); full["name"] = "Full Image";
     list.append(full);
     for (const lumen::Mask& m : m_document.masks()) {
-        QVariantMap e; e["id"] = m.id; e["name"] = m.name.isEmpty() ? "Mask" : m.name;
+        // Include which layer this mask belongs to directly in the
+        // dropdown text (this list's "name" field is what the ComboBox's
+        // textRole displays) -- otherwise there'd be no way to tell a
+        // base-image mask apart from an overlay-layer one just by looking
+        // at the selector. See Mask::targetLayerId.
+        const QString baseName = m.name.isEmpty() ? "Mask" : m.name;
+        QVariantMap e; e["id"] = m.id; e["name"] = QString("%1 (%2)").arg(baseName, maskOwnerLayerName(m));
         list.append(e);
     }
     return list;
@@ -395,7 +413,15 @@ void DocumentController::resetAdjustments() {
         lumen::AdjustmentType::Tint, lumen::AdjustmentType::NoiseReduction,
         lumen::AdjustmentType::Sharpening,
     }) m_document.setScalarAdjustmentForTarget(t, 0.0, m_activeAdjustmentTarget, label);
-    m_document.commitHistoryTransaction();
+    // asHistoryBoundary=true: Reset All should return the History panel to
+    // a clean/empty state ("return to unedited"), not just append one more
+    // entry to the visible timeline. Undo still works completely normally
+    // -- it's an ordinary undo-stack entry as far as the actual
+    // undo/redo mechanism is concerned (every adjustment value AND the
+    // prior timeline both come back correctly) -- only historyLabels()'s
+    // DISPLAY hides everything at or before a boundary until it's undone
+    // past. See HistorySnapshot::isHistoryBoundary.
+    m_document.commitHistoryTransaction(label, /*asHistoryBoundary=*/true);
 }
 void DocumentController::rotateClockwise()        { m_document.rotateClockwise(); }
 void DocumentController::rotateCounterClockwise() { m_document.rotateCounterClockwise(); }
@@ -487,7 +513,12 @@ void DocumentController::saveMaskToTemp(const QString& maskId) {
 }
 QString DocumentController::ensurePaintTarget() {
     if (!m_activeAdjustmentTarget.isEmpty()) return m_activeAdjustmentTarget;
-    const QString id = m_document.addMask(QString("Mask %1").arg(m_document.masks().size() + 1));
+    // A mask created while an overlay layer is selected (Layers panel row
+    // click or the Transform gizmo) belongs to THAT layer -- matching the
+    // exact selection concept already used for transforms, not a new one.
+    // Empty m_selectedLayerId (the common case) means base image, same as
+    // every mask before this existed.
+    const QString id = m_document.addMask(QString("Mask %1").arg(m_document.masks().size() + 1), m_selectedLayerId);
     setActiveAdjustmentTarget(id);
     return id;
 }
@@ -654,7 +685,7 @@ void DocumentController::refineEdges() {
 void DocumentController::addNewMaskTarget() {
     if (!m_document.hasDocument()) return;
     const QString name = QString("Mask %1").arg(m_document.masks().size() + 1);
-    const QString id = m_document.addMask(name);
+    const QString id = m_document.addMask(name, m_selectedLayerId);
     setActiveAdjustmentTarget(id);
 }
 
@@ -783,7 +814,7 @@ std::vector<lumen::MaskAdjLayer> DocumentController::buildMaskAdjLayers() const 
     for (const lumen::Mask& mask : m_document.masks()) {
         const auto adjs = m_document.adjustmentsForTarget(mask.id);
         if (adjs.isEmpty() || mask.mask.isNull()) continue;
-        result.push_back({mask.mask, adjs});
+        result.push_back({mask.mask, adjs, mask.targetLayerId});
     }
     return result;
 }

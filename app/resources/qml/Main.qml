@@ -664,7 +664,13 @@ ApplicationWindow {
                                         Row{anchors.fill:parent;anchors.margins:4;spacing:8
                                             Image{width:56;height:36;fillMode:Image.PreserveAspectFit
                                                 source:modelData.url||"";anchors.verticalCenter:parent.verticalCenter}
-                                            Label{text:modelData.name||"Mask";color:"#c8d0e0";font.pixelSize:11;anchors.verticalCenter:parent.verticalCenter}
+                                            Column{anchors.verticalCenter:parent.verticalCenter;spacing:1
+                                                Label{text:modelData.name||"Mask";color:"#c8d0e0";font.pixelSize:11}
+                                                // Which layer this mask belongs to (see Mask::targetLayerId) --
+                                                // without this there's no way to tell layer-scoped masks apart
+                                                // from base-image ones just by looking at the list.
+                                                Label{text:modelData.ownerLayerName||"Base Image";color:"#6366f1";font.pixelSize:9}
+                                            }
                                         }
                                     }
                                     Label{anchors.centerIn:parent;visible:documentController.maskList.length===0

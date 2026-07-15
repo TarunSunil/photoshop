@@ -295,11 +295,12 @@ void DocumentModel::setMaskImage(const QString& maskId, const QImage& image)
     emit changed();
 }
 
-QString DocumentModel::addMask(const QString& name)
+QString DocumentModel::addMask(const QString& name, const QString& targetLayerId)
 {
     Mask m;
     m.id   = makeId();
     m.name = name.isEmpty() ? QString("Mask %1").arg(m_masks.size() + 1) : name;
+    m.targetLayerId = targetLayerId;
     m_masks.push_back(m);
     emit changed();
     return m.id;
@@ -331,9 +332,16 @@ bool DocumentModel::canRedo() const { return !m_redoStack.isEmpty(); }
 
 QStringList DocumentModel::historyLabels() const
 {
+    // Walk from the most recent entry backward, stopping (and excluding)
+    // at the first "clean state" boundary found -- see
+    // HistorySnapshot::isHistoryBoundary. With no boundary anywhere in
+    // the stack, this just returns every label, oldest first, same as
+    // before.
     QStringList labels;
-    labels.reserve(m_undoStack.size());
-    for (const HistorySnapshot& s : m_undoStack) labels.push_back(s.label);
+    for (int i = m_undoStack.size() - 1; i >= 0; --i) {
+        if (m_undoStack[i].isHistoryBoundary) break;
+        labels.prepend(m_undoStack[i].label);
+    }
     return labels;
 }
 
@@ -358,14 +366,21 @@ void DocumentModel::undo()
 {
     if (!canUndo()) return;
     const HistorySnapshot target = m_undoStack.takeLast();
-    m_redoStack.push_back(captureSnapshot(target.label, target.structural));
+    HistorySnapshot redoEntry = captureSnapshot(target.label, target.structural);
+    // Propagate the boundary flag along with the entry -- redoing this
+    // later needs to re-hide the timeline exactly like the original
+    // commit did (see HistorySnapshot::isHistoryBoundary).
+    redoEntry.isHistoryBoundary = target.isHistoryBoundary;
+    m_redoStack.push_back(redoEntry);
     applySnapshot(target);
 }
 void DocumentModel::redo()
 {
     if (!canRedo()) return;
     const HistorySnapshot target = m_redoStack.takeLast();
-    m_undoStack.push_back(captureSnapshot(target.label, target.structural));
+    HistorySnapshot undoEntry = captureSnapshot(target.label, target.structural);
+    undoEntry.isHistoryBoundary = target.isHistoryBoundary;
+    m_undoStack.push_back(undoEntry);
     applySnapshot(target);
 }
 
@@ -470,10 +485,24 @@ void DocumentModel::deleteLayer(const QString& id)
     // structural=true so the pre-delete snapshot's layerImages field (see
     // HistorySnapshot) captures this layer's pixel data before it's
     // removed below, and undo() restores it -- see HistorySnapshot's
-    // comment on layerImages for the bug this fixes.
+    // comment on layerImages for the bug this fixes. m_masks is also part
+    // of the structural snapshot, so the cleanup below is undo/redo-safe
+    // for free -- no separate history handling needed.
     AutoHistoryStep step(*this, QString("Delete layer"), true);
     m_layers.removeIf([&](const Layer& l){ return l.id == id; });
     m_layerImages.remove(id);
+    // Masks scoped to this layer (see Mask::targetLayerId) have nothing
+    // left to apply to once it's gone -- remove them and any adjustments
+    // still targeting them, mirroring exactly how removeMask() already
+    // cleans up orphaned per-mask adjustments. Without this, a deleted
+    // layer's masks would sit in the Masks panel forever, doing nothing.
+    QStringList removedMaskIds;
+    for (const Mask& m : m_masks)
+        if (m.targetLayerId == id) removedMaskIds.push_back(m.id);
+    if (!removedMaskIds.isEmpty()) {
+        m_masks.removeIf([&](const Mask& m) { return m.targetLayerId == id; });
+        m_adjustments.removeIf([&](const Adjustment& a) { return removedMaskIds.contains(a.targetMaskId); });
+    }
     emit changed();
 }
 
@@ -525,11 +554,12 @@ bool DocumentModel::transactionChangedAnything() const
     return false;
 }
 
-void DocumentModel::commitHistoryTransaction(const QString& finalLabel)
+void DocumentModel::commitHistoryTransaction(const QString& finalLabel, bool asHistoryBoundary)
 {
     if (!m_transactionOpen) return;
     m_transactionOpen = false;
     if (!finalLabel.isEmpty()) m_transactionSnapshot.label = finalLabel;
+    m_transactionSnapshot.isHistoryBoundary = asHistoryBoundary;
     if (!transactionChangedAnything()) return; // e.g. slider pressed then released without moving
     m_undoStack.push_back(m_transactionSnapshot);
     if (m_undoStack.size() > 100) m_undoStack.removeFirst();

@@ -35,7 +35,8 @@ CREATE TABLE masks (
     kind TEXT NOT NULL,
     asset_path TEXT,
     feather_radius REAL NOT NULL,
-    inverted INTEGER NOT NULL
+    inverted INTEGER NOT NULL,
+    target_layer_id TEXT DEFAULT ''
 );
 
 CREATE TABLE adjustments (

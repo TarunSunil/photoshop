@@ -44,7 +44,7 @@ bool createSchema(QSqlDatabase& db)
         && exec(query, "CREATE TABLE project (id TEXT PRIMARY KEY, format TEXT NOT NULL, version INTEGER NOT NULL)")
         && exec(query, "CREATE TABLE source_assets (id TEXT PRIMARY KEY, path TEXT NOT NULL, width INTEGER, height INTEGER)")
         && exec(query, "CREATE TABLE layers (id TEXT PRIMARY KEY, name TEXT NOT NULL, kind TEXT NOT NULL, source_asset_id TEXT, opacity REAL NOT NULL, visible INTEGER NOT NULL, locked INTEGER NOT NULL, order_index INTEGER NOT NULL, pos_x REAL NOT NULL DEFAULT 0, pos_y REAL NOT NULL DEFAULT 0, scale_x REAL NOT NULL DEFAULT 1, scale_y REAL NOT NULL DEFAULT 1, rotation REAL NOT NULL DEFAULT 0)")
-        && exec(query, "CREATE TABLE masks (id TEXT PRIMARY KEY, name TEXT NOT NULL, kind TEXT NOT NULL, asset_path TEXT, feather_radius REAL NOT NULL, inverted INTEGER NOT NULL)")
+        && exec(query, "CREATE TABLE masks (id TEXT PRIMARY KEY, name TEXT NOT NULL, kind TEXT NOT NULL, asset_path TEXT, feather_radius REAL NOT NULL, inverted INTEGER NOT NULL, target_layer_id TEXT DEFAULT '')")
         && exec(query, "CREATE TABLE adjustments (id TEXT PRIMARY KEY, type TEXT NOT NULL, parameters TEXT NOT NULL, target_layer_id TEXT, target_mask_id TEXT, enabled INTEGER NOT NULL, order_index INTEGER NOT NULL)")
         && exec(query, "CREATE TABLE history_entries (id TEXT PRIMARY KEY, label TEXT NOT NULL, created_at TEXT NOT NULL)")
         && exec(query, "CREATE TABLE presets (id TEXT PRIMARY KEY, name TEXT NOT NULL, payload TEXT NOT NULL)")
@@ -161,13 +161,14 @@ bool ProjectStore::saveProject(const DocumentModel& document, const QString& pat
                     break;
                 }
             }
-            query.prepare("INSERT INTO masks (id, name, kind, asset_path, feather_radius, inverted) VALUES (?, ?, ?, ?, ?, ?)");
+            query.prepare("INSERT INTO masks (id, name, kind, asset_path, feather_radius, inverted, target_layer_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
             query.addBindValue(mask.id);
             query.addBindValue(mask.name);
             query.addBindValue("brush");
             query.addBindValue(maskAssetPath);
             query.addBindValue(mask.featherRadius);
             query.addBindValue(mask.inverted ? 1 : 0);
+            query.addBindValue(mask.targetLayerId);
             ok = query.exec();
         }
 
@@ -276,7 +277,16 @@ bool ProjectStore::loadProject(DocumentModel& document, const QString& path) con
         // inverted flag -- rather than being dropped entirely, since an
         // empty mask slot is a normal, already-supported state (the same
         // one "+ New Mask" produces before any painting happens).
-        if (ok && query.exec("SELECT id, name, asset_path, feather_radius, inverted FROM masks")) {
+        // Migrate older project files (saved before masks became
+        // layer-aware) that don't have this column yet -- SQLite has no
+        // "ADD COLUMN IF NOT EXISTS", so just attempt it and ignore
+        // failure (which means the column already exists). Existing rows
+        // get the column's DEFAULT '' (base image), matching exactly
+        // their only possible prior behavior -- masks always affected the
+        // base image before this feature existed.
+        query.exec("ALTER TABLE masks ADD COLUMN target_layer_id TEXT DEFAULT ''");
+
+        if (ok && query.exec("SELECT id, name, asset_path, feather_radius, inverted, target_layer_id FROM masks")) {
             while (query.next()) {
                 Mask mask;
                 mask.id            = query.value(0).toString();
@@ -285,6 +295,7 @@ bool ProjectStore::loadProject(DocumentModel& document, const QString& path) con
                 mask.assetPath     = query.value(2).toString();
                 mask.featherRadius = query.value(3).toDouble();
                 mask.inverted      = query.value(4).toInt() != 0;
+                mask.targetLayerId = query.value(5).toString();
                 if (!mask.assetPath.isEmpty()) {
                     QImage img;
                     if (img.load(mask.assetPath)) {
