@@ -199,6 +199,11 @@ QString DocumentController::maskUrl()  const {
     const QString path = m_maskTempPaths.value(m_activeAdjustmentTarget);
     return path.isEmpty() ? QString() : QUrl::fromLocalFile(path).toString();
 }
+QString DocumentController::activeMaskOwnerLayerId() const {
+    for (const lumen::Mask& m : m_document.masks())
+        if (m.id == m_activeAdjustmentTarget) return m.targetLayerId;
+    return QString();
+}
 int  DocumentController::sourceWidth()  const { return m_document.sourceSize().width(); }
 int  DocumentController::sourceHeight() const { return m_document.sourceSize().height(); }
 bool    DocumentController::aiBusy()   const { return m_aiBusy; }
@@ -286,16 +291,6 @@ void DocumentController::setActiveAdjustmentTarget(const QString& targetMaskId) 
     if (m_activeAdjustmentTarget == targetMaskId) return;
     if (m_maskSaveTimer && m_maskSaveTimer->isActive()) { m_maskSaveTimer->stop(); flushMaskSave(); }
     m_activeAdjustmentTarget = targetMaskId;
-    // Root-cause fix: m_selectedLayerId (the Transform gizmo's selection)
-    // is reused to decide which layer a NEWLY PAINTED mask belongs to
-    // (see ensurePaintTarget()). Explicitly switching to "Full Image"
-    // here is a clear signal the user's editing focus has moved off any
-    // specific overlay -- without this, a stale selectedLayerId left over
-    // from earlier overlay work would silently scope the next "base"
-    // mask the user paints to that overlay instead, even though nothing
-    // on screen still shows it selected.
-    if (targetMaskId.isEmpty() && !m_selectedLayerId.isEmpty())
-        setSelectedLayerId(QString());
     syncBrushEngineToTarget(m_activeAdjustmentTarget);
     emit activeAdjustmentTargetChanged();
     emit adjustmentsChanged();   // sliders must re-read values for the new target
@@ -563,6 +558,21 @@ void DocumentController::clearMask() {
     // and emits maskChanged/adjustmentsChanged for us.
     setActiveAdjustmentTarget(QString());
 }
+void DocumentController::deleteMask(const QString& maskId) {
+    if (maskId.isEmpty()) return;
+    if (maskId == m_activeAdjustmentTarget) {
+        clearMask(); // same target -- clearMask() already resets editing focus correctly
+        return;
+    }
+    // A different, non-active mask: remove its data only. Deliberately does
+    // NOT touch m_activeAdjustmentTarget or the brush engine -- deleting a
+    // mask you're not currently editing shouldn't reset what you ARE
+    // currently working on.
+    m_document.removeMask(maskId);
+    const QString oldPath = m_maskTempPaths.take(maskId);
+    if (!oldPath.isEmpty()) QFile::remove(oldPath);
+    emit maskChanged();
+}
 void DocumentController::saveMaskToTemp(const QString& maskId) {
     if (maskId.isEmpty()) return;
     const QImage mask = m_document.maskImage(maskId);
@@ -579,12 +589,16 @@ void DocumentController::saveMaskToTemp(const QString& maskId) {
 }
 QString DocumentController::ensurePaintTarget() {
     if (!m_activeAdjustmentTarget.isEmpty()) return m_activeAdjustmentTarget;
-    // A mask created while an overlay layer is selected (Layers panel row
-    // click or the Transform gizmo) belongs to THAT layer -- matching the
-    // exact selection concept already used for transforms, not a new one.
-    // Empty m_selectedLayerId (the common case) means base image, same as
-    // every mask before this existed.
-    const QString id = m_document.addMask(QString("Mask %1").arg(m_document.masks().size() + 1), m_selectedLayerId);
+    // Part 5 redesign: painting with no target already selected always
+    // creates a BASE-IMAGE mask -- no hidden state involved. A layer-scoped
+    // mask can only be created through the explicit "+ Add Mask" target
+    // chooser (see addNewMaskTarget()), which sets m_activeAdjustmentTarget
+    // directly, so this fallback is never reached for that case. This
+    // replaces the previous design, which silently inferred ownership from
+    // whichever overlay layer happened to still be selected (a hidden,
+    // easily-stale piece of state -- exactly the failure mode reported:
+    // "the selected layer silently resets, mask lands on the wrong target").
+    const QString id = m_document.addMask(QString("Mask %1").arg(m_document.masks().size() + 1));
     setActiveAdjustmentTarget(id);
     return id;
 }
@@ -750,10 +764,10 @@ void DocumentController::refineEdges() {
 // Adjustment entries yet naturally read 0 (see
 // DocumentModel::scalarAdjustmentForTarget), satisfying "new mask resets
 // sliders to zero" without any extra bookkeeping.
-void DocumentController::addNewMaskTarget() {
+void DocumentController::addNewMaskTarget(const QString& targetLayerId) {
     if (!m_document.hasDocument()) return;
     const QString name = QString("Mask %1").arg(m_document.masks().size() + 1);
-    const QString id = m_document.addMask(name, m_selectedLayerId);
+    const QString id = m_document.addMask(name, targetLayerId);
     setActiveAdjustmentTarget(id);
 }
 

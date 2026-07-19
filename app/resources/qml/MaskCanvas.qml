@@ -42,7 +42,38 @@ Canvas {
             const url = docCtrl.maskUrl;
             if (url && isImageLoaded(url)) {
                 ctx.globalAlpha = 0.42;
-                ctx.drawImage(url, 0, 0, width, height);
+                const ownerLayerId = docCtrl.activeMaskOwnerLayerId;
+                if (!ownerLayerId) {
+                    // Base-image-scoped mask: its stored pixels already
+                    // span the whole canvas 1:1, same as before.
+                    ctx.drawImage(url, 0, 0, width, height);
+                } else {
+                    // Layer-scoped mask: its stored pixels are baked into
+                    // THAT layer's own native pixel space (see
+                    // DocumentController::bakeMaskForTarget()), not canvas
+                    // space -- drawing it stretched to (0,0,width,height)
+                    // like a base mask would smear it across the whole
+                    // canvas instead of showing it where the owning layer
+                    // actually sits. Position/scale/rotate to match the
+                    // layer's current on-screen footprint instead, using
+                    // the exact same geometry LayerTransformOverlay.qml
+                    // already uses for its own handles.
+                    const layers = docCtrl.layerModel;
+                    let owner = null;
+                    for (const l of layers) { if (l.realId === ownerLayerId) { owner = l; break; } }
+                    if (owner) {
+                        const canvasScale = docCtrl.sourceWidth > 0 ? width / docCtrl.sourceWidth : 1.0;
+                        const ow = Math.max(1, owner.imgWidth  * owner.scaleX * canvasScale);
+                        const oh = Math.max(1, owner.imgHeight * owner.scaleY * canvasScale);
+                        const ocx = width  * 0.5 + owner.posX * canvasScale;
+                        const ocy = height * 0.5 + owner.posY * canvasScale;
+                        ctx.save();
+                        ctx.translate(ocx, ocy);
+                        if (owner.rotation) ctx.rotate(owner.rotation * Math.PI / 180);
+                        ctx.drawImage(url, -ow / 2, -oh / 2, ow, oh);
+                        ctx.restore();
+                    }
+                }
                 ctx.globalAlpha = 1.0;
             } else if (url) { loadImage(url); }
         }

@@ -42,6 +42,14 @@ class DocumentController final : public QObject {
     Q_PROPERTY(int    activeTool  READ activeTool  WRITE setActiveTool  NOTIFY activeToolChanged)
     Q_PROPERTY(bool   hasMask     READ hasMask     NOTIFY maskChanged)
     Q_PROPERTY(QString maskUrl    READ maskUrl     NOTIFY maskChanged)
+    // Which layer (if any) the CURRENTLY ACTIVE mask's pixel data is baked
+    // into (empty = base image) -- see Mask::targetLayerId. MaskCanvas.qml
+    // needs this to know whether to display maskUrl's PNG stretched across
+    // the whole canvas (base-scoped) or positioned/scaled/rotated to match
+    // an owning overlay's on-screen footprint (layer-scoped), since a
+    // layer-scoped mask's stored pixels are in THAT layer's own native
+    // space, not canvas space.
+    Q_PROPERTY(QString activeMaskOwnerLayerId READ activeMaskOwnerLayerId NOTIFY maskChanged)
     Q_PROPERTY(int sourceWidth    READ sourceWidth  NOTIFY documentChanged)
     Q_PROPERTY(int sourceHeight   READ sourceHeight NOTIFY documentChanged)
     Q_PROPERTY(bool   aiBusy     READ aiBusy      NOTIFY aiBusyChanged)
@@ -88,6 +96,7 @@ public:
     [[nodiscard]] int     activeTool()   const;  void setActiveTool(int tool);
     [[nodiscard]] bool    hasMask()      const;
     [[nodiscard]] QString maskUrl()      const;
+    [[nodiscard]] QString activeMaskOwnerLayerId() const;
     [[nodiscard]] int     sourceWidth()  const;
     [[nodiscard]] int     sourceHeight() const;
     [[nodiscard]] bool    aiBusy()       const;
@@ -138,7 +147,18 @@ public:
     // Issue 5: create a brand-new empty mask slot and switch the editing
     // target to it. Sliders read 0 for a target with no adjustments yet,
     // so this alone satisfies "sliders reset for new mask".
-    Q_INVOKABLE void addNewMaskTarget();
+    // Part 5 redesign: targetLayerId is chosen EXPLICITLY by the caller
+    // (the "+ Add Mask" popover in Main.qml) at the moment of creation --
+    // empty means base image. No longer inferred from selectedLayerId.
+    Q_INVOKABLE void addNewMaskTarget(const QString& targetLayerId = QString());
+    // Deletes an arbitrary mask by id (used by the per-row delete button
+    // in the Masks panel list) -- unlike clearMask(), which always acts on
+    // whichever mask is currently being edited, this can remove any mask
+    // regardless of which one is active. Delegates to clearMask() when the
+    // id happens to match the active target, since that already does the
+    // right additional cleanup (resetting the active edit target) for
+    // exactly that case.
+    Q_INVOKABLE void deleteMask(const QString& maskId);
     // AI
     Q_INVOKABLE void requestAiMask(double x, double y);
     Q_INVOKABLE void applyInpaint();
