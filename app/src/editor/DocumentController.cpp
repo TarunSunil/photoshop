@@ -215,7 +215,7 @@ QVariantList DocumentController::layerModel() const {
         QVariantMap m;
         m["id"]=l.id; m["name"]=l.name; m["opacity"]=l.opacity;
         m["visible"]=l.visible; m["order"]=l.order; m["realId"]=l.id;
-        m["isBase"] = (l.order == 0);
+        m["isBase"] = l.isBaseLayer();   // was: (l.order == 0)
         m["posX"]=l.posX; m["posY"]=l.posY;
         m["scaleX"]=l.scaleX; m["scaleY"]=l.scaleY; m["rotation"]=l.rotation;
         // Layer Transform Gizmo (stage 1): native pixel size of this layer's

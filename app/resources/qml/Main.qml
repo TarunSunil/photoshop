@@ -611,13 +611,13 @@ ApplicationWindow {
                                             Label{text:modelData.name;color:"#c8d0e0";font.pixelSize:11;Layout.fillWidth:true;elide:Text.ElideRight}
                                             Slider{from:0;to:1;value:modelData.opacity;implicitWidth:55;implicitHeight:18
                                                 onMoved:documentController.setLayerOpacity(modelData.realId,value)}
-                                            Button{text:"\u2191";flat:true;implicitWidth:20;implicitHeight:22
+                                            Button{text:"\u2191";visible: !modelData.isBase;flat:true;implicitWidth:20;implicitHeight:22
                                                 onClicked:documentController.moveLayerUp(modelData.realId)
                                                 contentItem:Label{text:"\u2191";color:"#6b7a99";font.pixelSize:12;horizontalAlignment:Text.AlignHCenter}}
-                                            Button{text:"\u2193";flat:true;implicitWidth:20;implicitHeight:22
+                                            Button{text:"\u2193";visible: !modelData.isBase;flat:true;implicitWidth:20;implicitHeight:22
                                                 onClicked:documentController.moveLayerDown(modelData.realId)
                                                 contentItem:Label{text:"\u2193";color:"#6b7a99";font.pixelSize:12;horizontalAlignment:Text.AlignHCenter}}
-                                            Button{text:"\u2715";flat:true;implicitWidth:20;implicitHeight:22
+                                            Button{text:"\u2715";visible: !modelData.isBase;flat:true;implicitWidth:20;implicitHeight:22
                                                 onClicked:documentController.deleteLayer(modelData.realId)
                                                 contentItem:Label{text:"\u2715";color:"#f07070";font.pixelSize:10;horizontalAlignment:Text.AlignHCenter}}
                                         }
@@ -760,7 +760,7 @@ ApplicationWindow {
                                             Image{Layout.preferredWidth:52;Layout.preferredHeight:34;fillMode:Image.PreserveAspectFit
                                                 source:modelData.url||""}
                                             ColumnLayout{spacing:2;Layout.fillWidth:true
-                                                Label{text:modelData.name||"Mask";color:"#c8d0e0";font.pixelSize:11.5}
+                                                Label{text:modelData.name||"Mask";color:"#c8d0e0";font.pixelSize:12}
                                                 // Which layer this mask belongs to (see Mask::targetLayerId) --
                                                 // without this there's no way to tell layer-scoped masks apart
                                                 // from base-image ones just by looking at the list.

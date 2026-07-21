@@ -6,51 +6,40 @@ namespace lumen {
 enum class LayerKind { Image, Adjustment, Text, Shape, Group };
 enum class BlendMode  { Normal, Multiply, Screen, Overlay, SoftLight, HardLight, Difference };
 
+// Identity marker for the document's base/background layer. Set once by
+// DocumentModel::openSourceImage(). Callers should use Layer::isBaseLayer()
+// rather than referencing this directly.
+inline const QString kBaseLayerSourceAssetId = QStringLiteral("source");
+
 struct Layer {
     QString   id;
     QString   name;
     LayerKind kind          = LayerKind::Image;
     BlendMode blendMode     = BlendMode::Normal;
     QString   sourceAssetId;
-    // Original file path this layer's image was loaded from (overlay
-    // layers only, set by DocumentModel::addImageLayer()) -- empty for
-    // the base layer, whose path lives in DocumentModel::sourcePath()
-    // instead. ProjectStore uses this at save time to create this
-    // layer's own source_assets row (the exact same mechanism the base
-    // image already uses, just applied per overlay layer), and
-    // DocumentModel::restoreLayer() sets it back when a project reloads.
     QString   sourcePath;
     double    opacity       = 1.0;
     bool      visible       = true;
     bool      locked        = false;
     int       order         = 0;
 
-    // Text layers
     QString   text;
     QColor    textColor     = Qt::white;
     int       textSize      = 24;
 
-    // Shape layers
     QColor    fillColor     = Qt::black;
     QRectF    shapeRect;
 
-    // Overlay transform (issue 6) — applies to order > 0 image layers.
-    // Positions are in base-image pixels relative to the base canvas centre.
-    // scaleX/scaleY are factors relative to the layer's own pixel dimensions.
-    // rotation is in degrees, clockwise.
     double    posX          = 0.0;
     double    posY          = 0.0;
     double    scaleX        = 1.0;
     double    scaleY        = 1.0;
     double    rotation      = 0.0;
 
-    // Needed by DocumentModel::transactionChangedAnything() to detect
-    // whether a layer-transform (or other layer-metadata) edit inside an
-    // open history transaction actually changed anything, the same way
-    // Adjustment::operator==(...) const = default already does for
-    // adjustment edits. All members here (QString, enums, double, bool,
-    // int, QColor, QRectF) already have operator==, so the default
-    // memberwise comparison is well-formed.
+    // Identity check, independent of render-stacking order -- use this
+    // instead of "order == 0" anywhere the base layer needs to be identified.
+    [[nodiscard]] bool isBaseLayer() const { return sourceAssetId == kBaseLayerSourceAssetId; }
+
     bool operator==(const Layer&) const = default;
 };
 } // namespace lumen

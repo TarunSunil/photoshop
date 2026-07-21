@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
     // or any dependency was missing the process terminated silently.  Those
     // engines are now unique_ptrs (lazy-initialised on first AI use), so this
     // constructor is safe.  The try/catch is kept as a safety net.
-    qDebug() << "Creating DocumentController";
+    qInfo() << "Creating DocumentController";
     DocumentController* docCtrl = nullptr;
     try {
         docCtrl = new DocumentController();
@@ -58,9 +58,18 @@ int main(int argc, char* argv[])
                    "DocumentController initialisation failed with an unknown exception.");
         return -1;
     }
-    qDebug() << "DocumentController created";
-
+    qInfo() << "DocumentController created";
+    qInfo() << "Creating QQmlApplicationEngine";
     QQmlApplicationEngine engine;
+    QObject::connect(
+    &engine,
+    &QQmlApplicationEngine::warnings,
+    [](const QList<QQmlError>& warnings)
+    {
+        qInfo() << "===== QML WARNINGS =====";
+        for (const auto& w : warnings)
+            qInfo().noquote() << w.toString();
+    });
     engine.rootContext()->setContextProperty("documentController", docCtrl);
 
     QObject::connect(
@@ -75,20 +84,46 @@ int main(int argc, char* argv[])
         Qt::QueuedConnection
     );
 
-    qDebug() << "Loading QML module";
-    engine.loadFromModule("LumenForge", "Main");
-    qDebug() << "Root objects:" << engine.rootObjects().size();
+        qInfo() << "Loading QML module";
 
-    if (engine.rootObjects().isEmpty()) {
-        fatalError("QML error", "No root QML object was created.\n"
-                   "The LumenForge QML module could not be loaded.");
-        delete docCtrl;
-        return -1;
+        qInfo() << "Import paths:";
+        for (const auto& p : engine.importPathList())
+            qInfo() << "  -" << p;
+
+        qInfo() << "Before loadFromModule";
+        try
+        {
+            engine.loadFromModule("LumenForge", "Main");
+            qInfo() << "After loadFromModule";
+        }
+        catch (const std::exception& e)
+        {
+            qCritical() << "Exception from loadFromModule:" << e.what();
+            throw;
+        }
+        catch (...)
+        {
+            qCritical() << "Unknown exception from loadFromModule";
+            throw;
+        }
+
+        qInfo() << "Root objects:" << engine.rootObjects().size();
+
+        if (engine.rootObjects().isEmpty())
+        {
+            fatalError(
+                "QML error",
+                "No root QML object was created.\n"
+                "The LumenForge QML module could not be loaded."
+            );
+
+            delete docCtrl;
+            return -1;
+        }
+
+        // Transfer ownership to the engine so docCtrl is cleaned up with the engine.
+        docCtrl->setParent(engine.rootObjects().first());
+
+        qInfo() << "Entering event loop";
+        return QGuiApplication::exec();
     }
-
-    // Transfer ownership to the engine so docCtrl is cleaned up with the engine.
-    docCtrl->setParent(engine.rootObjects().first());
-
-    qDebug() << "Entering event loop";
-    return QGuiApplication::exec();
-}

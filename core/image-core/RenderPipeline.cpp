@@ -158,7 +158,7 @@ void RenderPipeline::compositeOverlayLayers(
     painter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
 
     for (const Layer& layer : sorted) {
-        if (layer.order == 0 || !layer.visible) continue;  // skip base layer
+        if (layer.isBaseLayer() || !layer.visible) continue;  // skip base layer
         QImage img = layerImages.value(layer.id);
         if (img.isNull()) continue;
 

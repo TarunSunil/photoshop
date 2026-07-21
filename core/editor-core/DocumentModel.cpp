@@ -104,8 +104,7 @@ bool DocumentModel::openSourceImage(const QString& path)
     // base layer a second time, rather than relying on order_index (the
     // base layer can be reordered like any other via Main.qml's Move
     // Up/Down buttons, which have no isBase guard).
-    base.sourceAssetId = "source";
-    m_layers.push_back(base);
+    base.sourceAssetId = kBaseLayerSourceAssetId;   // was: "source"    m_layers.push_back(base);
     m_layerImages[base.id] = m_sourceImage;
     emit changed();
     return true;
@@ -458,6 +457,8 @@ void DocumentModel::restoreLayer(const Layer& layer, const QImage& image)
 void DocumentModel::moveLayer(int from, int to)
 {
     if (from < 0 || from >= m_layers.size() || to < 0 || to >= m_layers.size()) return;
+    // Base layer is a fixed background, not reorderable.
+    if (m_layers[from].isBaseLayer() || to == 0) return;
     AutoHistoryStep step(*this, QString("Move layer"), false);
     m_layers.move(from, to);
     for (int i = 0; i < m_layers.size(); ++i) m_layers[i].order = i;
@@ -482,20 +483,13 @@ void DocumentModel::setLayerBlendMode(const QString& id, BlendMode mode)
 void DocumentModel::deleteLayer(const QString& id)
 {
     if (m_layers.size() <= 1) return;
-    // structural=true so the pre-delete snapshot's layerImages field (see
-    // HistorySnapshot) captures this layer's pixel data before it's
-    // removed below, and undo() restores it -- see HistorySnapshot's
-    // comment on layerImages for the bug this fixes. m_masks is also part
-    // of the structural snapshot, so the cleanup below is undo/redo-safe
-    // for free -- no separate history handling needed.
+    const Layer* target = findLayer(id);
+    if (!target || target->isBaseLayer()) return;   // base layer isn't deletable
     AutoHistoryStep step(*this, QString("Delete layer"), true);
     m_layers.removeIf([&](const Layer& l){ return l.id == id; });
     m_layerImages.remove(id);
-    // Masks scoped to this layer (see Mask::targetLayerId) have nothing
-    // left to apply to once it's gone -- remove them and any adjustments
-    // still targeting them, mirroring exactly how removeMask() already
-    // cleans up orphaned per-mask adjustments. Without this, a deleted
-    // layer's masks would sit in the Masks panel forever, doing nothing.
+    // Renumber so order stays a contiguous 0..N-1 sequence, same as moveLayer().
+    for (int i = 0; i < m_layers.size(); ++i) m_layers[i].order = i;
     QStringList removedMaskIds;
     for (const Mask& m : m_masks)
         if (m.targetLayerId == id) removedMaskIds.push_back(m.id);
