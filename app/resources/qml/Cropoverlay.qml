@@ -16,6 +16,7 @@ Item {
     property real boxY: 0
     property real boxW: width
     property real boxH: height
+    property real rotation: 0
 
     // Reset to 90% of the canvas when the overlay appears
     onVisibleChanged: {
@@ -36,7 +37,8 @@ Item {
             Math.round(boxX / width  * sw),
             Math.round(boxY / height * sh),
             Math.round(boxW / width  * sw),
-            Math.round(boxH / height * sh)
+            Math.round(boxH / height * sh),
+            rotation
         );
     }
 
@@ -72,6 +74,8 @@ Item {
         width: cropOverlay.boxW; height: cropOverlay.boxH
         color: "transparent"
         border.color: "white"; border.width: 1
+        rotation: cropOverlay.rotation
+        transformOrigin: Item.Center
 
         // Rule-of-thirds grid — native Rectangle lines (GPU-composited), not a
         // Canvas. The previous Canvas-based version did a full CPU
@@ -138,13 +142,19 @@ Item {
             readonly property bool onRight:  idx === 2 || idx === 3 || idx === 4
             readonly property bool onTop:    idx === 0 || idx === 1 || idx === 2
             readonly property bool onBottom: idx === 4 || idx === 5 || idx === 6
+            readonly property real localHandleX:
+                onLeft ? -cropOverlay.boxW / 2 :
+                onRight ? cropOverlay.boxW / 2 : 0
+            readonly property real localHandleY:
+                onTop ? -cropOverlay.boxH / 2 :
+                onBottom ? cropOverlay.boxH / 2 : 0
+            readonly property real handleCos: Math.cos(cropOverlay.rotation * Math.PI / 180)
+            readonly property real handleSin: Math.sin(cropOverlay.rotation * Math.PI / 180)
 
-            x: (onLeft  ? cropOverlay.boxX :
-                onRight ? cropOverlay.boxX + cropOverlay.boxW :
-                          cropOverlay.boxX + cropOverlay.boxW * 0.5) - 5
-            y: (onTop    ? cropOverlay.boxY :
-                onBottom ? cropOverlay.boxY + cropOverlay.boxH :
-                           cropOverlay.boxY + cropOverlay.boxH * 0.5) - 5
+            x: cropOverlay.boxX + cropOverlay.boxW / 2
+               + localHandleX * handleCos - localHandleY * handleSin - width / 2
+            y: cropOverlay.boxY + cropOverlay.boxH / 2
+               + localHandleX * handleSin + localHandleY * handleCos - height / 2
 
             width: 10; height: 10; radius: 2
             color: "white"
@@ -217,6 +227,20 @@ Item {
         spacing: 8
         z: 20
 
+        Button {
+            text: "\u21ba"
+            implicitWidth: 30; implicitHeight: 30
+            onClicked: cropOverlay.rotation -= 1
+            background: Rectangle { color: parent.hovered ? "#1e2438" : "#171c2a"; radius: 5; border.color: "#252d45" }
+            contentItem: Label { text: parent.text; color: "#c8d0e0"; font.pixelSize: 16; horizontalAlignment: Text.AlignHCenter }
+        }
+        Button {
+            text: "\u21bb"
+            implicitWidth: 30; implicitHeight: 30
+            onClicked: cropOverlay.rotation += 1
+            background: Rectangle { color: parent.hovered ? "#1e2438" : "#171c2a"; radius: 5; border.color: "#252d45" }
+            contentItem: Label { text: parent.text; color: "#c8d0e0"; font.pixelSize: 16; horizontalAlignment: Text.AlignHCenter }
+        }
         Button {
             text: "\u2713  Crop"
             implicitWidth: 86; implicitHeight: 30

@@ -8,7 +8,11 @@
 #include <QUuid>
 #include <QVariantMap>
 #include <QtConcurrent>
+#include <QThread>
+#include <QElapsedTimer>
+#include <QDebug>
 #include <QPainter>
+#include <QTransform>
 #include <QLinearGradient>
 #include <QRadialGradient>
 #ifdef HAVE_OPENCV
@@ -111,10 +115,47 @@ DocumentController::DocumentController(QObject* parent)
     m_maskSaveTimer->setInterval(50);
     connect(m_maskSaveTimer, &QTimer::timeout, this, &DocumentController::flushMaskSave);
 
+    m_edgeRefineTimer = new QTimer(this);
+    m_edgeRefineTimer->setSingleShot(true);
+    m_edgeRefineTimer->setInterval(350);
+    connect(m_edgeRefineTimer, &QTimer::timeout, this, [this]() {
+        if (m_aiBusy) {
+            m_edgeRefinePending = true;
+            return;
+        }
+        refineEdges();
+    });
+
+    m_transformUiTimer = new QTimer(this);
+    m_transformUiTimer->setSingleShot(true);
+    m_transformUiTimer->setInterval(16);
+    connect(m_transformUiTimer, &QTimer::timeout, this, [this]() {
+        emit layersChanged();
+    });
+    m_refinePool.setMaxThreadCount(1);
+    m_refinePool.setThreadPriority(QThread::LowPriority);
+
     connect(&m_document, &lumen::DocumentModel::changed, this, [this]() {
+        if (m_layerTransformEditOpen) {
+            // A transform tick changes only lightweight layer metadata. Do
+            // not rebuild every document binding and QML model for every
+            // native mouse event; publish the latest layer state at ~60 Hz.
+            if (!m_transformUiTimer->isActive()) m_transformUiTimer->start();
+            return;
+        }
         emit documentChanged();
         emit adjustmentsChanged();
         emit layersChanged();
+        // While the brush/eraser is active the QML mask surface is the live
+        // view. Rebuilding the full composite after every stroke competes
+        // with pointer delivery and makes painting feel sticky; the first
+        // non-paint tool change below schedules the committed preview.
+        if (m_activeTool == 1 || m_activeTool == 2) return;
+        // Layer-transform drags update the QML overlay directly from the
+        // live layer model. Avoid starting a full asynchronous composite for
+        // every mouse-move tick; commitLayerTransformEdit() schedules one
+        // preview after the gesture ends.
+        if (m_layerTransformEditOpen) return;
         m_hqTimer->stop();
         *m_hqCancelFlag = true;
         m_previewDebounce->start();
@@ -208,8 +249,12 @@ int  DocumentController::sourceWidth()  const { return m_document.sourceSize().w
 int  DocumentController::sourceHeight() const { return m_document.sourceSize().height(); }
 bool    DocumentController::aiBusy()   const { return m_aiBusy; }
 QString DocumentController::aiStatus() const { return m_aiStatus; }
+QString DocumentController::aiTool()   const { return m_aiTool; }
 
 QVariantList DocumentController::layerModel() const {
+    const bool profile = qEnvironmentVariableIsSet("LUMEN_PROFILE");
+    QElapsedTimer timer;
+    if (profile) timer.start();
     QVariantList list;
     for (const lumen::Layer& l : m_document.layers()) {
         QVariantMap m;
@@ -228,6 +273,9 @@ QVariantList DocumentController::layerModel() const {
         m["imgHeight"] = img.height();
         list.prepend(m);
     }
+    if (profile)
+        qInfo().noquote() << "PROFILE layerModel ms=" << timer.nsecsElapsed()/1000000.0
+                          << "layers=" << list.size();
     return list;
 }
 // historyLog is a direct, live view of m_document's actual undo stack --
@@ -290,6 +338,8 @@ QString DocumentController::activeAdjustmentTarget() const { return m_activeAdju
 void DocumentController::setActiveAdjustmentTarget(const QString& targetMaskId) {
     if (m_activeAdjustmentTarget == targetMaskId) return;
     if (m_maskSaveTimer && m_maskSaveTimer->isActive()) { m_maskSaveTimer->stop(); flushMaskSave(); }
+    if (m_edgeRefineTimer) m_edgeRefineTimer->stop();
+    m_edgeRefinePending = false;
     m_activeAdjustmentTarget = targetMaskId;
     syncBrushEngineToTarget(m_activeAdjustmentTarget);
     emit activeAdjustmentTargetChanged();
@@ -320,10 +370,23 @@ void DocumentController::addRecentFile(const QString& path) {
     emit recentFilesChanged();
 }
 void DocumentController::setAiBusy(bool busy) {
-    if (m_aiBusy == busy) return; m_aiBusy = busy; emit aiBusyChanged();
+    if (m_aiBusy == busy) return;
+    m_aiBusy = busy;
+    emit aiBusyChanged();
+#ifdef HAVE_OPENCV
+    if (!busy && m_edgeRefinePending) {
+        m_edgeRefinePending = false;
+        if (m_edgeRefineTimer) m_edgeRefineTimer->start(50);
+    }
+#endif
 }
 void DocumentController::setAiStatus(const QString& s) {
     m_aiStatus = s; emit aiStatusChanged();
+}
+void DocumentController::setAiTool(const QString& tool) {
+    if (m_aiTool == tool) return;
+    m_aiTool = tool;
+    emit aiStatusChanged();
 }
 QString DocumentController::autosavePath() const {
     return QStandardPaths::writableLocation(QStandardPaths::TempLocation)
@@ -349,9 +412,14 @@ void DocumentController::discardRecovery() {
 void DocumentController::setActiveTool(int tool) {
     if (m_activeTool == tool) return;
     if (m_maskSaveTimer && m_maskSaveTimer->isActive()) { m_maskSaveTimer->stop(); flushMaskSave(); }
+    if (tool < 1 || tool > 2) {
+        if (m_edgeRefineTimer) m_edgeRefineTimer->stop();
+        m_edgeRefinePending = false;
+    }
     m_activeTool = tool;
     m_cropActive = (tool == 5);
     emit cropActiveChanged(); emit activeToolChanged();
+    if (tool != 1 && tool != 2) m_previewDebounce->start();
 }
 QString DocumentController::localPath(const QUrl& url) const {
     return url.isLocalFile() ? url.toLocalFile() : url.toString();
@@ -539,6 +607,12 @@ void DocumentController::commitMaskPaint() {
     m_document.setMaskImage(targetId, bakeMaskForTarget(targetId, canvasSpaceMask));
     saveMaskToTemp(targetId);
     emit maskChanged();
+#ifdef HAVE_OPENCV
+    // Coalesce rapid strokes and refine only after the painter pauses. The
+    // refinement itself remains asynchronous, so the brush never waits on
+    // OpenCV work.
+    if (m_edgeRefineTimer) m_edgeRefineTimer->start();
+#endif
 }
 void DocumentController::flushMaskSave() {
     if (!m_brushEngine || m_activeAdjustmentTarget.isEmpty()) return;
@@ -678,7 +752,7 @@ void DocumentController::applyRadialMask(double cx,double cy,double radius) {
     m_document.setMaskImage(targetId, bakeMaskForTarget(targetId, canvasSpaceMask));
     saveMaskToTemp(targetId); emit maskChanged();
 }
-void DocumentController::applyCrop(int x,int y,int w,int h) {
+void DocumentController::applyCrop(int x,int y,int w,int h,double rotation) {
     if (!m_document.hasDocument()) return;
     const QSize sz = m_document.sourceSize();
     const QRect rect(qBound(0,x,sz.width()),qBound(0,y,sz.height()),
@@ -689,6 +763,9 @@ void DocumentController::applyCrop(int x,int y,int w,int h) {
     // fully reverse a crop (previously replaceSourceImage() never
     // participated in undo/redo at all).
     m_document.beginHistoryTransaction("Crop", /*structural=*/true);
+    QTransform cropRotation;
+    cropRotation.rotate(rotation);
+
     // Crop every mask's pixel data by the identical rect BEFORE replacing the
     // source image, so marked regions stay aligned to the same content
     // instead of drifting to absolute canvas coordinates post-crop. Masks are
@@ -698,16 +775,23 @@ void DocumentController::applyCrop(int x,int y,int w,int h) {
     for (const lumen::Mask& mask : m_document.masks()) {
         if (mask.mask.isNull()) continue;
         const QRect clamped = rect.intersected(mask.mask.rect());
-        m_document.setMaskImage(mask.id, clamped.isEmpty() ? QImage() : mask.mask.copy(clamped));
+        const QImage croppedMask = clamped.isEmpty() ? QImage() : mask.mask.copy(clamped);
+        m_document.setMaskImage(mask.id, croppedMask.isNull()
+                                 ? QImage()
+                                 : croppedMask.transformed(cropRotation, Qt::SmoothTransformation));
     }
-    m_document.replaceSourceImage(m_document.sourceImage().copy(rect));
+    const QImage croppedSource = m_document.sourceImage().copy(rect);
+    m_document.replaceSourceImage(croppedSource.transformed(cropRotation, Qt::SmoothTransformation));
     // Final label needs the post-crop size, which is only known now (crop
     // replaced the source image on the line above) -- commitHistoryTransaction()'s
     // optional override exists for exactly this "known only at the end"
     // case, so the pushed undo entry reads e.g. "Crop 4000×3000" directly,
     // no separate logging step needed.
     m_document.commitHistoryTransaction(
-        QString("Crop %1\u00d7%2").arg(m_document.sourceSize().width()).arg(m_document.sourceSize().height()));
+        QString("Crop %1\u00d7%2 (%3\u00b0)")
+            .arg(m_document.sourceSize().width())
+            .arg(m_document.sourceSize().height())
+            .arg(qRound(rotation)));
     m_brushEngine = std::make_unique<lumen::BrushEngine>(brushEngineSize(m_document.sourceSize()));
     syncBrushEngineToTarget(m_activeAdjustmentTarget);
     for (const QString& oldPath : std::as_const(m_maskTempPaths)) QFile::remove(oldPath);
@@ -734,6 +818,7 @@ void DocumentController::refineEdges() {
 #ifdef HAVE_OPENCV
     const QString targetId = m_activeAdjustmentTarget;
     if (!m_document.hasDocument()||targetId.isEmpty()||m_document.maskImage(targetId).isNull()||m_aiBusy) return;
+    setAiTool("Mask edge refinement");
     setAiBusy(true); setAiStatus("Refining edges\u2026");
     const QImage src=m_document.sourceImage(), mask=m_document.maskImage(targetId);
     auto* w = new QFutureWatcher<QImage>(this);
@@ -753,7 +838,8 @@ void DocumentController::refineEdges() {
         } else setAiStatus("Edge refinement failed");
         setAiBusy(false); w->deleteLater();
     });
-    w->setFuture(QtConcurrent::run([src,mask]()->QImage{return refineMaskEdgesOcv(src,mask);}));
+    w->setFuture(QtConcurrent::run(&m_refinePool,
+        [src,mask]()->QImage{return refineMaskEdgesOcv(src,mask);}));
 #else
     setAiStatus("Edge refinement requires OpenCV");
 #endif
@@ -773,6 +859,7 @@ void DocumentController::addNewMaskTarget(const QString& targetLayerId) {
 
 void DocumentController::requestAiMask(double x,double y) {
     if (!m_document.hasDocument()||m_aiBusy) return;
+    setAiTool("Subject mask");
     setAiStatus("Loading mask model\u2026");
     const QImage src=m_document.sourceImage();
     m_aiRuntime.predictMask(src,QPointF(x,y),[this](QImage result,QString error){
@@ -791,6 +878,7 @@ void DocumentController::requestAiMask(double x,double y) {
 void DocumentController::applyInpaint() {
     const QString targetId = m_activeAdjustmentTarget;
     if (!m_document.hasDocument()||targetId.isEmpty()||m_document.maskImage(targetId).isNull()||m_aiBusy) return;
+    setAiTool("Object removal");
     if (!m_inpaintEngine) {
         try { m_inpaintEngine=std::make_unique<lumen::InpaintEngine>(); }
         catch(const std::exception& e) {
@@ -818,6 +906,7 @@ void DocumentController::applyInpaint() {
 }
 void DocumentController::applyUpscale() {
     if (!m_document.hasDocument()||m_aiBusy) return;
+    setAiTool("AI Upscale ×4");
     if (!m_upscaleEngine) {
         try { m_upscaleEngine=std::make_unique<lumen::UpscaleEngine>(); }
         catch(const std::exception& e) {
@@ -871,6 +960,7 @@ void DocumentController::deleteLayer(const QString& id){
 }
 void DocumentController::setLayerOpacity(const QString& id,double o){m_document.setLayerOpacity(id,o);}
 void DocumentController::setLayerVisible(const QString& id,bool v){m_document.setLayerVisible(id,v);}
+void DocumentController::renameLayer(const QString& id,const QString& name){m_document.setLayerName(id,name);}
 void DocumentController::moveLayerUp(const QString& id){
     const auto& layers=m_document.layers();
     for (int i=0;i<layers.size();++i)
@@ -885,11 +975,18 @@ void DocumentController::setLayerTransform(const QString& id,
                                             double posX, double posY,
                                             double scaleX, double scaleY,
                                             double rotation) {
+    if (qEnvironmentVariableIsSet("LUMEN_PROFILE"))
+        qInfo().noquote() << "PROFILE transform event id=" << id;
     m_document.setLayerTransform(id, posX, posY, scaleX, scaleY, rotation);
 }
 void DocumentController::beginLayerTransformEdit() {
     if (m_layerTransformEditOpen) return;
     m_layerTransformEditOpen = true;
+    m_previewDebounce->stop();
+    m_hqTimer->stop();
+    ++m_previewRequestId;
+    *m_cancelFlag = true;
+    *m_hqCancelFlag = true;
     m_document.beginHistoryTransaction("Transform layer");
 }
 void DocumentController::commitLayerTransformEdit() {
@@ -899,6 +996,9 @@ void DocumentController::commitLayerTransformEdit() {
     // itself detects and skips a no-op interaction (press without moving),
     // via transactionChangedAnything()'s layer check.
     m_document.commitHistoryTransaction();
+    if (m_transformUiTimer->isActive()) m_transformUiTimer->stop();
+    emit layersChanged();
+    m_previewDebounce->start();
 }
 void DocumentController::exportBatch(const QUrl& dir,const QStringList& fmts){
     m_exportService.exportBatch(m_document,dir.toLocalFile(),fmts);
@@ -917,6 +1017,9 @@ std::vector<lumen::MaskAdjLayer> DocumentController::buildMaskAdjLayers() const 
 
 // ── Preview (LQ) ──────────────────────────────────────────────────────────────
 void DocumentController::rebuildPreview() {
+    QElapsedTimer profileTimer;
+    const bool profile = qEnvironmentVariableIsSet("LUMEN_PROFILE");
+    if (profile) profileTimer.start();
     if (!m_document.hasDocument()) {
         ++m_previewRequestId; m_previewPath.clear(); emit previewChanged(); return;
     }
@@ -954,10 +1057,17 @@ void DocumentController::rebuildPreview() {
         if (m_previewPending){m_previewPending=false;rebuildPreview();}
     });
     watcher->setFuture(QtConcurrent::run(
-        [pipeline=m_renderPipeline,src,globalAdjs,maskAdjLayers,layers,layerImages,cancelled](){
-            return pipeline.renderWithLayers(src, globalAdjs, maskAdjLayers, layers, layerImages,
-                                             QSize(1400,1050), cancelled);
+        [pipeline=m_renderPipeline,src,globalAdjs,maskAdjLayers,layers,layerImages,cancelled,profile](){
+            QElapsedTimer t; if (profile) t.start();
+            if (profile) qInfo().noquote() << "PROFILE preview worker begin";
+            QImage out = pipeline.renderWithLayers(src, globalAdjs, maskAdjLayers, layers, layerImages,
+                                                   QSize(1400,1050), cancelled);
+            if (profile) qInfo().noquote() << "PROFILE preview worker ms=" << t.nsecsElapsed()/1000000.0;
+            return out;
         }));
+    if (profile)
+        qInfo().noquote() << "PROFILE rebuildPreview dispatch ms="
+                          << profileTimer.nsecsElapsed()/1000000.0;
 }
 
 // ── Preview (HQ — after 1.5 s idle) ──────────────────────────────────────────

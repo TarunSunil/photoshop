@@ -137,6 +137,7 @@ public:
     void setLayerOpacity(const QString& id, double opacity);
     void setLayerVisible(const QString& id, bool visible);
     void setLayerBlendMode(const QString& id, BlendMode mode);
+    void setLayerName(const QString& id, const QString& name);
     void deleteLayer(const QString& id);
 
     // Issue 6: per-layer transform

@@ -5,6 +5,8 @@
 #include <QJsonValue>
 #include <QPainter>
 #include <QTransform>
+#include <QElapsedTimer>
+#include <QDebug>
 #include <QtMath>
 #include <algorithm>
 #ifdef HAVE_OPENCV
@@ -73,6 +75,9 @@ QImage RenderPipeline::renderWithLayers(
     QSize maximumSize,
     std::shared_ptr<std::atomic<bool>> cancelled) const
 {
+    const bool profile = qEnvironmentVariableIsSet("LUMEN_PROFILE");
+    QElapsedTimer profileTimer;
+    if (profile) profileTimer.start();
     if (baseSource.isNull()) return {};
 
     // -- Step 1: scale source to preview size ----------------------------------
@@ -112,6 +117,11 @@ QImage RenderPipeline::renderWithLayers(
         compositeOverlayLayers(result, overlayLayers, layerImages, previewScale, maskAdjLayers);
     }
 
+    if (profile)
+        qInfo().noquote() << "PROFILE renderWithLayers ms="
+                          << profileTimer.nsecsElapsed()/1000000.0
+                          << "size=" << result.size()
+                          << "layers=" << overlayLayers.size();
     return result;
 }
 
@@ -147,6 +157,9 @@ void RenderPipeline::compositeOverlayLayers(
     double scale,
     const std::vector<MaskAdjLayer>& maskAdjLayers) const
 {
+    const bool profile = qEnvironmentVariableIsSet("LUMEN_PROFILE");
+    QElapsedTimer profileTimer;
+    if (profile) profileTimer.start();
     // Sort by order so base (order==0) is bottom, overlays are on top.
     QVector<Layer> sorted = layers;
     std::sort(sorted.begin(), sorted.end(),
@@ -205,6 +218,10 @@ void RenderPipeline::compositeOverlayLayers(
 
     // Convert back to RGBA64 to stay consistent with the rest of the pipeline.
     canvas = comp.convertToFormat(QImage::Format_RGBA64);
+    if (profile)
+        qInfo().noquote() << "PROFILE compositeOverlayLayers ms="
+                          << profileTimer.nsecsElapsed()/1000000.0
+                          << "layers=" << layers.size();
 }
 
 // ── Full-resolution export ────────────────────────────────────────────────────

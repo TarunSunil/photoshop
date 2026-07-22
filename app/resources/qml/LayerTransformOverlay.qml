@@ -183,6 +183,8 @@ Item {
         property real   startImgH:    0
         property bool   freeTransform:false    // Shift held at press time (corner handles only)
         property bool   dragging:     false
+        property int    profileEvents: 0
+        property double profileStartMs: 0
         property real   rotateAngleOffset: 0   // Stage 4: angle(center->pressMouse) - startRotation, held for the whole rotate gesture
 
         function cursorForHandle(h) {
@@ -321,6 +323,11 @@ Item {
 
         onPositionChanged: (mouse) => {
             if (!pressed || dragLayerId.length === 0) return;
+            if (profileStartMs === 0) profileStartMs = Date.now();
+            profileEvents++;
+            if (profileEvents % 60 === 0)
+                console.log("PROFILE transform QML events=", profileEvents,
+                            "elapsedMs=", Date.now() - profileStartMs);
             if (mode === "resize") { doResize(mouse.x, mouse.y); return; }
             if (mode === "rotate") { doRotate(mouse.x, mouse.y, mouse.modifiers); return; }
 

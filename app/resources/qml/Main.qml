@@ -183,10 +183,6 @@ ApplicationWindow {
                     implicitHeight: 28; implicitWidth: 58
                     onClicked: exportDialog.open() }
                 Item { Layout.fillWidth: true }
-                Label { text: documentController.aiStatus; color:"#f59e0b"; font.pixelSize:11
-                    visible: documentController.aiStatus.length>0 }
-                BusyIndicator { running: documentController.aiBusy; visible: documentController.aiBusy
-                    implicitWidth: 22; implicitHeight: 22 }
                 Item { width: 12 }
                 Rectangle { width:1; height:20; color:"#252d45" }
                 Item { width: 4 }
@@ -303,11 +299,21 @@ ApplicationWindow {
                             contentHeight: Math.max(height,
                                 (documentController.hasDocument ? documentController.sourceHeight * root.zoom : 0) + root.canvasPadding)
                             clip: true
-                            interactive: documentController.activeTool===0
+                            property bool handPanActive: false
+                            property int panProfileEvents: 0
+                            property double panProfileStartMs: 0
+                            interactive: documentController.activeTool===0 && !handPanActive
 
                             WheelHandler {
                                 acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+                                property int profileEvents: 0
+                                property double profileStartMs: 0
                                 onWheel: (event) => {
+                                    if (profileStartMs === 0) profileStartMs = Date.now();
+                                    profileEvents++;
+                                    if (profileEvents % 20 === 0)
+                                        console.log("PROFILE zoom QML events=", profileEvents,
+                                                    "elapsedMs=", Date.now() - profileStartMs)
                                     const fac = event.angleDelta.y > 0 ? 1.12 : (1.0 / 1.12);
                                     const oldZ = root.zoom;
                                     const newZ = Math.min(4.0, Math.max(0.1, oldZ * fac));
@@ -400,12 +406,23 @@ ApplicationWindow {
                                 anchors.fill:parent; acceptedButtons:Qt.RightButton|Qt.MiddleButton
                                 propagateComposedEvents:true; property real lx:0; property real ly:0
                                 cursorShape: pressed?Qt.ClosedHandCursor:Qt.ArrowCursor
-                                onPressed: (m)=>{lx=m.x;ly=m.y;m.accepted=true}
+                                onPressed: (m)=>{
+                                    canvasFlick.handPanActive = true
+                                    canvasFlick.panProfileEvents = 0
+                                    canvasFlick.panProfileStartMs = Date.now()
+                                    lx=m.x;ly=m.y;m.accepted=true
+                                }
                                 onPositionChanged: (m)=>{
+                                    canvasFlick.panProfileEvents++
+                                    if (canvasFlick.panProfileEvents % 60 === 0)
+                                        console.log("PROFILE pan QML events=", canvasFlick.panProfileEvents,
+                                                    "elapsedMs=", Date.now() - canvasFlick.panProfileStartMs)
                                     canvasFlick.contentX=Math.max(0,Math.min(canvasFlick.contentWidth-canvasFlick.width,  canvasFlick.contentX-(m.x-lx)));
                                     canvasFlick.contentY=Math.max(0,Math.min(canvasFlick.contentHeight-canvasFlick.height,canvasFlick.contentY-(m.y-ly)));
                                     lx=m.x;ly=m.y;
                                 }
+                                onReleased: canvasFlick.handPanActive = false
+                                onCanceled: canvasFlick.handPanActive = false
                             }
                         }
 
@@ -502,19 +519,20 @@ ApplicationWindow {
                                 Label{text:"DETAIL";color:"#3a4566";font.pixelSize:10;Layout.leftMargin:16}
                                 AdjustmentSlider{label:"Noise Reduction";from:0;to:100;value:documentController.noiseReduction;onMoved:(v)=>documentController.noiseReduction=v}
                                 AdjustmentSlider{label:"Sharpening";     from:0;to:100;value:documentController.sharpening;    onMoved:(v)=>documentController.sharpening    =v}
-                                Button{text:"Refine Edges"
-                                    enabled:documentController.hasDocument&&documentController.hasMask&&!documentController.aiBusy
-                                    implicitHeight:28;Layout.leftMargin:12;Layout.rightMargin:12;Layout.fillWidth:true
-                                    onClicked:documentController.refineEdges()
-                                    ToolTip.visible:hovered;ToolTip.delay:600;ToolTip.text:"Snap mask to image edges (OpenCV)"
-                                    background:Rectangle{color:parent.hovered?"#1e2438":"#171c2a";radius:6;border.color:"#252d45"}
-                                    contentItem:Label{text:"Refine Edges";color:parent.enabled?"#8892a4":"#4a5268";font.pixelSize:11;horizontalAlignment:Text.AlignHCenter}}
                                 Button{text:"Reset All";enabled:documentController.hasDocument;implicitHeight:28
                                     Layout.leftMargin:12;Layout.rightMargin:12;Layout.fillWidth:true
                                     onClicked:documentController.resetAdjustments()
                                     background:Rectangle{color:parent.hovered?"#2a1414":"#171c2a";radius:6;border.color:"#252d45"}
                                     contentItem:Label{text:"Reset All";color:"#f07070";font.pixelSize:11;horizontalAlignment:Text.AlignHCenter}}
                                 Label{text:"AI TOOLS";color:"#3a4566";font.pixelSize:10;Layout.leftMargin:16}
+                                RowLayout { Layout.fillWidth:true; Layout.leftMargin:12; Layout.rightMargin:12; spacing:6
+                                    BusyIndicator { running:documentController.aiBusy; visible:documentController.aiBusy; implicitWidth:18;implicitHeight:18 }
+                                    Label { text: documentController.aiTool.length>0
+                                                  ? documentController.aiTool + ": " + documentController.aiStatus
+                                                  : documentController.aiStatus
+                                            color:"#f59e0b"; font.pixelSize:10; Layout.fillWidth:true; elide:Text.ElideRight
+                                            visible:documentController.aiStatus.length>0 }
+                                }
                                 Button{text:"Subject mask";enabled:documentController.hasDocument&&!documentController.aiBusy;implicitHeight:28
                                     Layout.leftMargin:12;Layout.rightMargin:12;Layout.fillWidth:true
                                     onClicked:documentController.requestAiMask(imagePreview.width/2,imagePreview.height/2)
@@ -592,6 +610,7 @@ ApplicationWindow {
                                     model: documentController.layerModel
                                     delegate: Rectangle {
                                         width:layerList.width; height:28
+                                        property bool editingName: false
                                         // Layer Transform Gizmo (stage 1): highlight the row that
                                         // matches documentController.selectedLayerId, and let
                                         // clicking anywhere in the row (not just the Buttons/Slider)
@@ -603,12 +622,39 @@ ApplicationWindow {
                                         MouseArea {
                                             anchors.fill: parent
                                             onClicked: documentController.selectedLayerId = modelData.realId
+                                            onDoubleClicked: {
+                                                documentController.selectedLayerId = modelData.realId
+                                                editingName = true
+                                                nameEditor.text = modelData.name
+                                                nameEditor.selectAll()
+                                                nameEditor.forceActiveFocus()
+                                            }
                                         }
                                         RowLayout{anchors.fill:parent;anchors.margins:2;spacing:3
                                             Button{text:modelData.visible?"\u25c9":"\u25cb";flat:true;implicitWidth:22;implicitHeight:22
                                                 onClicked:documentController.setLayerVisible(modelData.realId,!modelData.visible)
                                                 contentItem:Label{text:parent.text;color:modelData.visible?"#6366f1":"#4a5268";font.pixelSize:11;horizontalAlignment:Text.AlignHCenter}}
-                                            Label{text:modelData.name;color:"#c8d0e0";font.pixelSize:11;Layout.fillWidth:true;elide:Text.ElideRight}
+                                            Label{text:modelData.name;color:"#c8d0e0";font.pixelSize:11;Layout.fillWidth:true;elide:Text.ElideRight;visible:!editingName}
+                                            TextInput {
+                                                id:nameEditor
+                                                visible:editingName
+                                                text:modelData.name
+                                                color:"#e2e8f0"
+                                                font.pixelSize:11
+                                                Layout.fillWidth:true
+                                                selectByMouse:true
+                                                clip:true
+                                                onAccepted: {
+                                                    documentController.renameLayer(modelData.realId, text)
+                                                    editingName = false
+                                                    focus = false
+                                                }
+                                                onEditingFinished: if (editingName) {
+                                                    documentController.renameLayer(modelData.realId, text)
+                                                    editingName = false
+                                                    focus = false
+                                                }
+                                            }
                                             Slider{from:0;to:1;value:modelData.opacity;implicitWidth:55;implicitHeight:18
                                                 onMoved:documentController.setLayerOpacity(modelData.realId,value)}
                                             Button{text:"\u2191";visible: !modelData.isBase;flat:true;implicitWidth:20;implicitHeight:22

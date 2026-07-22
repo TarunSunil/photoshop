@@ -13,6 +13,7 @@
 #include <QObject>
 #include <QStringList>
 #include <QTimer>
+#include <QThreadPool>
 #include <QUrl>
 #include <QVariantList>
 #include <atomic>
@@ -54,6 +55,7 @@ class DocumentController final : public QObject {
     Q_PROPERTY(int sourceHeight   READ sourceHeight NOTIFY documentChanged)
     Q_PROPERTY(bool   aiBusy     READ aiBusy      NOTIFY aiBusyChanged)
     Q_PROPERTY(QString aiStatus  READ aiStatus    NOTIFY aiStatusChanged)
+    Q_PROPERTY(QString aiTool    READ aiTool      NOTIFY aiStatusChanged)
     Q_PROPERTY(QVariantList layerModel  READ layerModel  NOTIFY layersChanged)
     Q_PROPERTY(QStringList  historyLog  READ historyLog  NOTIFY historyLogChanged)
     Q_PROPERTY(QVariantList maskList    READ maskList    NOTIFY maskChanged)
@@ -101,6 +103,7 @@ public:
     [[nodiscard]] int     sourceHeight() const;
     [[nodiscard]] bool    aiBusy()       const;
     [[nodiscard]] QString aiStatus()     const;
+    [[nodiscard]] QString aiTool()       const;
     [[nodiscard]] QVariantList layerModel()  const;
     [[nodiscard]] QStringList  historyLog()  const;
     [[nodiscard]] QVariantList maskList()    const;
@@ -142,7 +145,7 @@ public:
     Q_INVOKABLE void clearMask();
     Q_INVOKABLE void applyGradientMask(double x1, double y1, double x2, double y2);
     Q_INVOKABLE void applyRadialMask(double cx, double cy, double radius);
-    Q_INVOKABLE void applyCrop(int x, int y, int w, int h);
+    Q_INVOKABLE void applyCrop(int x, int y, int w, int h, double rotation = 0.0);
     Q_INVOKABLE void refineEdges();
     // Issue 5: create a brand-new empty mask slot and switch the editing
     // target to it. Sliders read 0 for a target with no adjustments yet,
@@ -168,6 +171,7 @@ public:
     Q_INVOKABLE void deleteLayer(const QString& id);
     Q_INVOKABLE void setLayerOpacity(const QString& id, double opacity);
     Q_INVOKABLE void setLayerVisible(const QString& id, bool visible);
+    Q_INVOKABLE void renameLayer(const QString& id, const QString& name);
     Q_INVOKABLE void moveLayerUp(const QString& id);
     Q_INVOKABLE void moveLayerDown(const QString& id);
     // Issue 6: per-layer transform (position/scale/rotation)
@@ -273,6 +277,7 @@ private:
     void saveMaskToTemp(const QString& maskId);
     void flushMaskSave();
     void setAiBusy(bool busy);
+    void setAiTool(const QString& tool);
     void setAiStatus(const QString& status);
     void autoSave();
     void checkRecovery();
@@ -311,10 +316,15 @@ private:
     QHash<QString, QString> m_maskTempPaths;   // maskId -> temp PNG preview path
     int      m_maskVersion       = 0;
     bool     m_aiBusy            = false;
+    QString  m_aiTool;
     QString  m_aiStatus;
     QTimer*  m_autosaveTimer     = nullptr;
     QTimer*  m_previewDebounce   = nullptr;
     QTimer*  m_maskSaveTimer     = nullptr;
+    QTimer*  m_edgeRefineTimer   = nullptr;
+    QTimer*  m_transformUiTimer  = nullptr;
+    QThreadPool m_refinePool;
+    bool     m_edgeRefinePending = false;
     bool     m_hasPendingRecovery = false;
     bool     m_cropActive        = false;
 

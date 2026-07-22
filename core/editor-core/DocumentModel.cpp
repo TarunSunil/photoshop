@@ -104,7 +104,8 @@ bool DocumentModel::openSourceImage(const QString& path)
     // base layer a second time, rather than relying on order_index (the
     // base layer can be reordered like any other via Main.qml's Move
     // Up/Down buttons, which have no isBase guard).
-    base.sourceAssetId = kBaseLayerSourceAssetId;   // was: "source"    m_layers.push_back(base);
+    base.sourceAssetId = kBaseLayerSourceAssetId;
+    m_layers.push_back(base);
     m_layerImages[base.id] = m_sourceImage;
     emit changed();
     return true;
@@ -479,6 +480,18 @@ void DocumentModel::setLayerVisible(const QString& id, bool visible)
 
 void DocumentModel::setLayerBlendMode(const QString& id, BlendMode mode)
 { if (Layer* l = findLayer(id)) { l->blendMode = mode; emit changed(); } }
+
+void DocumentModel::setLayerName(const QString& id, const QString& name)
+{
+    Layer* layer = findLayer(id);
+    if (!layer) return;
+    const QString trimmed = name.trimmed();
+    if (trimmed.isEmpty() || trimmed == layer->name) return;
+
+    AutoHistoryStep step(*this, QString("Rename layer: %1").arg(trimmed), false);
+    layer->name = trimmed;
+    emit changed();
+}
 
 void DocumentModel::deleteLayer(const QString& id)
 {
