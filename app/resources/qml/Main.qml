@@ -20,11 +20,17 @@ ApplicationWindow {
     color: "#0f1117"
 
     property real   zoom:            1.0
-    property real   brushRadius:     50
-    property string lastSourceName:  ""
-    property int    bottomTab:       0    // 0=Layers 1=History 2=Masks 3=Filmstrip
+    property real   brushRadius:         50
+    property string lastSourceName:      ""
+    property int    bottomTab:           0    // 0=Layers 1=History 2=Masks 3=Filmstrip
 
-    // ---------------------------------------------------------------------------
+    // TEMPORARY DIAGNOSTIC -- not a permanent fix. Tracks actual Ctrl
+    // key-held state independently of whatever the wheel event's own
+    // modifiers field reports, so the two can be logged side-by-side and
+    // compared. Remove once the comparison is done and a decision is made.
+    property bool   debugCtrlKeyHeld: false
+    Keys.onPressed:  (event) => { if (event.key === Qt.Key_Control) root.debugCtrlKeyHeld = true }
+    Keys.onReleased: (event) => { if (event.key === Qt.Key_Control) root.debugCtrlKeyHeld = false }
     // Helpers
     // ---------------------------------------------------------------------------
 
@@ -308,7 +314,35 @@ ApplicationWindow {
                                 acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
                                 property int profileEvents: 0
                                 property double profileStartMs: 0
-                                onWheel: (event) => {
+                                    onWheel: (event) => {
+                                        // TEMPORARY DIAGNOSTIC -- compares the wheel event's own
+                                        // modifiers against independently-tracked key state. Remove
+                                        // once resolved.
+                                        const eventSaysCtrl = !!(event.modifiers & Qt.ControlModifier);
+                                        console.log(eventSaysCtrl === root.debugCtrlKeyHeld ? "PROFILE ctrl-match" : "PROFILE ctrl-MISMATCH",
+                                                    "eventModifiers=", event.modifiers,
+                                                    "eventSaysCtrl=", eventSaysCtrl,
+                                                    "trackedCtrlHeld=", root.debugCtrlKeyHeld,
+                                                    "rootHasFocus=", root.activeFocus,
+                                                    "activeTool=", documentController.activeTool);
+
+                                        // Ctrl+wheel adjusts brush/eraser size instead of zooming, only
+                                        // while the Brush or Eraser tool is active (Photoshop convention).
+                                        // Falls through to normal zoom whenever Ctrl isn't held, or a
+                                        // different tool is active -- zoom behavior below is unchanged.
+                                        if ((event.modifiers & Qt.ControlModifier) &&
+                                            (documentController.activeTool === 1 ||
+                                            documentController.activeTool === 2)) {
+                                            
+                                            const step = event.angleDelta.y > 0 ? 5 : -5;
+                                            
+                                            root.brushRadius =
+                                                Math.max(5, Math.min(200, root.brushRadius + step));
+                                            
+                                            event.accepted = true;
+                                            return;
+                                        }
+
                                     if (profileStartMs === 0) profileStartMs = Date.now();
                                     profileEvents++;
                                     if (profileEvents % 20 === 0)

@@ -14,6 +14,7 @@
 #include <QStringList>
 #include <QTimer>
 #include <QThreadPool>
+#include <QElapsedTimer>
 #include <QUrl>
 #include <QVariantList>
 #include <atomic>
@@ -325,6 +326,13 @@ private:
     QTimer*  m_transformUiTimer  = nullptr;
     QThreadPool m_refinePool;
     bool     m_edgeRefinePending = false;
+    // Tracks when the most recent brush/eraser stroke was actually
+    // committed. Used by setAiBusy() to decide whether a queued
+    // refinement rerun should fire immediately (painting has genuinely
+    // paused) or wait for the debounce the next real stroke commit already
+    // restarts (painting is still ongoing) -- see setAiBusy()'s comment.
+    QElapsedTimer m_lastMaskStrokeCommitTimer;
+
     bool     m_hasPendingRecovery = false;
     bool     m_cropActive        = false;
 

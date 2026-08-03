@@ -376,7 +376,18 @@ void DocumentController::setAiBusy(bool busy) {
 #ifdef HAVE_OPENCV
     if (!busy && m_edgeRefinePending) {
         m_edgeRefinePending = false;
-        if (m_edgeRefineTimer) m_edgeRefineTimer->start(50);
+        // Only requeue immediately if painting has actually paused since
+        // the last stroke -- otherwise this collapses into a tight
+        // refine-finishes -> immediately-refine-again loop for as long as
+        // painting continues, which was the confirmed cause of brush/cursor
+        // lag after refinement starts. If painting is still ongoing, the
+        // most recent commitMaskPaint() already restarted m_edgeRefineTimer
+        // with the normal 350ms debounce -- let that be the sole trigger.
+        if (m_edgeRefineTimer &&
+            (!m_lastMaskStrokeCommitTimer.isValid() ||
+             m_lastMaskStrokeCommitTimer.elapsed() >= m_edgeRefineTimer->interval())) {
+            m_edgeRefineTimer->start(50);
+        }
     }
 #endif
 }
@@ -611,6 +622,7 @@ void DocumentController::commitMaskPaint() {
     // Coalesce rapid strokes and refine only after the painter pauses. The
     // refinement itself remains asynchronous, so the brush never waits on
     // OpenCV work.
+    m_lastMaskStrokeCommitTimer.start();
     if (m_edgeRefineTimer) m_edgeRefineTimer->start();
 #endif
 }
