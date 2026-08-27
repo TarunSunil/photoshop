@@ -1,0 +1,162 @@
+diff --git a/app/resources/qml/MaskCanvas.qml b/app/resources/qml/MaskCanvas.qml
+index 404d38c..835ecf5 100644
+--- a/app/resources/qml/MaskCanvas.qml
++++ b/app/resources/qml/MaskCanvas.qml
+@@ -14,30 +14,27 @@ Item {
+     property bool   draggingTool: false
+     implicitWidth: 200; implicitHeight: 200
+ 
+-    // STEP 1 STUB -- will hold the committed-mask draw only (step 2).
+-    // Empty for now, so it draws nothing and doesn't affect anything yet.
++    // Draws ONLY the committed mask overlay (from the C++-saved PNG).
++    // Repaints only when: the committed mask actually changes (maskChanged),
++    // the image finishes loading, or the canvas resizes (the mask must be
++    // redrawn at the new destination size). It does NOT repaint on mouse
++    // movement -- that was the whole point of this split (see Step 1 of
++    // the MaskCanvas refactor: separating committed-mask rendering from
++    // the live painting overlay so the (expensive, drawImage-driven)
++    // committed-mask repaint no longer runs on every mouse-move tick).
+     Canvas {
+         id: staticCanvas
+         anchors.fill: parent
+-    }
+-
+-    // TRANSITIONAL: everything the original single Canvas did, unchanged,
+-    // just re-hosted as a named child now that root is a plain Item.
+-    // Content will move out of this into staticCanvas (step 2) and
+-    // liveCanvas (step 4); this element is deleted once both are done.
+-    Canvas {
+-        id: legacyCanvas
+-        anchors.fill: parent
+         property string loadedUrl: ""
+ 
+         Connections {
+             target: maskCanvas.docCtrl
+             function onMaskChanged() {
+                 const url = maskCanvas.docCtrl && maskCanvas.docCtrl.hasMask ? maskCanvas.docCtrl.maskUrl : "";
+-                if (legacyCanvas.loadedUrl.length > 0 && legacyCanvas.loadedUrl !== url)
+-                    legacyCanvas.unloadImage(legacyCanvas.loadedUrl);
+-                if (url.length === 0) { legacyCanvas.loadedUrl = ""; legacyCanvas.requestPaint(); return; }
+-                legacyCanvas.loadImage(url);
++                if (staticCanvas.loadedUrl.length > 0 && staticCanvas.loadedUrl !== url)
++                    staticCanvas.unloadImage(staticCanvas.loadedUrl);
++                if (url.length === 0) { staticCanvas.loadedUrl = ""; staticCanvas.requestPaint(); return; }
++                staticCanvas.loadImage(url);
+             }
+         }
+         onImageLoaded: { loadedUrl = maskCanvas.docCtrl ? maskCanvas.docCtrl.maskUrl : ""; requestPaint(); }
+@@ -48,11 +45,9 @@ Item {
+             const ctx = getContext("2d");
+             ctx.reset();
+             const docCtrl = maskCanvas.docCtrl;
+-            const tool = docCtrl ? docCtrl.activeTool : 0;
+-            const sw = docCtrl ? (docCtrl.sourceWidth  || width)  : width;
+-            const sh = docCtrl ? (docCtrl.sourceHeight || height) : height;
+ 
+-            // 1. Committed mask overlay from C++ PNG
++            // Committed mask overlay from C++ PNG -- identical logic to
++            // the original section 1, unchanged, just hosted here now.
+             if (docCtrl && docCtrl.hasDocument && docCtrl.hasMask) {
+                 const url = docCtrl.maskUrl;
+                 if (url && isImageLoaded(url)) {
+@@ -80,6 +75,28 @@ Item {
+                     ctx.globalAlpha = 1.0;
+                 } else if (url) { loadImage(url); }
+             }
++        }
++    }
++
++    // Draws ONLY live-interaction content: the in-progress (uncommitted)
++    // stroke preview, the brush cursor ring, and the gradient/radial drag
++    // previews. Repaints on every mouse move (see the MouseArea below) --
++    // it never touches committed-mask state, so that per-move repaint
++    // stays cheap regardless of mask size/zoom (see Step 1's comment on
++    // staticCanvas for why that separation is the point of this refactor).
++    Canvas {
++        id: liveCanvas
++        anchors.fill: parent
++        onWidthChanged:  requestPaint()
++        onHeightChanged: requestPaint()
++
++        onPaint: {
++            const ctx = getContext("2d");
++            ctx.reset();
++            const docCtrl = maskCanvas.docCtrl;
++            const tool = docCtrl ? docCtrl.activeTool : 0;
++            const sw = docCtrl ? (docCtrl.sourceWidth  || width)  : width;
++            const sh = docCtrl ? (docCtrl.sourceHeight || height) : height;
+ 
+             // 2. Locally accumulated brush strokes (not yet committed to C++)
+             for (const s of maskCanvas.strokeHistory) {
+@@ -129,22 +146,16 @@ Item {
+         }
+     }
+ 
+-    // STEP 4 STUB -- will hold the live-preview draw only. Empty for now.
+-    Canvas {
+-        id: liveCanvas
+-        anchors.fill: parent
+-    }
+-
+     // Push a stroke to history and request repaint (instant visual feedback, no file I/O)
+     function drawLocalStroke(x, y, erase) {
+         const sw = docCtrl ? (docCtrl.sourceWidth  || width)  : width;
+         const sh = docCtrl ? (docCtrl.sourceHeight || height) : height;
+         const r  = Math.max(1, brushRadius * Math.min(width/sw, height/sh));
+         maskCanvas.strokeHistory.push({x:x, y:y, r:r, erase:erase});
+-        legacyCanvas.requestPaint();
++        liveCanvas.requestPaint();
+     }
+ 
+-    onBrushRadiusChanged: if (cursorInside) legacyCanvas.requestPaint()
++    onBrushRadiusChanged: if (cursorInside) liveCanvas.requestPaint()
+ 
+     MouseArea {
+         anchors.fill: parent
+@@ -157,7 +168,7 @@ Item {
+             if (t===3||t===4) return Qt.SizeAllCursor;
+             return Qt.ArrowCursor;
+         }
+-        onEntered:  { maskCanvas.cursorInside=true;  legacyCanvas.requestPaint(); }
++        onEntered:  { maskCanvas.cursorInside=true;  liveCanvas.requestPaint(); }
+         onExited:   {
+             maskCanvas.cursorInside=false;
+             if (painting) {
+@@ -165,7 +176,7 @@ Item {
+                 maskCanvas.strokeHistory=[];
+                 if (docCtrl) docCtrl.commitMaskPaint();
+             }
+-            legacyCanvas.requestPaint();
++            liveCanvas.requestPaint();
+         }
+         onPressed: (mouse) => {
+             if (!docCtrl) return;
+@@ -178,7 +189,7 @@ Item {
+             } else if (tool===3||tool===4) {
+                 maskCanvas.dragStartX=mouse.x; maskCanvas.dragStartY=mouse.y;
+                 maskCanvas.dragEndX=mouse.x;   maskCanvas.dragEndY=mouse.y;
+-                maskCanvas.draggingTool=true;   legacyCanvas.requestPaint();
++                maskCanvas.draggingTool=true;   liveCanvas.requestPaint();
+             }
+         }
+         onReleased: (mouse) => {
+@@ -195,7 +206,7 @@ Item {
+                 const x2=maskCanvas.dragEndX/maskCanvas.width*sw,   y2=maskCanvas.dragEndY/maskCanvas.height*sh;
+                 if (tool===3) { docCtrl.applyGradientMask(x1,y1,x2,y2); }
+                 else if (tool===4) { const dx=x2-x1,dy=y2-y1; docCtrl.applyRadialMask(x1,y1,Math.sqrt(dx*dx+dy*dy)); }
+-                legacyCanvas.requestPaint();
++                liveCanvas.requestPaint();
+             }
+         }
+         onPositionChanged: (mouse) => {
+@@ -205,8 +216,8 @@ Item {
+                 maskCanvas.drawLocalStroke(mouse.x, mouse.y, tool===2);
+                 doStroke(mouse.x, mouse.y, tool===2);
+             } else if (maskCanvas.draggingTool) {
+-                maskCanvas.dragEndX=mouse.x; maskCanvas.dragEndY=mouse.y; legacyCanvas.requestPaint();
+-            } else { legacyCanvas.requestPaint(); }
++                maskCanvas.dragEndX=mouse.x; maskCanvas.dragEndY=mouse.y; liveCanvas.requestPaint();
++            } else { liveCanvas.requestPaint(); }
+         }
+         function doStroke(x, y, erase) {
+             const sw=docCtrl.sourceWidth||maskCanvas.width, sh=docCtrl.sourceHeight||maskCanvas.height;

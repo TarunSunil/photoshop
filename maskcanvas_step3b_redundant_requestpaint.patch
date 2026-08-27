@@ -1,0 +1,15 @@
+diff --git a/app/resources/qml/MaskCanvas.qml b/app/resources/qml/MaskCanvas.qml
+index 9f4d948..3b38881 100644
+--- a/app/resources/qml/MaskCanvas.qml
++++ b/app/resources/qml/MaskCanvas.qml
+@@ -260,8 +260,9 @@ Item {
+                 painting=false;
+                 liveCanvas.clearDabs();
+                 if (docCtrl) docCtrl.commitMaskPaint();
++            } else {
++                liveCanvas.requestPaint();
+             }
+-            liveCanvas.requestPaint();
+         }
+         onPressed: (mouse) => {
+             if (!docCtrl) return;

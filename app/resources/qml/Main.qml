@@ -315,6 +315,9 @@ ApplicationWindow {
                                 property int profileEvents: 0
                                 property double profileStartMs: 0
                                     onWheel: (event) => {
+                                        const deltaY = event.angleDelta.y !== 0 ? event.angleDelta.y : event.pixelDelta.y;
+                                        const hasPixelDelta = !!event.pixelDelta && (event.pixelDelta.x !== 0 || event.pixelDelta.y !== 0);
+                                        const isDiscreteWheelStep = Math.abs(event.angleDelta.y) >= 120 && !hasPixelDelta;
                                         // TEMPORARY DIAGNOSTIC -- compares the wheel event's own
                                         // modifiers against independently-tracked key state. Remove
                                         // once resolved.
@@ -323,18 +326,24 @@ ApplicationWindow {
                                                     "eventModifiers=", event.modifiers,
                                                     "eventSaysCtrl=", eventSaysCtrl,
                                                     "trackedCtrlHeld=", root.debugCtrlKeyHeld,
-                                                    "rootHasFocus=", root.activeFocus,
+                                                    "activeWindow=", root.active,
+                                                    "hasActiveFocusItem=", root.activeFocusItem !== null,
+                                                    "isDiscreteWheelStep=", isDiscreteWheelStep,
                                                     "activeTool=", documentController.activeTool);
 
                                         // Ctrl+wheel adjusts brush/eraser size instead of zooming, only
-                                        // while the Brush or Eraser tool is active (Photoshop convention).
+                                        // while the Brush or Eraser tool is active (Photoshop convention),
+                                        // and only for true discrete mouse-wheel notches. Some touchpad/
+                                        // gesture paths may synthesize Ctrl in modifiers; they must not
+                                        // mutate brush size.
                                         // Falls through to normal zoom whenever Ctrl isn't held, or a
                                         // different tool is active -- zoom behavior below is unchanged.
                                         if ((event.modifiers & Qt.ControlModifier) &&
+                                            isDiscreteWheelStep &&
                                             (documentController.activeTool === 1 ||
                                             documentController.activeTool === 2)) {
                                             
-                                            const step = event.angleDelta.y > 0 ? 5 : -5;
+                                            const step = deltaY > 0 ? 5 : -5;
                                             
                                             root.brushRadius =
                                                 Math.max(5, Math.min(200, root.brushRadius + step));
@@ -348,7 +357,8 @@ ApplicationWindow {
                                     if (profileEvents % 20 === 0)
                                         console.log("PROFILE zoom QML events=", profileEvents,
                                                     "elapsedMs=", Date.now() - profileStartMs)
-                                    const fac = event.angleDelta.y > 0 ? 1.12 : (1.0 / 1.12);
+                                    if (deltaY === 0) return;
+                                    const fac = deltaY > 0 ? 1.12 : (1.0 / 1.12);
                                     const oldZ = root.zoom;
                                     const newZ = Math.min(4.0, Math.max(0.1, oldZ * fac));
                                     if (Math.abs(newZ - oldZ) < 0.001) return;

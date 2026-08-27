@@ -3,9 +3,6 @@ Item {
     id: maskCanvas
     property var    docCtrl:      null
     property double brushRadius:  50
-    // Rendered radius for the cursor ring UI only. Deliberately independent
-    // of canvas zoom so wheel-zoom cannot resize the ring.
-    readonly property real previewRadiusPx: Math.max(1, brushRadius)
     property bool   eraseMode:    false
     property bool   paintEnabled: false
     property real   cursorX:      0
@@ -184,6 +181,8 @@ Item {
             const ctx = getContext("2d");
             const docCtrl = maskCanvas.docCtrl;
             const tool = docCtrl ? docCtrl.activeTool : 0;
+            const sw = docCtrl ? (docCtrl.sourceWidth  || width)  : width;
+            const sh = docCtrl ? (docCtrl.sourceHeight || height) : height;
 
             // 3. Brush cursor ring (tools 1 & 2). Dabs are already on the
             // canvas (painted directly by paintDab(), not replayed here) --
@@ -192,7 +191,7 @@ Item {
             // without touching accumulated dab pixels.
             if (tool===1 || tool===2) {
                 if (maskCanvas.cursorInside) {
-                    const r = maskCanvas.previewRadiusPx;
+                    const r = maskCanvas.brushRadius * Math.min(width/sw, height/sh);
                     const color = tool===2 ? "rgba(255,100,100,0.9)" : "rgba(255,255,255,0.85)";
                     drawRing(maskCanvas.cursorX, maskCanvas.cursorY, r, color, color);
                 } else {
@@ -233,8 +232,7 @@ Item {
 
     // Paints one new dab immediately (see liveCanvas.paintDab()) instead of
     // pushing to a growing history that gets replayed every frame -- this
-    // is the actual long-stroke fix. Keep this in canvas/document space so
-    // dab preview matches the true brush footprint.
+    // is the actual long-stroke fix. brushRadius/zoom math is unchanged.
     function drawLocalStroke(x, y, erase) {
         const sw = docCtrl ? (docCtrl.sourceWidth  || width)  : width;
         const sh = docCtrl ? (docCtrl.sourceHeight || height) : height;
