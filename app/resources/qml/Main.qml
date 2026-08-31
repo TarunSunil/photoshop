@@ -447,6 +447,21 @@ ApplicationWindow {
                             }
 
                             MouseArea {
+                                // Root-cause fix for pan jitter: a plain child of a Flickable is
+                                // auto-parented by Qt Quick into the Flickable's own contentItem,
+                                // NOT the Flickable's fixed viewport. Without this override,
+                                // mouse.x/mouse.y here are reported in the same content-relative
+                                // coordinate frame that onPositionChanged below rewrites via
+                                // contentX/contentY on every move -- a self-referential feedback
+                                // loop that produced the alternating overshoot/correction jitter.
+                                // Verified directly: a MouseArea left as a plain Flickable child
+                                // takes on contentWidth/contentHeight as its own width/height and
+                                // its coordinate frame shifts as contentX/contentY change; adding
+                                // this explicit parent override keeps its frame fixed to the
+                                // viewport regardless of pan, matching Qt Quick's WheelHandler
+                                // (a PointerHandler, never subject to this reparenting), which is
+                                // why zoom-to-cursor never showed this symptom.
+                                parent: canvasFlick
                                 anchors.fill:parent; acceptedButtons:Qt.RightButton|Qt.MiddleButton
                                 propagateComposedEvents:true; property real lx:0; property real ly:0
                                 cursorShape: pressed?Qt.ClosedHandCursor:Qt.ArrowCursor
