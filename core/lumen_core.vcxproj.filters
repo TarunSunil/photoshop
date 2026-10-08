@@ -1,0 +1,135 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="D:\Code\Photoshop\core\lumen_core_autogen\mocs_compilation_Debug.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\editor-core\DocumentModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\image-core\RenderPipeline.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\image-core\RawImporter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\image-core\ColorManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\mask-core\BrushEngine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\mask-core\MaskDocument.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\ai-core\AiRuntime.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\ai-core\OnnxSession.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\ai-core\MaskPredictor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\ai-core\InpaintEngine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\ai-core\UpscaleEngine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\export-core\ExportService.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\storage\ProjectStore.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Code\Photoshop\core\lumen_core_autogen\mocs_compilation_Release.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Code\Photoshop\core\lumen_core_autogen\mocs_compilation_MinSizeRel.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Code\Photoshop\core\lumen_core_autogen\mocs_compilation_RelWithDebInfo.cpp">
+      <Filter>Source Files\Generated</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\shared-types\Adjustment.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\shared-types\Layer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\shared-types\Mask.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\editor-core\DocumentModel.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\image-core\RenderPipeline.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\image-core\BlendModes.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\image-core\RawImporter.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\image-core\ColorManager.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\mask-core\BrushEngine.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\mask-core\MaskDocument.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\ai-core\AiRuntime.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\ai-core\OnnxSession.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\ai-core\MaskPredictor.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\ai-core\InpaintEngine.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\ai-core\UpscaleEngine.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\export-core\ExportService.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\storage\ProjectStore.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\Code\Photoshop\core\ddf_lumen_core.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\Code\Photoshop\CMakeFiles\997243c121227ebd1d3cabb2f29e6c2b\qt6lumen_core_metatypes.json.gen.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="D:\Code\Photoshop\core\meta_types\qt6lumen_core_metatypes.json.gen" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{687D7801-C282-368B-B71D-B92D0467AA92}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{C3DE8ADE-8B83-3A1A-B643-C34290668A52}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{26B0094E-AF0B-3670-B47A-7A72C6173287}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Generated">
+      <UniqueIdentifier>{A0CE7AF0-0E01-3B5B-85AC-0F0E15AA7915}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

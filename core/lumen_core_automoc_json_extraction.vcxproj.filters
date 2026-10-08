@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="D:\Code\Photoshop\CMakeFiles\94dedffdac167d7a4f89511212e5013d\lumen_core_automoc_json_extraction.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="D:\Code\Photoshop\core\CMakeFiles\lumen_core_automoc_json_extraction" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{687D7801-C282-368B-B71D-B92D0467AA92}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

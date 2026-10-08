@@ -1,0 +1,433 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{8FB83003-62C0-3FE4-8A87-1F725EF05EF6}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
+    <Platform>x64</Platform>
+    <ProjectName>lumen_core</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\Code\Photoshop\core\Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">lumen_core.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">lumen_core</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\Code\Photoshop\core\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">lumen_core.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">lumen_core</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\Code\Photoshop\core\MinSizeRel\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">lumen_core.dir\MinSizeRel\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">lumen_core</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\Code\Photoshop\core\RelWithDebInfo\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">lumen_core.dir\RelWithDebInfo\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">lumen_core</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">.lib</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>D:\Code\Photoshop\core\lumen_core_autogen\include_Debug;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtCore" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include" /external:I "D:/Code/QT/6.11.1/msvc2022_64/mkspecs/win32-msvc" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtGui" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtSql" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtConcurrent" -Zc:__cplusplus -utf-8</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <ConformanceMode>true</ConformanceMode>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <SupportJustMyCode></SupportJustMyCode>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;QT_CORE_LIB;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;_WIN64;UNICODE;_UNICODE;QT_GUI_LIB;QT_SQL_LIB;QT_CONCURRENT_LIB;CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;QT_CORE_LIB;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;_WIN64;UNICODE;_UNICODE;QT_GUI_LIB;QT_SQL_LIB;QT_CONCURRENT_LIB;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\Code\Photoshop\core\lumen_core_autogen\include_Debug;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core;D:\Code\QT\6.11.1\msvc2022_64\include\QtCore;D:\Code\QT\6.11.1\msvc2022_64\include;D:\Code\QT\6.11.1\msvc2022_64\mkspecs\win32-msvc;D:\Code\QT\6.11.1\msvc2022_64\include\QtGui;D:\Code\QT\6.11.1\msvc2022_64\include\QtSql;D:\Code\QT\6.11.1\msvc2022_64\include\QtConcurrent;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>D:\Code\Photoshop\core\lumen_core_autogen\include_Debug;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core;D:\Code\QT\6.11.1\msvc2022_64\include\QtCore;D:\Code\QT\6.11.1\msvc2022_64\include;D:\Code\QT\6.11.1\msvc2022_64\mkspecs\win32-msvc;D:\Code\QT\6.11.1\msvc2022_64\include\QtGui;D:\Code\QT\6.11.1\msvc2022_64\include\QtSql;D:\Code\QT\6.11.1\msvc2022_64\include\QtConcurrent;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>D:\Code\Photoshop\core\lumen_core_autogen\include_Release;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtCore" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include" /external:I "D:/Code/QT/6.11.1/msvc2022_64/mkspecs/win32-msvc" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtGui" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtSql" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtConcurrent" -Zc:__cplusplus -utf-8</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <ConformanceMode>true</ConformanceMode>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <SupportJustMyCode></SupportJustMyCode>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;QT_CORE_LIB;QT_NO_DEBUG;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;_WIN64;UNICODE;_UNICODE;QT_GUI_LIB;QT_SQL_LIB;QT_CONCURRENT_LIB;CMAKE_INTDIR="Release"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;QT_CORE_LIB;QT_NO_DEBUG;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;_WIN64;UNICODE;_UNICODE;QT_GUI_LIB;QT_SQL_LIB;QT_CONCURRENT_LIB;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\Code\Photoshop\core\lumen_core_autogen\include_Release;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core;D:\Code\QT\6.11.1\msvc2022_64\include\QtCore;D:\Code\QT\6.11.1\msvc2022_64\include;D:\Code\QT\6.11.1\msvc2022_64\mkspecs\win32-msvc;D:\Code\QT\6.11.1\msvc2022_64\include\QtGui;D:\Code\QT\6.11.1\msvc2022_64\include\QtSql;D:\Code\QT\6.11.1\msvc2022_64\include\QtConcurrent;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>D:\Code\Photoshop\core\lumen_core_autogen\include_Release;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core;D:\Code\QT\6.11.1\msvc2022_64\include\QtCore;D:\Code\QT\6.11.1\msvc2022_64\include;D:\Code\QT\6.11.1\msvc2022_64\mkspecs\win32-msvc;D:\Code\QT\6.11.1\msvc2022_64\include\QtGui;D:\Code\QT\6.11.1\msvc2022_64\include\QtSql;D:\Code\QT\6.11.1\msvc2022_64\include\QtConcurrent;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>D:\Code\Photoshop\core\lumen_core_autogen\include_MinSizeRel;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtCore" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include" /external:I "D:/Code/QT/6.11.1/msvc2022_64/mkspecs/win32-msvc" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtGui" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtSql" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtConcurrent" -Zc:__cplusplus -utf-8</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <ConformanceMode>true</ConformanceMode>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <Optimization>MinSpace</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <SupportJustMyCode></SupportJustMyCode>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;QT_CORE_LIB;QT_NO_DEBUG;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;_WIN64;UNICODE;_UNICODE;QT_GUI_LIB;QT_SQL_LIB;QT_CONCURRENT_LIB;CMAKE_INTDIR="MinSizeRel"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;QT_CORE_LIB;QT_NO_DEBUG;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;_WIN64;UNICODE;_UNICODE;QT_GUI_LIB;QT_SQL_LIB;QT_CONCURRENT_LIB;CMAKE_INTDIR=\"MinSizeRel\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\Code\Photoshop\core\lumen_core_autogen\include_MinSizeRel;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core;D:\Code\QT\6.11.1\msvc2022_64\include\QtCore;D:\Code\QT\6.11.1\msvc2022_64\include;D:\Code\QT\6.11.1\msvc2022_64\mkspecs\win32-msvc;D:\Code\QT\6.11.1\msvc2022_64\include\QtGui;D:\Code\QT\6.11.1\msvc2022_64\include\QtSql;D:\Code\QT\6.11.1\msvc2022_64\include\QtConcurrent;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>D:\Code\Photoshop\core\lumen_core_autogen\include_MinSizeRel;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core;D:\Code\QT\6.11.1\msvc2022_64\include\QtCore;D:\Code\QT\6.11.1\msvc2022_64\include;D:\Code\QT\6.11.1\msvc2022_64\mkspecs\win32-msvc;D:\Code\QT\6.11.1\msvc2022_64\include\QtGui;D:\Code\QT\6.11.1\msvc2022_64\include\QtSql;D:\Code\QT\6.11.1\msvc2022_64\include\QtConcurrent;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>D:\Code\Photoshop\core\lumen_core_autogen\include_RelWithDebInfo;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtCore" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include" /external:I "D:/Code/QT/6.11.1/msvc2022_64/mkspecs/win32-msvc" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtGui" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtSql" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtConcurrent" -Zc:__cplusplus -utf-8</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <ConformanceMode>true</ConformanceMode>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <SupportJustMyCode></SupportJustMyCode>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;QT_CORE_LIB;QT_NO_DEBUG;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;_WIN64;UNICODE;_UNICODE;QT_GUI_LIB;QT_SQL_LIB;QT_CONCURRENT_LIB;CMAKE_INTDIR="RelWithDebInfo"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;QT_CORE_LIB;QT_NO_DEBUG;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;_WIN64;UNICODE;_UNICODE;QT_GUI_LIB;QT_SQL_LIB;QT_CONCURRENT_LIB;CMAKE_INTDIR=\"RelWithDebInfo\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\Code\Photoshop\core\lumen_core_autogen\include_RelWithDebInfo;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core;D:\Code\QT\6.11.1\msvc2022_64\include\QtCore;D:\Code\QT\6.11.1\msvc2022_64\include;D:\Code\QT\6.11.1\msvc2022_64\mkspecs\win32-msvc;D:\Code\QT\6.11.1\msvc2022_64\include\QtGui;D:\Code\QT\6.11.1\msvc2022_64\include\QtSql;D:\Code\QT\6.11.1\msvc2022_64\include\QtConcurrent;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>D:\Code\Photoshop\core\lumen_core_autogen\include_RelWithDebInfo;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core;D:\Code\QT\6.11.1\msvc2022_64\include\QtCore;D:\Code\QT\6.11.1\msvc2022_64\include;D:\Code\QT\6.11.1\msvc2022_64\mkspecs\win32-msvc;D:\Code\QT\6.11.1\msvc2022_64\include\QtGui;D:\Code\QT\6.11.1\msvc2022_64\include\QtSql;D:\Code\QT\6.11.1\msvc2022_64\include\QtConcurrent;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\Code\Photoshop\CMakeFiles\997243c121227ebd1d3cabb2f29e6c2b\qt6lumen_core_metatypes.json.gen.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Running moc --collect-json for target lumen_core</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+D:\Code\QT\6.11.1\msvc2022_64\bin\moc.exe -o D:/Code/Photoshop/core/meta_types/qt6lumen_core_metatypes.json.gen --collect-json @D:/Code/Photoshop/core/meta_types/lumen_core_json_file_list.txt
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E copy_if_different D:/Code/Photoshop/core/meta_types/qt6lumen_core_metatypes.json.gen D:/Code/Photoshop/core/meta_types/qt6lumen_core_metatypes.json
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\Code\QT\6.11.1\msvc2022_64\bin\moc.exe;D:\Code\Photoshop\core\meta_types\lumen_core_json_file_list.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\Code\Photoshop\core\meta_types\qt6lumen_core_metatypes.json.gen</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Running moc --collect-json for target lumen_core</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+D:\Code\QT\6.11.1\msvc2022_64\bin\moc.exe -o D:/Code/Photoshop/core/meta_types/qt6lumen_core_metatypes.json.gen --collect-json @D:/Code/Photoshop/core/meta_types/lumen_core_json_file_list.txt
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E copy_if_different D:/Code/Photoshop/core/meta_types/qt6lumen_core_metatypes.json.gen D:/Code/Photoshop/core/meta_types/qt6lumen_core_metatypes.json
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\Code\QT\6.11.1\msvc2022_64\bin\moc.exe;D:\Code\Photoshop\core\meta_types\lumen_core_json_file_list.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\Code\Photoshop\core\meta_types\qt6lumen_core_metatypes.json.gen</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Running moc --collect-json for target lumen_core</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+D:\Code\QT\6.11.1\msvc2022_64\bin\moc.exe -o D:/Code/Photoshop/core/meta_types/qt6lumen_core_metatypes.json.gen --collect-json @D:/Code/Photoshop/core/meta_types/lumen_core_json_file_list.txt
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E copy_if_different D:/Code/Photoshop/core/meta_types/qt6lumen_core_metatypes.json.gen D:/Code/Photoshop/core/meta_types/qt6lumen_core_metatypes.json
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\Code\QT\6.11.1\msvc2022_64\bin\moc.exe;D:\Code\Photoshop\core\meta_types\lumen_core_json_file_list.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\Code\Photoshop\core\meta_types\qt6lumen_core_metatypes.json.gen</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Running moc --collect-json for target lumen_core</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+D:\Code\QT\6.11.1\msvc2022_64\bin\moc.exe -o D:/Code/Photoshop/core/meta_types/qt6lumen_core_metatypes.json.gen --collect-json @D:/Code/Photoshop/core/meta_types/lumen_core_json_file_list.txt
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E copy_if_different D:/Code/Photoshop/core/meta_types/qt6lumen_core_metatypes.json.gen D:/Code/Photoshop/core/meta_types/qt6lumen_core_metatypes.json
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\Code\QT\6.11.1\msvc2022_64\bin\moc.exe;D:\Code\Photoshop\core\meta_types\lumen_core_json_file_list.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\Code\Photoshop\core\meta_types\qt6lumen_core_metatypes.json.gen</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\CMakeLists.txt">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SD:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas -BD:/Code/Photoshop --check-stamp-file D:/Code/Photoshop/core/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\Code\Photoshop\core\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SD:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas -BD:/Code/Photoshop --check-stamp-file D:/Code/Photoshop/core/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\Code\Photoshop\core\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SD:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas -BD:/Code/Photoshop --check-stamp-file D:/Code/Photoshop/core/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\Code\Photoshop\core\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SD:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas -BD:/Code/Photoshop --check-stamp-file D:/Code/Photoshop/core/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\Code\Photoshop\core\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="D:\Code\Photoshop\core\lumen_core_autogen\mocs_compilation_Debug.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\shared-types\Adjustment.hpp" />
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\shared-types\Layer.hpp" />
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\shared-types\Mask.hpp" />
+    <ClCompile Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\editor-core\DocumentModel.cpp" />
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\editor-core\DocumentModel.hpp" />
+    <ClCompile Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\image-core\RenderPipeline.cpp" />
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\image-core\RenderPipeline.hpp" />
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\image-core\BlendModes.hpp" />
+    <ClCompile Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\image-core\RawImporter.cpp" />
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\image-core\RawImporter.hpp" />
+    <ClCompile Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\image-core\ColorManager.cpp" />
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\image-core\ColorManager.hpp" />
+    <ClCompile Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\mask-core\BrushEngine.cpp" />
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\mask-core\BrushEngine.hpp" />
+    <ClCompile Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\mask-core\MaskDocument.cpp" />
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\mask-core\MaskDocument.hpp" />
+    <ClCompile Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\ai-core\AiRuntime.cpp" />
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\ai-core\AiRuntime.hpp" />
+    <ClCompile Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\ai-core\OnnxSession.cpp" />
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\ai-core\OnnxSession.hpp" />
+    <ClCompile Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\ai-core\MaskPredictor.cpp" />
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\ai-core\MaskPredictor.hpp" />
+    <ClCompile Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\ai-core\InpaintEngine.cpp" />
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\ai-core\InpaintEngine.hpp" />
+    <ClCompile Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\ai-core\UpscaleEngine.cpp" />
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\ai-core\UpscaleEngine.hpp" />
+    <ClCompile Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\export-core\ExportService.cpp" />
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\export-core\ExportService.hpp" />
+    <ClCompile Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\storage\ProjectStore.cpp" />
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core\storage\ProjectStore.hpp" />
+    <ClInclude Include="D:\Code\Photoshop\core\ddf_lumen_core.h" />
+    <None Include="D:\Code\Photoshop\core\meta_types\qt6lumen_core_metatypes.json.gen">
+    </None>
+    <ClCompile Include="D:\Code\Photoshop\core\lumen_core_autogen\mocs_compilation_Release.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="D:\Code\Photoshop\core\lumen_core_autogen\mocs_compilation_MinSizeRel.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="D:\Code\Photoshop\core\lumen_core_autogen\mocs_compilation_RelWithDebInfo.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="D:\Code\Photoshop\ZERO_CHECK.vcxproj">
+      <Project>{3E65A0CD-15F6-3B17-BA9A-37E33E5FF60D}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="D:\Code\Photoshop\core\lumen_core_autogen.vcxproj">
+      <Project>{B9ECF00F-E021-333C-B7AA-861DE4F8773C}</Project>
+      <Name>lumen_core_autogen</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="D:\Code\Photoshop\core\lumen_core_automoc_json_extraction.vcxproj">
+      <Project>{17028DFA-ED28-3F5B-9B74-D9D646A06534}</Project>
+      <Name>lumen_core_automoc_json_extraction</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

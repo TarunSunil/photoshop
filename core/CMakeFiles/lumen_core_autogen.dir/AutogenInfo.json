@@ -1,0 +1,351 @@
+{
+	"AUTOGEN_COMMAND_LINE_LENGTH_MAX" : 32000,
+	"BUILD_DIR" : "D:/Code/Photoshop/core/lumen_core_autogen",
+	"CMAKE_BINARY_DIR" : "D:/Code/Photoshop",
+	"CMAKE_CURRENT_BINARY_DIR" : "D:/Code/Photoshop/core",
+	"CMAKE_CURRENT_SOURCE_DIR" : "D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core",
+	"CMAKE_EXECUTABLE" : "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe",
+	"CMAKE_LIST_FILES" : 
+	[
+		"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/CMakeLists.txt"
+	],
+	"CMAKE_SOURCE_DIR" : "D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas",
+	"CROSS_CONFIG" : false,
+	"DEP_FILE" : "",
+	"DEP_FILE_RULE_NAME" : "",
+	"HEADERS" : 
+	[
+		[
+			"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/ai-core/AiRuntime.hpp",
+			"MU",
+			"LCIMXLJ5VZ/moc_AiRuntime.cpp",
+			null
+		],
+		[
+			"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/ai-core/InpaintEngine.hpp",
+			"MU",
+			"LCIMXLJ5VZ/moc_InpaintEngine.cpp",
+			null
+		],
+		[
+			"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/ai-core/MaskPredictor.hpp",
+			"MU",
+			"LCIMXLJ5VZ/moc_MaskPredictor.cpp",
+			null
+		],
+		[
+			"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/ai-core/OnnxSession.hpp",
+			"MU",
+			"LCIMXLJ5VZ/moc_OnnxSession.cpp",
+			null
+		],
+		[
+			"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/ai-core/UpscaleEngine.hpp",
+			"MU",
+			"LCIMXLJ5VZ/moc_UpscaleEngine.cpp",
+			null
+		],
+		[
+			"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/editor-core/DocumentModel.hpp",
+			"MU",
+			"I7CP7TIK6Z/moc_DocumentModel.cpp",
+			null
+		],
+		[
+			"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/export-core/ExportService.hpp",
+			"MU",
+			"LPWQJSWZSD/moc_ExportService.cpp",
+			null
+		],
+		[
+			"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/image-core/BlendModes.hpp",
+			"MU",
+			"6KDJCDUG5P/moc_BlendModes.cpp",
+			null
+		],
+		[
+			"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/image-core/ColorManager.hpp",
+			"MU",
+			"6KDJCDUG5P/moc_ColorManager.cpp",
+			null
+		],
+		[
+			"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/image-core/RawImporter.hpp",
+			"MU",
+			"6KDJCDUG5P/moc_RawImporter.cpp",
+			null
+		],
+		[
+			"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/image-core/RenderPipeline.hpp",
+			"MU",
+			"6KDJCDUG5P/moc_RenderPipeline.cpp",
+			null
+		],
+		[
+			"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/mask-core/BrushEngine.hpp",
+			"MU",
+			"JWMK2M3WJW/moc_BrushEngine.cpp",
+			null
+		],
+		[
+			"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/mask-core/MaskDocument.hpp",
+			"MU",
+			"JWMK2M3WJW/moc_MaskDocument.cpp",
+			null
+		],
+		[
+			"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/shared-types/Adjustment.hpp",
+			"MU",
+			"O4GTNY3XBC/moc_Adjustment.cpp",
+			null
+		],
+		[
+			"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/shared-types/Layer.hpp",
+			"MU",
+			"O4GTNY3XBC/moc_Layer.cpp",
+			null
+		],
+		[
+			"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/shared-types/Mask.hpp",
+			"MU",
+			"O4GTNY3XBC/moc_Mask.cpp",
+			null
+		],
+		[
+			"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/storage/ProjectStore.hpp",
+			"MU",
+			"5XLNPBDXWK/moc_ProjectStore.cpp",
+			null
+		],
+		[
+			"D:/Code/Photoshop/core/ddf_lumen_core.h",
+			"MU",
+			"EJRQKI7XPS/moc_ddf_lumen_core.cpp",
+			null
+		]
+	],
+	"HEADER_EXTENSIONS" : [ "h", "hh", "h++", "hm", "hpp", "hxx", "in", "txx" ],
+	"INCLUDE_DIR" : "D:/Code/Photoshop/core/lumen_core_autogen/include",
+	"INCLUDE_DIR_Debug" : "D:/Code/Photoshop/core/lumen_core_autogen/include_Debug",
+	"INCLUDE_DIR_MinSizeRel" : "D:/Code/Photoshop/core/lumen_core_autogen/include_MinSizeRel",
+	"INCLUDE_DIR_RelWithDebInfo" : "D:/Code/Photoshop/core/lumen_core_autogen/include_RelWithDebInfo",
+	"INCLUDE_DIR_Release" : "D:/Code/Photoshop/core/lumen_core_autogen/include_Release",
+	"MOC_COMPILATION_FILE" : "D:/Code/Photoshop/core/lumen_core_autogen/mocs_compilation.cpp",
+	"MOC_COMPILATION_FILE_Debug" : "D:/Code/Photoshop/core/lumen_core_autogen/mocs_compilation_Debug.cpp",
+	"MOC_COMPILATION_FILE_MinSizeRel" : "D:/Code/Photoshop/core/lumen_core_autogen/mocs_compilation_MinSizeRel.cpp",
+	"MOC_COMPILATION_FILE_RelWithDebInfo" : "D:/Code/Photoshop/core/lumen_core_autogen/mocs_compilation_RelWithDebInfo.cpp",
+	"MOC_COMPILATION_FILE_Release" : "D:/Code/Photoshop/core/lumen_core_autogen/mocs_compilation_Release.cpp",
+	"MOC_DEFINITIONS" : [],
+	"MOC_DEFINITIONS_Debug" : 
+	[
+		"QT_CONCURRENT_LIB",
+		"QT_CORE_LIB",
+		"QT_GUI_LIB",
+		"QT_SQL_LIB",
+		"UNICODE",
+		"WIN32",
+		"WIN64",
+		"_ENABLE_EXTENDED_ALIGNED_STORAGE",
+		"_UNICODE",
+		"_WIN64"
+	],
+	"MOC_DEFINITIONS_MinSizeRel" : 
+	[
+		"QT_CONCURRENT_LIB",
+		"QT_CORE_LIB",
+		"QT_GUI_LIB",
+		"QT_NO_DEBUG",
+		"QT_SQL_LIB",
+		"UNICODE",
+		"WIN32",
+		"WIN64",
+		"_ENABLE_EXTENDED_ALIGNED_STORAGE",
+		"_UNICODE",
+		"_WIN64"
+	],
+	"MOC_DEFINITIONS_RelWithDebInfo" : 
+	[
+		"QT_CONCURRENT_LIB",
+		"QT_CORE_LIB",
+		"QT_GUI_LIB",
+		"QT_NO_DEBUG",
+		"QT_SQL_LIB",
+		"UNICODE",
+		"WIN32",
+		"WIN64",
+		"_ENABLE_EXTENDED_ALIGNED_STORAGE",
+		"_UNICODE",
+		"_WIN64"
+	],
+	"MOC_DEFINITIONS_Release" : 
+	[
+		"QT_CONCURRENT_LIB",
+		"QT_CORE_LIB",
+		"QT_GUI_LIB",
+		"QT_NO_DEBUG",
+		"QT_SQL_LIB",
+		"UNICODE",
+		"WIN32",
+		"WIN64",
+		"_ENABLE_EXTENDED_ALIGNED_STORAGE",
+		"_UNICODE",
+		"_WIN64"
+	],
+	"MOC_DEPEND_FILTERS" : 
+	[
+		[
+			"Q_PLUGIN_METADATA",
+			"[\n][ \t]*Q_PLUGIN_METADATA[ \t]*\\([^\\)]*FILE[ \t]*\"([^\"]+)\""
+		]
+	],
+	"MOC_INCLUDES" : [],
+	"MOC_INCLUDES_Debug" : 
+	[
+		"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core",
+		"D:/Code/QT/6.11.1/msvc2022_64/include/QtCore",
+		"D:/Code/QT/6.11.1/msvc2022_64/include",
+		"D:/Code/QT/6.11.1/msvc2022_64/mkspecs/win32-msvc",
+		"D:/Code/QT/6.11.1/msvc2022_64/include/QtGui",
+		"D:/Code/QT/6.11.1/msvc2022_64/include/QtSql",
+		"D:/Code/QT/6.11.1/msvc2022_64/include/QtConcurrent"
+	],
+	"MOC_INCLUDES_MinSizeRel" : 
+	[
+		"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core",
+		"D:/Code/QT/6.11.1/msvc2022_64/include/QtCore",
+		"D:/Code/QT/6.11.1/msvc2022_64/include",
+		"D:/Code/QT/6.11.1/msvc2022_64/mkspecs/win32-msvc",
+		"D:/Code/QT/6.11.1/msvc2022_64/include/QtGui",
+		"D:/Code/QT/6.11.1/msvc2022_64/include/QtSql",
+		"D:/Code/QT/6.11.1/msvc2022_64/include/QtConcurrent"
+	],
+	"MOC_INCLUDES_RelWithDebInfo" : 
+	[
+		"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core",
+		"D:/Code/QT/6.11.1/msvc2022_64/include/QtCore",
+		"D:/Code/QT/6.11.1/msvc2022_64/include",
+		"D:/Code/QT/6.11.1/msvc2022_64/mkspecs/win32-msvc",
+		"D:/Code/QT/6.11.1/msvc2022_64/include/QtGui",
+		"D:/Code/QT/6.11.1/msvc2022_64/include/QtSql",
+		"D:/Code/QT/6.11.1/msvc2022_64/include/QtConcurrent"
+	],
+	"MOC_INCLUDES_Release" : 
+	[
+		"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core",
+		"D:/Code/QT/6.11.1/msvc2022_64/include/QtCore",
+		"D:/Code/QT/6.11.1/msvc2022_64/include",
+		"D:/Code/QT/6.11.1/msvc2022_64/mkspecs/win32-msvc",
+		"D:/Code/QT/6.11.1/msvc2022_64/include/QtGui",
+		"D:/Code/QT/6.11.1/msvc2022_64/include/QtSql",
+		"D:/Code/QT/6.11.1/msvc2022_64/include/QtConcurrent"
+	],
+	"MOC_MACRO_NAMES" : 
+	[
+		"Q_OBJECT",
+		"Q_GADGET",
+		"Q_NAMESPACE",
+		"Q_NAMESPACE_EXPORT",
+		"Q_GADGET_EXPORT",
+		"Q_ENUM_NS"
+	],
+	"MOC_OPTIONS" : [ "-DWIN32", "--compiler-flavor=msvc", "--output-json" ],
+	"MOC_PATH_PREFIX" : false,
+	"MOC_PREDEFS_CMD" : [],
+	"MOC_PREDEFS_FILE" : "",
+	"MOC_RELAXED_MODE" : false,
+	"MOC_SKIP" : [],
+	"MULTI_CONFIG" : true,
+	"PARALLEL" : 10,
+	"PARSE_CACHE_FILE" : "D:/Code/Photoshop/core/CMakeFiles/lumen_core_autogen.dir/ParseCache.txt",
+	"PARSE_CACHE_FILE_Debug" : "D:/Code/Photoshop/core/CMakeFiles/lumen_core_autogen.dir/ParseCache_Debug.txt",
+	"PARSE_CACHE_FILE_MinSizeRel" : "D:/Code/Photoshop/core/CMakeFiles/lumen_core_autogen.dir/ParseCache_MinSizeRel.txt",
+	"PARSE_CACHE_FILE_RelWithDebInfo" : "D:/Code/Photoshop/core/CMakeFiles/lumen_core_autogen.dir/ParseCache_RelWithDebInfo.txt",
+	"PARSE_CACHE_FILE_Release" : "D:/Code/Photoshop/core/CMakeFiles/lumen_core_autogen.dir/ParseCache_Release.txt",
+	"QT_MOC_EXECUTABLE" : "",
+	"QT_MOC_EXECUTABLE_Debug" : "D:/Code/QT/6.11.1/msvc2022_64/bin/moc.exe",
+	"QT_MOC_EXECUTABLE_MinSizeRel" : "D:/Code/QT/6.11.1/msvc2022_64/bin/moc.exe",
+	"QT_MOC_EXECUTABLE_RelWithDebInfo" : "D:/Code/QT/6.11.1/msvc2022_64/bin/moc.exe",
+	"QT_MOC_EXECUTABLE_Release" : "D:/Code/QT/6.11.1/msvc2022_64/bin/moc.exe",
+	"QT_UIC_EXECUTABLE" : "",
+	"QT_VERSION_MAJOR" : 6,
+	"QT_VERSION_MINOR" : 11,
+	"SETTINGS_FILE" : "D:/Code/Photoshop/core/CMakeFiles/lumen_core_autogen.dir/AutogenUsed.txt",
+	"SETTINGS_FILE_Debug" : "D:/Code/Photoshop/core/CMakeFiles/lumen_core_autogen.dir/AutogenUsed_Debug.txt",
+	"SETTINGS_FILE_MinSizeRel" : "D:/Code/Photoshop/core/CMakeFiles/lumen_core_autogen.dir/AutogenUsed_MinSizeRel.txt",
+	"SETTINGS_FILE_RelWithDebInfo" : "D:/Code/Photoshop/core/CMakeFiles/lumen_core_autogen.dir/AutogenUsed_RelWithDebInfo.txt",
+	"SETTINGS_FILE_Release" : "D:/Code/Photoshop/core/CMakeFiles/lumen_core_autogen.dir/AutogenUsed_Release.txt",
+	"SOURCES" : 
+	[
+		[
+			"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/ai-core/AiRuntime.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/ai-core/InpaintEngine.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/ai-core/MaskPredictor.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/ai-core/OnnxSession.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/ai-core/UpscaleEngine.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/editor-core/DocumentModel.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/export-core/ExportService.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/image-core/ColorManager.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/image-core/RawImporter.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/image-core/RenderPipeline.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/mask-core/BrushEngine.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/mask-core/MaskDocument.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/core/storage/ProjectStore.cpp",
+			"MU",
+			null
+		]
+	],
+	"UIC_OPTIONS" : [],
+	"UIC_SEARCH_PATHS" : [],
+	"UIC_SKIP" : [],
+	"UIC_UI_FILES" : [],
+	"USE_BETTER_GRAPH" : true,
+	"VERBOSITY" : 0
+}

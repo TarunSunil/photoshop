@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="/">
+    <file alias="/qt/qml/LumenForge">D:/Code/Photoshop/app/LumenForge</file>
+
+  </qresource>
+</RCC>

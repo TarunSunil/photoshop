@@ -1,0 +1,8 @@
+--resource
+D:/Code/Photoshop/app/.qt/rcc/qmake_LumenForge.qrc
+--resource
+D:/Code/Photoshop/app/.qt/rcc/LumenForge_raw_qml_0.qrc
+/qt/qml/LumenForge/resources/qml/Main.qml
+/qt/qml/LumenForge/resources/qml/MaskCanvas.qml
+/qt/qml/LumenForge/resources/qml/CropOverlay.qml
+/qt/qml/LumenForge/resources/qml/LayerTransformOverlay.qml

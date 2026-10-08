@@ -267,7 +267,6 @@ Item {
             if (painting && (tool===1||tool===2)) {
                 maskCanvas.drawLocalStroke(mouse.x, mouse.y, tool===2);
                 doStroke(mouse.x, mouse.y, tool===2);
-                overlayCanvas.requestPaint();
             } else if (maskCanvas.draggingTool) {
                 maskCanvas.dragEndX=mouse.x; maskCanvas.dragEndY=mouse.y; liveCanvas.requestPaint();
             } else { overlayCanvas.requestPaint(); }

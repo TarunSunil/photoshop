@@ -1,0 +1,17 @@
+--bare
+-I
+D:/Code/Photoshop/app
+-I
+D:/Code/Photoshop/app/LumenForge
+-I
+D:/Code/Photoshop/app
+-I
+D:/Code/QT/6.11.1/msvc2022_64/qml
+--resource
+D:/Code/Photoshop/app/.qt/rcc/qmake_LumenForge.qrc
+--resource
+D:/Code/Photoshop/app/.qt/rcc/LumenForge_raw_qml_0.qrc
+D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/app/resources/qml/Main.qml
+D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/app/resources/qml/MaskCanvas.qml
+D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/app/resources/qml/Cropoverlay.qml
+D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/app/resources/qml/LayerTransformOverlay.qml

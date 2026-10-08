@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="D:\Code\Photoshop\CMakeFiles\ab225ce9a1a7e3c95b23593e65d51813\LumenForge_qmllint_module.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="D:\Code\Photoshop\app\CMakeFiles\LumenForge_qmllint_module" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{687D7801-C282-368B-B71D-B92D0467AA92}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

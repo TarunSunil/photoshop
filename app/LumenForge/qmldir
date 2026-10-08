@@ -1,0 +1,9 @@
+module LumenForge
+typeinfo LumenForge.qmltypes
+prefer :/qt/qml/LumenForge/
+Main 1.0 resources/qml/Main.qml
+MaskCanvas 1.0 resources/qml/MaskCanvas.qml
+CropOverlay 1.0 resources/qml/CropOverlay.qml
+LayerTransformOverlay 1.0 resources/qml/LayerTransformOverlay.qml
+depends QtQuick
+

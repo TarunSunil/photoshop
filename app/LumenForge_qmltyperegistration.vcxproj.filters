@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="D:\Code\Photoshop\CMakeFiles\598ef32cc59210c6e4adc9c645d6a85f\qt6lumenforge_metatypes.json.gen.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="D:\Code\Photoshop\CMakeFiles\598ef32cc59210c6e4adc9c645d6a85f\qt6lumenforge_metatypes.json.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="D:\Code\Photoshop\CMakeFiles\14f84bb67db972c89b1c034e5ff9b8bf\lumenforge_qmltyperegistrations.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="D:\Code\Photoshop\CMakeFiles\ab225ce9a1a7e3c95b23593e65d51813\LumenForge_qmltyperegistration.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="D:\Code\Photoshop\app\CMakeFiles\LumenForge_qmltyperegistration" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{687D7801-C282-368B-B71D-B92D0467AA92}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,7 @@
+# CMake generation dependency list for this directory.
+D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/app/CMakeLists.txt
+D:/Code/Photoshop/app/.qt/qml_imports/LumenForge_conf.cmake
+D:/Code/QT/6.11.1/msvc2022_64/lib/cmake/Qt6/windows/app.exe.manifest.in
+D:/Code/QT/6.11.1/msvc2022_64/lib/cmake/Qt6Core/Qt6CoreConfigureFileTemplate.in
+D:/Code/QT/6.11.1/msvc2022_64/lib/cmake/Qt6Qml/Qt6QmlModuleDirMappingTemplate.qrc.in
+D:/Code/QT/6.11.1/msvc2022_64/lib/cmake/Qt6Qml/Qt6qmldirTemplate.cmake.in

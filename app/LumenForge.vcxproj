@@ -1,0 +1,1094 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{11979A3A-826F-32D4-84BA-9C4DF9DCF87C}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
+    <Platform>x64</Platform>
+    <ProjectName>LumenForge</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\Code\Photoshop\Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">LumenForge.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">LumenForge</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\Code\Photoshop\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">LumenForge.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">LumenForge</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\Code\Photoshop\MinSizeRel\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">LumenForge.dir\MinSizeRel\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">LumenForge</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\Code\Photoshop\RelWithDebInfo\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">LumenForge.dir\RelWithDebInfo\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">LumenForge</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">true</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</GenerateManifest>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>D:\Code\Photoshop\app\LumenForge_autogen\include_Debug;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\src;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtQml" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtCore" /external:I "D:/Code/QT/6.11.1/msvc2022_64/mkspecs/win32-msvc" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtQmlIntegration" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtNetwork" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtGui" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtSql" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtConcurrent" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtQuick" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtOpenGL" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtQuickControls2" -Zc:__cplusplus -utf-8</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <ConformanceMode>true</ConformanceMode>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <SupportJustMyCode></SupportJustMyCode>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;QT_CORE_LIB;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;_WIN64;UNICODE;_UNICODE;QT_QML_LIB;QT_QMLINTEGRATION_LIB;QT_NETWORK_LIB;QT_GUI_LIB;QT_SQL_LIB;QT_CONCURRENT_LIB;QT_QUICK_LIB;QT_OPENGL_LIB;QT_QUICKCONTROLS2_LIB;CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;QT_CORE_LIB;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;_WIN64;UNICODE;_UNICODE;QT_QML_LIB;QT_QMLINTEGRATION_LIB;QT_NETWORK_LIB;QT_GUI_LIB;QT_SQL_LIB;QT_CONCURRENT_LIB;QT_QUICK_LIB;QT_OPENGL_LIB;QT_QUICKCONTROLS2_LIB;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\Code\Photoshop\app\LumenForge_autogen\include_Debug;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\src;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core;D:\Code\QT\6.11.1\msvc2022_64\include\QtQml;D:\Code\QT\6.11.1\msvc2022_64\include;D:\Code\QT\6.11.1\msvc2022_64\include\QtCore;D:\Code\QT\6.11.1\msvc2022_64\mkspecs\win32-msvc;D:\Code\QT\6.11.1\msvc2022_64\include\QtQmlIntegration;D:\Code\QT\6.11.1\msvc2022_64\include\QtNetwork;D:\Code\QT\6.11.1\msvc2022_64\include\QtGui;D:\Code\QT\6.11.1\msvc2022_64\include\QtSql;D:\Code\QT\6.11.1\msvc2022_64\include\QtConcurrent;D:\Code\QT\6.11.1\msvc2022_64\include\QtQuick;D:\Code\QT\6.11.1\msvc2022_64\include\QtOpenGL;D:\Code\QT\6.11.1\msvc2022_64\include\QtQuickControls2;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>D:\Code\Photoshop\app\LumenForge_autogen\include_Debug;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\src;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core;D:\Code\QT\6.11.1\msvc2022_64\include\QtQml;D:\Code\QT\6.11.1\msvc2022_64\include;D:\Code\QT\6.11.1\msvc2022_64\include\QtCore;D:\Code\QT\6.11.1\msvc2022_64\mkspecs\win32-msvc;D:\Code\QT\6.11.1\msvc2022_64\include\QtQmlIntegration;D:\Code\QT\6.11.1\msvc2022_64\include\QtNetwork;D:\Code\QT\6.11.1\msvc2022_64\include\QtGui;D:\Code\QT\6.11.1\msvc2022_64\include\QtSql;D:\Code\QT\6.11.1\msvc2022_64\include\QtConcurrent;D:\Code\QT\6.11.1\msvc2022_64\include\QtQuick;D:\Code\QT\6.11.1\msvc2022_64\include\QtOpenGL;D:\Code\QT\6.11.1\msvc2022_64\include\QtQuickControls2;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>..\core\Debug\lumen_core.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6Concurrentd.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6QuickControls2d.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6Sqld.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6Quickd.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6OpenGLd.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6Guid.lib;d3d11.lib;dxgi.lib;dxguid.lib;d3d12.lib;user32.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6Qmld.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6Networkd.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6Cored.lib;mpr.lib;userenv.lib;ws2_32.lib;shell32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>D:/Code/Photoshop/app/Debug/LumenForge.lib</ImportLibrary>
+      <ProgramDataBaseFile>D:/Code/Photoshop/Debug/LumenForge.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+    <Manifest>
+      <AdditionalManifestFiles>D:\Code\Photoshop\app\LumenForge.exe.manifest;</AdditionalManifestFiles>
+    </Manifest>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>D:\Code\Photoshop\app\LumenForge_autogen\include_Release;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\src;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtQml" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtCore" /external:I "D:/Code/QT/6.11.1/msvc2022_64/mkspecs/win32-msvc" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtQmlIntegration" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtNetwork" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtGui" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtSql" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtConcurrent" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtQuick" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtOpenGL" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtQuickControls2" -Zc:__cplusplus -utf-8</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <ConformanceMode>true</ConformanceMode>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <SupportJustMyCode></SupportJustMyCode>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;QT_CORE_LIB;QT_NO_DEBUG;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;_WIN64;UNICODE;_UNICODE;QT_QML_LIB;QT_QMLINTEGRATION_LIB;QT_NETWORK_LIB;QT_GUI_LIB;QT_SQL_LIB;QT_CONCURRENT_LIB;QT_QUICK_LIB;QT_OPENGL_LIB;QT_QUICKCONTROLS2_LIB;CMAKE_INTDIR="Release"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;QT_CORE_LIB;QT_NO_DEBUG;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;_WIN64;UNICODE;_UNICODE;QT_QML_LIB;QT_QMLINTEGRATION_LIB;QT_NETWORK_LIB;QT_GUI_LIB;QT_SQL_LIB;QT_CONCURRENT_LIB;QT_QUICK_LIB;QT_OPENGL_LIB;QT_QUICKCONTROLS2_LIB;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\Code\Photoshop\app\LumenForge_autogen\include_Release;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\src;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core;D:\Code\QT\6.11.1\msvc2022_64\include\QtQml;D:\Code\QT\6.11.1\msvc2022_64\include;D:\Code\QT\6.11.1\msvc2022_64\include\QtCore;D:\Code\QT\6.11.1\msvc2022_64\mkspecs\win32-msvc;D:\Code\QT\6.11.1\msvc2022_64\include\QtQmlIntegration;D:\Code\QT\6.11.1\msvc2022_64\include\QtNetwork;D:\Code\QT\6.11.1\msvc2022_64\include\QtGui;D:\Code\QT\6.11.1\msvc2022_64\include\QtSql;D:\Code\QT\6.11.1\msvc2022_64\include\QtConcurrent;D:\Code\QT\6.11.1\msvc2022_64\include\QtQuick;D:\Code\QT\6.11.1\msvc2022_64\include\QtOpenGL;D:\Code\QT\6.11.1\msvc2022_64\include\QtQuickControls2;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>D:\Code\Photoshop\app\LumenForge_autogen\include_Release;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\src;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core;D:\Code\QT\6.11.1\msvc2022_64\include\QtQml;D:\Code\QT\6.11.1\msvc2022_64\include;D:\Code\QT\6.11.1\msvc2022_64\include\QtCore;D:\Code\QT\6.11.1\msvc2022_64\mkspecs\win32-msvc;D:\Code\QT\6.11.1\msvc2022_64\include\QtQmlIntegration;D:\Code\QT\6.11.1\msvc2022_64\include\QtNetwork;D:\Code\QT\6.11.1\msvc2022_64\include\QtGui;D:\Code\QT\6.11.1\msvc2022_64\include\QtSql;D:\Code\QT\6.11.1\msvc2022_64\include\QtConcurrent;D:\Code\QT\6.11.1\msvc2022_64\include\QtQuick;D:\Code\QT\6.11.1\msvc2022_64\include\QtOpenGL;D:\Code\QT\6.11.1\msvc2022_64\include\QtQuickControls2;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>..\core\Release\lumen_core.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6Concurrent.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6QuickControls2.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6Sql.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6Quick.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6OpenGL.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6Gui.lib;d3d11.lib;dxgi.lib;dxguid.lib;d3d12.lib;user32.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6Qml.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6Network.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6Core.lib;mpr.lib;userenv.lib;ws2_32.lib;shell32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>D:/Code/Photoshop/app/Release/LumenForge.lib</ImportLibrary>
+      <ProgramDataBaseFile>D:/Code/Photoshop/Release/LumenForge.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+    <Manifest>
+      <AdditionalManifestFiles>D:\Code\Photoshop\app\LumenForge.exe.manifest;</AdditionalManifestFiles>
+    </Manifest>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>D:\Code\Photoshop\app\LumenForge_autogen\include_MinSizeRel;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\src;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtQml" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtCore" /external:I "D:/Code/QT/6.11.1/msvc2022_64/mkspecs/win32-msvc" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtQmlIntegration" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtNetwork" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtGui" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtSql" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtConcurrent" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtQuick" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtOpenGL" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtQuickControls2" -Zc:__cplusplus -utf-8</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <ConformanceMode>true</ConformanceMode>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <Optimization>MinSpace</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <SupportJustMyCode></SupportJustMyCode>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;QT_CORE_LIB;QT_NO_DEBUG;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;_WIN64;UNICODE;_UNICODE;QT_QML_LIB;QT_QMLINTEGRATION_LIB;QT_NETWORK_LIB;QT_GUI_LIB;QT_SQL_LIB;QT_CONCURRENT_LIB;QT_QUICK_LIB;QT_OPENGL_LIB;QT_QUICKCONTROLS2_LIB;CMAKE_INTDIR="MinSizeRel"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;QT_CORE_LIB;QT_NO_DEBUG;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;_WIN64;UNICODE;_UNICODE;QT_QML_LIB;QT_QMLINTEGRATION_LIB;QT_NETWORK_LIB;QT_GUI_LIB;QT_SQL_LIB;QT_CONCURRENT_LIB;QT_QUICK_LIB;QT_OPENGL_LIB;QT_QUICKCONTROLS2_LIB;CMAKE_INTDIR=\"MinSizeRel\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\Code\Photoshop\app\LumenForge_autogen\include_MinSizeRel;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\src;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core;D:\Code\QT\6.11.1\msvc2022_64\include\QtQml;D:\Code\QT\6.11.1\msvc2022_64\include;D:\Code\QT\6.11.1\msvc2022_64\include\QtCore;D:\Code\QT\6.11.1\msvc2022_64\mkspecs\win32-msvc;D:\Code\QT\6.11.1\msvc2022_64\include\QtQmlIntegration;D:\Code\QT\6.11.1\msvc2022_64\include\QtNetwork;D:\Code\QT\6.11.1\msvc2022_64\include\QtGui;D:\Code\QT\6.11.1\msvc2022_64\include\QtSql;D:\Code\QT\6.11.1\msvc2022_64\include\QtConcurrent;D:\Code\QT\6.11.1\msvc2022_64\include\QtQuick;D:\Code\QT\6.11.1\msvc2022_64\include\QtOpenGL;D:\Code\QT\6.11.1\msvc2022_64\include\QtQuickControls2;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>D:\Code\Photoshop\app\LumenForge_autogen\include_MinSizeRel;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\src;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core;D:\Code\QT\6.11.1\msvc2022_64\include\QtQml;D:\Code\QT\6.11.1\msvc2022_64\include;D:\Code\QT\6.11.1\msvc2022_64\include\QtCore;D:\Code\QT\6.11.1\msvc2022_64\mkspecs\win32-msvc;D:\Code\QT\6.11.1\msvc2022_64\include\QtQmlIntegration;D:\Code\QT\6.11.1\msvc2022_64\include\QtNetwork;D:\Code\QT\6.11.1\msvc2022_64\include\QtGui;D:\Code\QT\6.11.1\msvc2022_64\include\QtSql;D:\Code\QT\6.11.1\msvc2022_64\include\QtConcurrent;D:\Code\QT\6.11.1\msvc2022_64\include\QtQuick;D:\Code\QT\6.11.1\msvc2022_64\include\QtOpenGL;D:\Code\QT\6.11.1\msvc2022_64\include\QtQuickControls2;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>..\core\MinSizeRel\lumen_core.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6Concurrent.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6QuickControls2.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6Sql.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6Quick.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6OpenGL.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6Gui.lib;d3d11.lib;dxgi.lib;dxguid.lib;d3d12.lib;user32.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6Qml.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6Network.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6Core.lib;mpr.lib;userenv.lib;ws2_32.lib;shell32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>D:/Code/Photoshop/app/MinSizeRel/LumenForge.lib</ImportLibrary>
+      <ProgramDataBaseFile>D:/Code/Photoshop/MinSizeRel/LumenForge.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+    <Manifest>
+      <AdditionalManifestFiles>D:\Code\Photoshop\app\LumenForge.exe.manifest;</AdditionalManifestFiles>
+    </Manifest>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>D:\Code\Photoshop\app\LumenForge_autogen\include_RelWithDebInfo;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\src;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtQml" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtCore" /external:I "D:/Code/QT/6.11.1/msvc2022_64/mkspecs/win32-msvc" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtQmlIntegration" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtNetwork" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtGui" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtSql" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtConcurrent" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtQuick" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtOpenGL" /external:I "D:/Code/QT/6.11.1/msvc2022_64/include/QtQuickControls2" -Zc:__cplusplus -utf-8</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <ConformanceMode>true</ConformanceMode>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <SupportJustMyCode></SupportJustMyCode>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;QT_CORE_LIB;QT_NO_DEBUG;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;_WIN64;UNICODE;_UNICODE;QT_QML_LIB;QT_QMLINTEGRATION_LIB;QT_NETWORK_LIB;QT_GUI_LIB;QT_SQL_LIB;QT_CONCURRENT_LIB;QT_QUICK_LIB;QT_OPENGL_LIB;QT_QUICKCONTROLS2_LIB;CMAKE_INTDIR="RelWithDebInfo"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;QT_CORE_LIB;QT_NO_DEBUG;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;_WIN64;UNICODE;_UNICODE;QT_QML_LIB;QT_QMLINTEGRATION_LIB;QT_NETWORK_LIB;QT_GUI_LIB;QT_SQL_LIB;QT_CONCURRENT_LIB;QT_QUICK_LIB;QT_OPENGL_LIB;QT_QUICKCONTROLS2_LIB;CMAKE_INTDIR=\"RelWithDebInfo\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\Code\Photoshop\app\LumenForge_autogen\include_RelWithDebInfo;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\src;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core;D:\Code\QT\6.11.1\msvc2022_64\include\QtQml;D:\Code\QT\6.11.1\msvc2022_64\include;D:\Code\QT\6.11.1\msvc2022_64\include\QtCore;D:\Code\QT\6.11.1\msvc2022_64\mkspecs\win32-msvc;D:\Code\QT\6.11.1\msvc2022_64\include\QtQmlIntegration;D:\Code\QT\6.11.1\msvc2022_64\include\QtNetwork;D:\Code\QT\6.11.1\msvc2022_64\include\QtGui;D:\Code\QT\6.11.1\msvc2022_64\include\QtSql;D:\Code\QT\6.11.1\msvc2022_64\include\QtConcurrent;D:\Code\QT\6.11.1\msvc2022_64\include\QtQuick;D:\Code\QT\6.11.1\msvc2022_64\include\QtOpenGL;D:\Code\QT\6.11.1\msvc2022_64\include\QtQuickControls2;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>D:\Code\Photoshop\app\LumenForge_autogen\include_RelWithDebInfo;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\src;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\core;D:\Code\QT\6.11.1\msvc2022_64\include\QtQml;D:\Code\QT\6.11.1\msvc2022_64\include;D:\Code\QT\6.11.1\msvc2022_64\include\QtCore;D:\Code\QT\6.11.1\msvc2022_64\mkspecs\win32-msvc;D:\Code\QT\6.11.1\msvc2022_64\include\QtQmlIntegration;D:\Code\QT\6.11.1\msvc2022_64\include\QtNetwork;D:\Code\QT\6.11.1\msvc2022_64\include\QtGui;D:\Code\QT\6.11.1\msvc2022_64\include\QtSql;D:\Code\QT\6.11.1\msvc2022_64\include\QtConcurrent;D:\Code\QT\6.11.1\msvc2022_64\include\QtQuick;D:\Code\QT\6.11.1\msvc2022_64\include\QtOpenGL;D:\Code\QT\6.11.1\msvc2022_64\include\QtQuickControls2;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>..\core\RelWithDebInfo\lumen_core.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6Concurrent.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6QuickControls2.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6Sql.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6Quick.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6OpenGL.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6Gui.lib;d3d11.lib;dxgi.lib;dxguid.lib;d3d12.lib;user32.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6Qml.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6Network.lib;D:\Code\QT\6.11.1\msvc2022_64\lib\Qt6Core.lib;mpr.lib;userenv.lib;ws2_32.lib;shell32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>D:/Code/Photoshop/app/RelWithDebInfo/LumenForge.lib</ImportLibrary>
+      <ProgramDataBaseFile>D:/Code/Photoshop/RelWithDebInfo/LumenForge.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+    <Manifest>
+      <AdditionalManifestFiles>D:\Code\Photoshop\app\LumenForge.exe.manifest;</AdditionalManifestFiles>
+    </Manifest>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\Code\Photoshop\CMakeFiles\598ef32cc59210c6e4adc9c645d6a85f\qt6lumenforge_metatypes.json.gen.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Running moc --collect-json for target LumenForge</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+D:\Code\QT\6.11.1\msvc2022_64\bin\moc.exe -o D:/Code/Photoshop/app/meta_types/qt6lumenforge_metatypes.json.gen --collect-json @D:/Code/Photoshop/app/meta_types/LumenForge_json_file_list.txt
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E copy_if_different D:/Code/Photoshop/app/meta_types/qt6lumenforge_metatypes.json.gen D:/Code/Photoshop/app/meta_types/qt6lumenforge_metatypes.json
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\Code\QT\6.11.1\msvc2022_64\bin\moc.exe;D:\Code\Photoshop\app\meta_types\LumenForge_json_file_list.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\Code\Photoshop\app\meta_types\qt6lumenforge_metatypes.json.gen</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Running moc --collect-json for target LumenForge</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+D:\Code\QT\6.11.1\msvc2022_64\bin\moc.exe -o D:/Code/Photoshop/app/meta_types/qt6lumenforge_metatypes.json.gen --collect-json @D:/Code/Photoshop/app/meta_types/LumenForge_json_file_list.txt
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E copy_if_different D:/Code/Photoshop/app/meta_types/qt6lumenforge_metatypes.json.gen D:/Code/Photoshop/app/meta_types/qt6lumenforge_metatypes.json
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\Code\QT\6.11.1\msvc2022_64\bin\moc.exe;D:\Code\Photoshop\app\meta_types\LumenForge_json_file_list.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\Code\Photoshop\app\meta_types\qt6lumenforge_metatypes.json.gen</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Running moc --collect-json for target LumenForge</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+D:\Code\QT\6.11.1\msvc2022_64\bin\moc.exe -o D:/Code/Photoshop/app/meta_types/qt6lumenforge_metatypes.json.gen --collect-json @D:/Code/Photoshop/app/meta_types/LumenForge_json_file_list.txt
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E copy_if_different D:/Code/Photoshop/app/meta_types/qt6lumenforge_metatypes.json.gen D:/Code/Photoshop/app/meta_types/qt6lumenforge_metatypes.json
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\Code\QT\6.11.1\msvc2022_64\bin\moc.exe;D:\Code\Photoshop\app\meta_types\LumenForge_json_file_list.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\Code\Photoshop\app\meta_types\qt6lumenforge_metatypes.json.gen</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Running moc --collect-json for target LumenForge</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+D:\Code\QT\6.11.1\msvc2022_64\bin\moc.exe -o D:/Code/Photoshop/app/meta_types/qt6lumenforge_metatypes.json.gen --collect-json @D:/Code/Photoshop/app/meta_types/LumenForge_json_file_list.txt
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E copy_if_different D:/Code/Photoshop/app/meta_types/qt6lumenforge_metatypes.json.gen D:/Code/Photoshop/app/meta_types/qt6lumenforge_metatypes.json
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\Code\QT\6.11.1\msvc2022_64\bin\moc.exe;D:\Code\Photoshop\app\meta_types\LumenForge_json_file_list.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\Code\Photoshop\app\meta_types\qt6lumenforge_metatypes.json.gen</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\Code\Photoshop\CMakeFiles\598ef32cc59210c6e4adc9c645d6a85f\qt6lumenforge_metatypes.json.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating meta_types/qt6lumenforge_metatypes.json</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E touch D:/Code/Photoshop/app/meta_types/qt6lumenforge_metatypes.json
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\Code\Photoshop\app\meta_types\qt6lumenforge_metatypes.json.gen;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\Code\Photoshop\app\meta_types\qt6lumenforge_metatypes.json</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating meta_types/qt6lumenforge_metatypes.json</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E touch D:/Code/Photoshop/app/meta_types/qt6lumenforge_metatypes.json
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\Code\Photoshop\app\meta_types\qt6lumenforge_metatypes.json.gen;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\Code\Photoshop\app\meta_types\qt6lumenforge_metatypes.json</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Generating meta_types/qt6lumenforge_metatypes.json</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E touch D:/Code/Photoshop/app/meta_types/qt6lumenforge_metatypes.json
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\Code\Photoshop\app\meta_types\qt6lumenforge_metatypes.json.gen;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\Code\Photoshop\app\meta_types\qt6lumenforge_metatypes.json</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Generating meta_types/qt6lumenforge_metatypes.json</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E touch D:/Code/Photoshop/app/meta_types/qt6lumenforge_metatypes.json
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\Code\Photoshop\app\meta_types\qt6lumenforge_metatypes.json.gen;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\Code\Photoshop\app\meta_types\qt6lumenforge_metatypes.json</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\Code\Photoshop\CMakeFiles\14f84bb67db972c89b1c034e5ff9b8bf\lumenforge_qmltyperegistrations.cpp.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Automatic QML type registration for target LumenForge</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+call ..\.qt\bin\qt_setup_tool_path.bat D:/Code/QT/6.11.1/msvc2022_64/bin/qmltyperegistrar.exe --generate-qmltypes=D:/Code/Photoshop/app/LumenForge/LumenForge.qmltypes --import-name=LumenForge --major-version=1 --minor-version=0 @D:/Code/Photoshop/app/qmltypes/LumenForge_foreign_types.txt -o D:/Code/Photoshop/app/lumenforge_qmltyperegistrations.cpp D:/Code/Photoshop/app/meta_types/qt6lumenforge_metatypes.json
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory D:/Code/Photoshop/app/.qt/qmltypes
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E touch D:/Code/Photoshop/app/.qt/qmltypes/LumenForge.qmltypes
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\Code\Photoshop\app\qmltypes\LumenForge_foreign_types.txt;D:\Code\Photoshop\app\meta_types\qt6lumenforge_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\bin\qmltyperegistrar.exe;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6core_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6qml_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6network_metatypes.json;D:\Code\Photoshop\core\meta_types\qt6lumen_core_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6gui_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6sql_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6concurrent_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6quick_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6opengl_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6quickcontrols2_metatypes.json;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\Code\Photoshop\app\lumenforge_qmltyperegistrations.cpp;D:\Code\Photoshop\app\LumenForge\LumenForge.qmltypes</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Automatic QML type registration for target LumenForge</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+call ..\.qt\bin\qt_setup_tool_path.bat D:/Code/QT/6.11.1/msvc2022_64/bin/qmltyperegistrar.exe --generate-qmltypes=D:/Code/Photoshop/app/LumenForge/LumenForge.qmltypes --import-name=LumenForge --major-version=1 --minor-version=0 @D:/Code/Photoshop/app/qmltypes/LumenForge_foreign_types.txt -o D:/Code/Photoshop/app/lumenforge_qmltyperegistrations.cpp D:/Code/Photoshop/app/meta_types/qt6lumenforge_metatypes.json
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory D:/Code/Photoshop/app/.qt/qmltypes
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E touch D:/Code/Photoshop/app/.qt/qmltypes/LumenForge.qmltypes
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\Code\Photoshop\app\qmltypes\LumenForge_foreign_types.txt;D:\Code\Photoshop\app\meta_types\qt6lumenforge_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\bin\qmltyperegistrar.exe;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6core_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6qml_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6network_metatypes.json;D:\Code\Photoshop\core\meta_types\qt6lumen_core_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6gui_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6sql_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6concurrent_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6quick_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6opengl_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6quickcontrols2_metatypes.json;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\Code\Photoshop\app\lumenforge_qmltyperegistrations.cpp;D:\Code\Photoshop\app\LumenForge\LumenForge.qmltypes</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Automatic QML type registration for target LumenForge</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+call ..\.qt\bin\qt_setup_tool_path.bat D:/Code/QT/6.11.1/msvc2022_64/bin/qmltyperegistrar.exe --generate-qmltypes=D:/Code/Photoshop/app/LumenForge/LumenForge.qmltypes --import-name=LumenForge --major-version=1 --minor-version=0 @D:/Code/Photoshop/app/qmltypes/LumenForge_foreign_types.txt -o D:/Code/Photoshop/app/lumenforge_qmltyperegistrations.cpp D:/Code/Photoshop/app/meta_types/qt6lumenforge_metatypes.json
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory D:/Code/Photoshop/app/.qt/qmltypes
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E touch D:/Code/Photoshop/app/.qt/qmltypes/LumenForge.qmltypes
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\Code\Photoshop\app\qmltypes\LumenForge_foreign_types.txt;D:\Code\Photoshop\app\meta_types\qt6lumenforge_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\bin\qmltyperegistrar.exe;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6core_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6qml_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6network_metatypes.json;D:\Code\Photoshop\core\meta_types\qt6lumen_core_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6gui_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6sql_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6concurrent_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6quick_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6opengl_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6quickcontrols2_metatypes.json;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\Code\Photoshop\app\lumenforge_qmltyperegistrations.cpp;D:\Code\Photoshop\app\LumenForge\LumenForge.qmltypes</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Automatic QML type registration for target LumenForge</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+call ..\.qt\bin\qt_setup_tool_path.bat D:/Code/QT/6.11.1/msvc2022_64/bin/qmltyperegistrar.exe --generate-qmltypes=D:/Code/Photoshop/app/LumenForge/LumenForge.qmltypes --import-name=LumenForge --major-version=1 --minor-version=0 @D:/Code/Photoshop/app/qmltypes/LumenForge_foreign_types.txt -o D:/Code/Photoshop/app/lumenforge_qmltyperegistrations.cpp D:/Code/Photoshop/app/meta_types/qt6lumenforge_metatypes.json
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory D:/Code/Photoshop/app/.qt/qmltypes
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E touch D:/Code/Photoshop/app/.qt/qmltypes/LumenForge.qmltypes
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\Code\Photoshop\app\qmltypes\LumenForge_foreign_types.txt;D:\Code\Photoshop\app\meta_types\qt6lumenforge_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\bin\qmltyperegistrar.exe;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6core_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6qml_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6network_metatypes.json;D:\Code\Photoshop\core\meta_types\qt6lumen_core_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6gui_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6sql_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6concurrent_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6quick_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6opengl_metatypes.json;D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6quickcontrols2_metatypes.json;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\Code\Photoshop\app\lumenforge_qmltyperegistrations.cpp;D:\Code\Photoshop\app\LumenForge\LumenForge.qmltypes</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\Code\Photoshop\CMakeFiles\36aa7d1f494b04305d6e2648c913f9d4\qrc_qmake_LumenForge.cpp.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Running rcc for resource qmake_LumenForge</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+D:\Code\QT\6.11.1\msvc2022_64\bin\rcc.exe --output D:/Code/Photoshop/app/.qt/rcc/qrc_qmake_LumenForge.cpp --name qmake_LumenForge D:/Code/Photoshop/app/.qt/rcc/qmake_LumenForge.qrc --no-zstd
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\Code\Photoshop\app\LumenForge\qmldir;D:\Code\Photoshop\app\.qt\rcc\qmake_LumenForge.qrc;D:\Code\QT\6.11.1\msvc2022_64\bin\rcc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\Code\Photoshop\app\.qt\rcc\qrc_qmake_LumenForge.cpp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Running rcc for resource qmake_LumenForge</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+D:\Code\QT\6.11.1\msvc2022_64\bin\rcc.exe --output D:/Code/Photoshop/app/.qt/rcc/qrc_qmake_LumenForge.cpp --name qmake_LumenForge D:/Code/Photoshop/app/.qt/rcc/qmake_LumenForge.qrc --no-zstd
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\Code\Photoshop\app\LumenForge\qmldir;D:\Code\Photoshop\app\.qt\rcc\qmake_LumenForge.qrc;D:\Code\QT\6.11.1\msvc2022_64\bin\rcc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\Code\Photoshop\app\.qt\rcc\qrc_qmake_LumenForge.cpp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Running rcc for resource qmake_LumenForge</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+D:\Code\QT\6.11.1\msvc2022_64\bin\rcc.exe --output D:/Code/Photoshop/app/.qt/rcc/qrc_qmake_LumenForge.cpp --name qmake_LumenForge D:/Code/Photoshop/app/.qt/rcc/qmake_LumenForge.qrc --no-zstd
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\Code\Photoshop\app\LumenForge\qmldir;D:\Code\Photoshop\app\.qt\rcc\qmake_LumenForge.qrc;D:\Code\QT\6.11.1\msvc2022_64\bin\rcc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\Code\Photoshop\app\.qt\rcc\qrc_qmake_LumenForge.cpp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Running rcc for resource qmake_LumenForge</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+D:\Code\QT\6.11.1\msvc2022_64\bin\rcc.exe --output D:/Code/Photoshop/app/.qt/rcc/qrc_qmake_LumenForge.cpp --name qmake_LumenForge D:/Code/Photoshop/app/.qt/rcc/qmake_LumenForge.qrc --no-zstd
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\Code\Photoshop\app\LumenForge\qmldir;D:\Code\Photoshop\app\.qt\rcc\qmake_LumenForge.qrc;D:\Code\QT\6.11.1\msvc2022_64\bin\rcc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\Code\Photoshop\app\.qt\rcc\qrc_qmake_LumenForge.cpp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\Code\Photoshop\CMakeFiles\f117ddb55b60874d5f082a831db2428d\LumenForge_qmlcache_loader.cpp.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating .rcc/qmlcache/LumenForge_qmlcache_loader.cpp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+call ..\.qt\bin\qt_setup_tool_path.bat D:/Code/QT/6.11.1/msvc2022_64/bin/qmlcachegen.exe --resource-name qmlcache_LumenForge -o D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_qmlcache_loader.cpp @D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_qml_loader_file_list.rsp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\Code\QT\6.11.1\msvc2022_64\bin\qmlcachegen.exe;D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_qml_loader_file_list.rsp;D:\Code\Photoshop\app\.qt\rcc\qmake_LumenForge.qrc;D:\Code\Photoshop\app\.qt\rcc\LumenForge_raw_qml_0.qrc;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_qmlcache_loader.cpp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating .rcc/qmlcache/LumenForge_qmlcache_loader.cpp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+call ..\.qt\bin\qt_setup_tool_path.bat D:/Code/QT/6.11.1/msvc2022_64/bin/qmlcachegen.exe --resource-name qmlcache_LumenForge -o D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_qmlcache_loader.cpp @D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_qml_loader_file_list.rsp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\Code\QT\6.11.1\msvc2022_64\bin\qmlcachegen.exe;D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_qml_loader_file_list.rsp;D:\Code\Photoshop\app\.qt\rcc\qmake_LumenForge.qrc;D:\Code\Photoshop\app\.qt\rcc\LumenForge_raw_qml_0.qrc;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_qmlcache_loader.cpp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Generating .rcc/qmlcache/LumenForge_qmlcache_loader.cpp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+call ..\.qt\bin\qt_setup_tool_path.bat D:/Code/QT/6.11.1/msvc2022_64/bin/qmlcachegen.exe --resource-name qmlcache_LumenForge -o D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_qmlcache_loader.cpp @D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_qml_loader_file_list.rsp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\Code\QT\6.11.1\msvc2022_64\bin\qmlcachegen.exe;D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_qml_loader_file_list.rsp;D:\Code\Photoshop\app\.qt\rcc\qmake_LumenForge.qrc;D:\Code\Photoshop\app\.qt\rcc\LumenForge_raw_qml_0.qrc;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_qmlcache_loader.cpp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Generating .rcc/qmlcache/LumenForge_qmlcache_loader.cpp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+call ..\.qt\bin\qt_setup_tool_path.bat D:/Code/QT/6.11.1/msvc2022_64/bin/qmlcachegen.exe --resource-name qmlcache_LumenForge -o D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_qmlcache_loader.cpp @D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_qml_loader_file_list.rsp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\Code\QT\6.11.1\msvc2022_64\bin\qmlcachegen.exe;D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_qml_loader_file_list.rsp;D:\Code\Photoshop\app\.qt\rcc\qmake_LumenForge.qrc;D:\Code\Photoshop\app\.qt\rcc\LumenForge_raw_qml_0.qrc;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_qmlcache_loader.cpp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\Code\Photoshop\CMakeFiles\02921c63107bba980d53443d8e67ce6e\Main_qml.cpp.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating .rcc/qmlcache/LumenForge_resources/qml/Main_qml.cpp, .rcc/qmlcache/LumenForge_resources/qml/Main_qml.cpp.aotstats</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_resources/qml
+if %errorlevel% neq 0 goto :cmEnd
+call ..\.qt\bin\qt_setup_tool_path.bat D:/Code/QT/6.11.1/msvc2022_64/bin/qmlcachegen.exe --bare --resource-path /qt/qml/LumenForge/resources/qml/Main.qml -I D:/Code/Photoshop/app -I D:/Code/QT/6.11.1/msvc2022_64/qml -i D:/Code/Photoshop/app/LumenForge/qmldir --resource D:/Code/Photoshop/app/.qt/rcc/qmake_LumenForge.qrc --resource D:/Code/Photoshop/app/.qt/rcc/LumenForge_raw_qml_0.qrc --dump-aot-stats --module-id=LumenForge(LumenForge) -o D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_resources/qml/Main_qml.cpp D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/app/resources/qml/Main.qml
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\Code\QT\6.11.1\msvc2022_64\bin\qmlcachegen.exe;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\Main.qml;D:\Code\Photoshop\app\.qt\rcc\qmake_LumenForge.qrc;D:\Code\Photoshop\app\.qt\rcc\LumenForge_raw_qml_0.qrc;D:\Code\Photoshop\app\LumenForge\LumenForge.qmltypes;D:\Code\Photoshop\app\LumenForge\qmldir;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\Main_qml.cpp;D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\Main_qml.cpp.aotstats</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating .rcc/qmlcache/LumenForge_resources/qml/Main_qml.cpp, .rcc/qmlcache/LumenForge_resources/qml/Main_qml.cpp.aotstats</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_resources/qml
+if %errorlevel% neq 0 goto :cmEnd
+call ..\.qt\bin\qt_setup_tool_path.bat D:/Code/QT/6.11.1/msvc2022_64/bin/qmlcachegen.exe --bare --resource-path /qt/qml/LumenForge/resources/qml/Main.qml -I D:/Code/Photoshop/app -I D:/Code/QT/6.11.1/msvc2022_64/qml -i D:/Code/Photoshop/app/LumenForge/qmldir --resource D:/Code/Photoshop/app/.qt/rcc/qmake_LumenForge.qrc --resource D:/Code/Photoshop/app/.qt/rcc/LumenForge_raw_qml_0.qrc --dump-aot-stats --module-id=LumenForge(LumenForge) -o D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_resources/qml/Main_qml.cpp D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/app/resources/qml/Main.qml
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\Code\QT\6.11.1\msvc2022_64\bin\qmlcachegen.exe;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\Main.qml;D:\Code\Photoshop\app\.qt\rcc\qmake_LumenForge.qrc;D:\Code\Photoshop\app\.qt\rcc\LumenForge_raw_qml_0.qrc;D:\Code\Photoshop\app\LumenForge\LumenForge.qmltypes;D:\Code\Photoshop\app\LumenForge\qmldir;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\Main_qml.cpp;D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\Main_qml.cpp.aotstats</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Generating .rcc/qmlcache/LumenForge_resources/qml/Main_qml.cpp, .rcc/qmlcache/LumenForge_resources/qml/Main_qml.cpp.aotstats</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_resources/qml
+if %errorlevel% neq 0 goto :cmEnd
+call ..\.qt\bin\qt_setup_tool_path.bat D:/Code/QT/6.11.1/msvc2022_64/bin/qmlcachegen.exe --bare --resource-path /qt/qml/LumenForge/resources/qml/Main.qml -I D:/Code/Photoshop/app -I D:/Code/QT/6.11.1/msvc2022_64/qml -i D:/Code/Photoshop/app/LumenForge/qmldir --resource D:/Code/Photoshop/app/.qt/rcc/qmake_LumenForge.qrc --resource D:/Code/Photoshop/app/.qt/rcc/LumenForge_raw_qml_0.qrc --dump-aot-stats --module-id=LumenForge(LumenForge) -o D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_resources/qml/Main_qml.cpp D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/app/resources/qml/Main.qml
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\Code\QT\6.11.1\msvc2022_64\bin\qmlcachegen.exe;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\Main.qml;D:\Code\Photoshop\app\.qt\rcc\qmake_LumenForge.qrc;D:\Code\Photoshop\app\.qt\rcc\LumenForge_raw_qml_0.qrc;D:\Code\Photoshop\app\LumenForge\LumenForge.qmltypes;D:\Code\Photoshop\app\LumenForge\qmldir;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\Main_qml.cpp;D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\Main_qml.cpp.aotstats</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Generating .rcc/qmlcache/LumenForge_resources/qml/Main_qml.cpp, .rcc/qmlcache/LumenForge_resources/qml/Main_qml.cpp.aotstats</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_resources/qml
+if %errorlevel% neq 0 goto :cmEnd
+call ..\.qt\bin\qt_setup_tool_path.bat D:/Code/QT/6.11.1/msvc2022_64/bin/qmlcachegen.exe --bare --resource-path /qt/qml/LumenForge/resources/qml/Main.qml -I D:/Code/Photoshop/app -I D:/Code/QT/6.11.1/msvc2022_64/qml -i D:/Code/Photoshop/app/LumenForge/qmldir --resource D:/Code/Photoshop/app/.qt/rcc/qmake_LumenForge.qrc --resource D:/Code/Photoshop/app/.qt/rcc/LumenForge_raw_qml_0.qrc --dump-aot-stats --module-id=LumenForge(LumenForge) -o D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_resources/qml/Main_qml.cpp D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/app/resources/qml/Main.qml
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\Code\QT\6.11.1\msvc2022_64\bin\qmlcachegen.exe;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\Main.qml;D:\Code\Photoshop\app\.qt\rcc\qmake_LumenForge.qrc;D:\Code\Photoshop\app\.qt\rcc\LumenForge_raw_qml_0.qrc;D:\Code\Photoshop\app\LumenForge\LumenForge.qmltypes;D:\Code\Photoshop\app\LumenForge\qmldir;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\Main_qml.cpp;D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\Main_qml.cpp.aotstats</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\Code\Photoshop\CMakeFiles\02921c63107bba980d53443d8e67ce6e\MaskCanvas_qml.cpp.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating .rcc/qmlcache/LumenForge_resources/qml/MaskCanvas_qml.cpp, .rcc/qmlcache/LumenForge_resources/qml/MaskCanvas_qml.cpp.aotstats</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_resources/qml
+if %errorlevel% neq 0 goto :cmEnd
+call ..\.qt\bin\qt_setup_tool_path.bat D:/Code/QT/6.11.1/msvc2022_64/bin/qmlcachegen.exe --bare --resource-path /qt/qml/LumenForge/resources/qml/MaskCanvas.qml -I D:/Code/Photoshop/app -I D:/Code/QT/6.11.1/msvc2022_64/qml -i D:/Code/Photoshop/app/LumenForge/qmldir --resource D:/Code/Photoshop/app/.qt/rcc/qmake_LumenForge.qrc --resource D:/Code/Photoshop/app/.qt/rcc/LumenForge_raw_qml_0.qrc --dump-aot-stats --module-id=LumenForge(LumenForge) -o D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_resources/qml/MaskCanvas_qml.cpp D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/app/resources/qml/MaskCanvas.qml
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\Code\QT\6.11.1\msvc2022_64\bin\qmlcachegen.exe;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\MaskCanvas.qml;D:\Code\Photoshop\app\.qt\rcc\qmake_LumenForge.qrc;D:\Code\Photoshop\app\.qt\rcc\LumenForge_raw_qml_0.qrc;D:\Code\Photoshop\app\LumenForge\LumenForge.qmltypes;D:\Code\Photoshop\app\LumenForge\qmldir;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\MaskCanvas_qml.cpp;D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\MaskCanvas_qml.cpp.aotstats</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating .rcc/qmlcache/LumenForge_resources/qml/MaskCanvas_qml.cpp, .rcc/qmlcache/LumenForge_resources/qml/MaskCanvas_qml.cpp.aotstats</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_resources/qml
+if %errorlevel% neq 0 goto :cmEnd
+call ..\.qt\bin\qt_setup_tool_path.bat D:/Code/QT/6.11.1/msvc2022_64/bin/qmlcachegen.exe --bare --resource-path /qt/qml/LumenForge/resources/qml/MaskCanvas.qml -I D:/Code/Photoshop/app -I D:/Code/QT/6.11.1/msvc2022_64/qml -i D:/Code/Photoshop/app/LumenForge/qmldir --resource D:/Code/Photoshop/app/.qt/rcc/qmake_LumenForge.qrc --resource D:/Code/Photoshop/app/.qt/rcc/LumenForge_raw_qml_0.qrc --dump-aot-stats --module-id=LumenForge(LumenForge) -o D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_resources/qml/MaskCanvas_qml.cpp D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/app/resources/qml/MaskCanvas.qml
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\Code\QT\6.11.1\msvc2022_64\bin\qmlcachegen.exe;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\MaskCanvas.qml;D:\Code\Photoshop\app\.qt\rcc\qmake_LumenForge.qrc;D:\Code\Photoshop\app\.qt\rcc\LumenForge_raw_qml_0.qrc;D:\Code\Photoshop\app\LumenForge\LumenForge.qmltypes;D:\Code\Photoshop\app\LumenForge\qmldir;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\MaskCanvas_qml.cpp;D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\MaskCanvas_qml.cpp.aotstats</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Generating .rcc/qmlcache/LumenForge_resources/qml/MaskCanvas_qml.cpp, .rcc/qmlcache/LumenForge_resources/qml/MaskCanvas_qml.cpp.aotstats</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_resources/qml
+if %errorlevel% neq 0 goto :cmEnd
+call ..\.qt\bin\qt_setup_tool_path.bat D:/Code/QT/6.11.1/msvc2022_64/bin/qmlcachegen.exe --bare --resource-path /qt/qml/LumenForge/resources/qml/MaskCanvas.qml -I D:/Code/Photoshop/app -I D:/Code/QT/6.11.1/msvc2022_64/qml -i D:/Code/Photoshop/app/LumenForge/qmldir --resource D:/Code/Photoshop/app/.qt/rcc/qmake_LumenForge.qrc --resource D:/Code/Photoshop/app/.qt/rcc/LumenForge_raw_qml_0.qrc --dump-aot-stats --module-id=LumenForge(LumenForge) -o D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_resources/qml/MaskCanvas_qml.cpp D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/app/resources/qml/MaskCanvas.qml
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\Code\QT\6.11.1\msvc2022_64\bin\qmlcachegen.exe;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\MaskCanvas.qml;D:\Code\Photoshop\app\.qt\rcc\qmake_LumenForge.qrc;D:\Code\Photoshop\app\.qt\rcc\LumenForge_raw_qml_0.qrc;D:\Code\Photoshop\app\LumenForge\LumenForge.qmltypes;D:\Code\Photoshop\app\LumenForge\qmldir;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\MaskCanvas_qml.cpp;D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\MaskCanvas_qml.cpp.aotstats</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Generating .rcc/qmlcache/LumenForge_resources/qml/MaskCanvas_qml.cpp, .rcc/qmlcache/LumenForge_resources/qml/MaskCanvas_qml.cpp.aotstats</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_resources/qml
+if %errorlevel% neq 0 goto :cmEnd
+call ..\.qt\bin\qt_setup_tool_path.bat D:/Code/QT/6.11.1/msvc2022_64/bin/qmlcachegen.exe --bare --resource-path /qt/qml/LumenForge/resources/qml/MaskCanvas.qml -I D:/Code/Photoshop/app -I D:/Code/QT/6.11.1/msvc2022_64/qml -i D:/Code/Photoshop/app/LumenForge/qmldir --resource D:/Code/Photoshop/app/.qt/rcc/qmake_LumenForge.qrc --resource D:/Code/Photoshop/app/.qt/rcc/LumenForge_raw_qml_0.qrc --dump-aot-stats --module-id=LumenForge(LumenForge) -o D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_resources/qml/MaskCanvas_qml.cpp D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/app/resources/qml/MaskCanvas.qml
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\Code\QT\6.11.1\msvc2022_64\bin\qmlcachegen.exe;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\MaskCanvas.qml;D:\Code\Photoshop\app\.qt\rcc\qmake_LumenForge.qrc;D:\Code\Photoshop\app\.qt\rcc\LumenForge_raw_qml_0.qrc;D:\Code\Photoshop\app\LumenForge\LumenForge.qmltypes;D:\Code\Photoshop\app\LumenForge\qmldir;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\MaskCanvas_qml.cpp;D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\MaskCanvas_qml.cpp.aotstats</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\Code\Photoshop\CMakeFiles\02921c63107bba980d53443d8e67ce6e\Cropoverlay_qml.cpp.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating .rcc/qmlcache/LumenForge_resources/qml/Cropoverlay_qml.cpp, .rcc/qmlcache/LumenForge_resources/qml/Cropoverlay_qml.cpp.aotstats</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_resources/qml
+if %errorlevel% neq 0 goto :cmEnd
+call ..\.qt\bin\qt_setup_tool_path.bat D:/Code/QT/6.11.1/msvc2022_64/bin/qmlcachegen.exe --bare --resource-path /qt/qml/LumenForge/resources/qml/CropOverlay.qml -I D:/Code/Photoshop/app -I D:/Code/QT/6.11.1/msvc2022_64/qml -i D:/Code/Photoshop/app/LumenForge/qmldir --resource D:/Code/Photoshop/app/.qt/rcc/qmake_LumenForge.qrc --resource D:/Code/Photoshop/app/.qt/rcc/LumenForge_raw_qml_0.qrc --dump-aot-stats --module-id=LumenForge(LumenForge) -o D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_resources/qml/Cropoverlay_qml.cpp D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/app/resources/qml/Cropoverlay.qml
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\Code\QT\6.11.1\msvc2022_64\bin\qmlcachegen.exe;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\Cropoverlay.qml;D:\Code\Photoshop\app\.qt\rcc\qmake_LumenForge.qrc;D:\Code\Photoshop\app\.qt\rcc\LumenForge_raw_qml_0.qrc;D:\Code\Photoshop\app\LumenForge\LumenForge.qmltypes;D:\Code\Photoshop\app\LumenForge\qmldir;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\Cropoverlay_qml.cpp;D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\Cropoverlay_qml.cpp.aotstats</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating .rcc/qmlcache/LumenForge_resources/qml/Cropoverlay_qml.cpp, .rcc/qmlcache/LumenForge_resources/qml/Cropoverlay_qml.cpp.aotstats</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_resources/qml
+if %errorlevel% neq 0 goto :cmEnd
+call ..\.qt\bin\qt_setup_tool_path.bat D:/Code/QT/6.11.1/msvc2022_64/bin/qmlcachegen.exe --bare --resource-path /qt/qml/LumenForge/resources/qml/CropOverlay.qml -I D:/Code/Photoshop/app -I D:/Code/QT/6.11.1/msvc2022_64/qml -i D:/Code/Photoshop/app/LumenForge/qmldir --resource D:/Code/Photoshop/app/.qt/rcc/qmake_LumenForge.qrc --resource D:/Code/Photoshop/app/.qt/rcc/LumenForge_raw_qml_0.qrc --dump-aot-stats --module-id=LumenForge(LumenForge) -o D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_resources/qml/Cropoverlay_qml.cpp D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/app/resources/qml/Cropoverlay.qml
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\Code\QT\6.11.1\msvc2022_64\bin\qmlcachegen.exe;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\Cropoverlay.qml;D:\Code\Photoshop\app\.qt\rcc\qmake_LumenForge.qrc;D:\Code\Photoshop\app\.qt\rcc\LumenForge_raw_qml_0.qrc;D:\Code\Photoshop\app\LumenForge\LumenForge.qmltypes;D:\Code\Photoshop\app\LumenForge\qmldir;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\Cropoverlay_qml.cpp;D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\Cropoverlay_qml.cpp.aotstats</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Generating .rcc/qmlcache/LumenForge_resources/qml/Cropoverlay_qml.cpp, .rcc/qmlcache/LumenForge_resources/qml/Cropoverlay_qml.cpp.aotstats</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_resources/qml
+if %errorlevel% neq 0 goto :cmEnd
+call ..\.qt\bin\qt_setup_tool_path.bat D:/Code/QT/6.11.1/msvc2022_64/bin/qmlcachegen.exe --bare --resource-path /qt/qml/LumenForge/resources/qml/CropOverlay.qml -I D:/Code/Photoshop/app -I D:/Code/QT/6.11.1/msvc2022_64/qml -i D:/Code/Photoshop/app/LumenForge/qmldir --resource D:/Code/Photoshop/app/.qt/rcc/qmake_LumenForge.qrc --resource D:/Code/Photoshop/app/.qt/rcc/LumenForge_raw_qml_0.qrc --dump-aot-stats --module-id=LumenForge(LumenForge) -o D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_resources/qml/Cropoverlay_qml.cpp D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/app/resources/qml/Cropoverlay.qml
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\Code\QT\6.11.1\msvc2022_64\bin\qmlcachegen.exe;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\Cropoverlay.qml;D:\Code\Photoshop\app\.qt\rcc\qmake_LumenForge.qrc;D:\Code\Photoshop\app\.qt\rcc\LumenForge_raw_qml_0.qrc;D:\Code\Photoshop\app\LumenForge\LumenForge.qmltypes;D:\Code\Photoshop\app\LumenForge\qmldir;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\Cropoverlay_qml.cpp;D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\Cropoverlay_qml.cpp.aotstats</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Generating .rcc/qmlcache/LumenForge_resources/qml/Cropoverlay_qml.cpp, .rcc/qmlcache/LumenForge_resources/qml/Cropoverlay_qml.cpp.aotstats</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_resources/qml
+if %errorlevel% neq 0 goto :cmEnd
+call ..\.qt\bin\qt_setup_tool_path.bat D:/Code/QT/6.11.1/msvc2022_64/bin/qmlcachegen.exe --bare --resource-path /qt/qml/LumenForge/resources/qml/CropOverlay.qml -I D:/Code/Photoshop/app -I D:/Code/QT/6.11.1/msvc2022_64/qml -i D:/Code/Photoshop/app/LumenForge/qmldir --resource D:/Code/Photoshop/app/.qt/rcc/qmake_LumenForge.qrc --resource D:/Code/Photoshop/app/.qt/rcc/LumenForge_raw_qml_0.qrc --dump-aot-stats --module-id=LumenForge(LumenForge) -o D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_resources/qml/Cropoverlay_qml.cpp D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/app/resources/qml/Cropoverlay.qml
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\Code\QT\6.11.1\msvc2022_64\bin\qmlcachegen.exe;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\Cropoverlay.qml;D:\Code\Photoshop\app\.qt\rcc\qmake_LumenForge.qrc;D:\Code\Photoshop\app\.qt\rcc\LumenForge_raw_qml_0.qrc;D:\Code\Photoshop\app\LumenForge\LumenForge.qmltypes;D:\Code\Photoshop\app\LumenForge\qmldir;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\Cropoverlay_qml.cpp;D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\Cropoverlay_qml.cpp.aotstats</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\Code\Photoshop\CMakeFiles\02921c63107bba980d53443d8e67ce6e\LayerTransformOverlay_qml.cpp.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating .rcc/qmlcache/LumenForge_resources/qml/LayerTransformOverlay_qml.cpp, .rcc/qmlcache/LumenForge_resources/qml/LayerTransformOverlay_qml.cpp.aotstats</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_resources/qml
+if %errorlevel% neq 0 goto :cmEnd
+call ..\.qt\bin\qt_setup_tool_path.bat D:/Code/QT/6.11.1/msvc2022_64/bin/qmlcachegen.exe --bare --resource-path /qt/qml/LumenForge/resources/qml/LayerTransformOverlay.qml -I D:/Code/Photoshop/app -I D:/Code/QT/6.11.1/msvc2022_64/qml -i D:/Code/Photoshop/app/LumenForge/qmldir --resource D:/Code/Photoshop/app/.qt/rcc/qmake_LumenForge.qrc --resource D:/Code/Photoshop/app/.qt/rcc/LumenForge_raw_qml_0.qrc --dump-aot-stats --module-id=LumenForge(LumenForge) -o D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_resources/qml/LayerTransformOverlay_qml.cpp D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/app/resources/qml/LayerTransformOverlay.qml
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\Code\QT\6.11.1\msvc2022_64\bin\qmlcachegen.exe;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\LayerTransformOverlay.qml;D:\Code\Photoshop\app\.qt\rcc\qmake_LumenForge.qrc;D:\Code\Photoshop\app\.qt\rcc\LumenForge_raw_qml_0.qrc;D:\Code\Photoshop\app\LumenForge\LumenForge.qmltypes;D:\Code\Photoshop\app\LumenForge\qmldir;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\LayerTransformOverlay_qml.cpp;D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\LayerTransformOverlay_qml.cpp.aotstats</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating .rcc/qmlcache/LumenForge_resources/qml/LayerTransformOverlay_qml.cpp, .rcc/qmlcache/LumenForge_resources/qml/LayerTransformOverlay_qml.cpp.aotstats</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_resources/qml
+if %errorlevel% neq 0 goto :cmEnd
+call ..\.qt\bin\qt_setup_tool_path.bat D:/Code/QT/6.11.1/msvc2022_64/bin/qmlcachegen.exe --bare --resource-path /qt/qml/LumenForge/resources/qml/LayerTransformOverlay.qml -I D:/Code/Photoshop/app -I D:/Code/QT/6.11.1/msvc2022_64/qml -i D:/Code/Photoshop/app/LumenForge/qmldir --resource D:/Code/Photoshop/app/.qt/rcc/qmake_LumenForge.qrc --resource D:/Code/Photoshop/app/.qt/rcc/LumenForge_raw_qml_0.qrc --dump-aot-stats --module-id=LumenForge(LumenForge) -o D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_resources/qml/LayerTransformOverlay_qml.cpp D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/app/resources/qml/LayerTransformOverlay.qml
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\Code\QT\6.11.1\msvc2022_64\bin\qmlcachegen.exe;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\LayerTransformOverlay.qml;D:\Code\Photoshop\app\.qt\rcc\qmake_LumenForge.qrc;D:\Code\Photoshop\app\.qt\rcc\LumenForge_raw_qml_0.qrc;D:\Code\Photoshop\app\LumenForge\LumenForge.qmltypes;D:\Code\Photoshop\app\LumenForge\qmldir;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\LayerTransformOverlay_qml.cpp;D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\LayerTransformOverlay_qml.cpp.aotstats</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Generating .rcc/qmlcache/LumenForge_resources/qml/LayerTransformOverlay_qml.cpp, .rcc/qmlcache/LumenForge_resources/qml/LayerTransformOverlay_qml.cpp.aotstats</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_resources/qml
+if %errorlevel% neq 0 goto :cmEnd
+call ..\.qt\bin\qt_setup_tool_path.bat D:/Code/QT/6.11.1/msvc2022_64/bin/qmlcachegen.exe --bare --resource-path /qt/qml/LumenForge/resources/qml/LayerTransformOverlay.qml -I D:/Code/Photoshop/app -I D:/Code/QT/6.11.1/msvc2022_64/qml -i D:/Code/Photoshop/app/LumenForge/qmldir --resource D:/Code/Photoshop/app/.qt/rcc/qmake_LumenForge.qrc --resource D:/Code/Photoshop/app/.qt/rcc/LumenForge_raw_qml_0.qrc --dump-aot-stats --module-id=LumenForge(LumenForge) -o D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_resources/qml/LayerTransformOverlay_qml.cpp D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/app/resources/qml/LayerTransformOverlay.qml
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\Code\QT\6.11.1\msvc2022_64\bin\qmlcachegen.exe;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\LayerTransformOverlay.qml;D:\Code\Photoshop\app\.qt\rcc\qmake_LumenForge.qrc;D:\Code\Photoshop\app\.qt\rcc\LumenForge_raw_qml_0.qrc;D:\Code\Photoshop\app\LumenForge\LumenForge.qmltypes;D:\Code\Photoshop\app\LumenForge\qmldir;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\LayerTransformOverlay_qml.cpp;D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\LayerTransformOverlay_qml.cpp.aotstats</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Generating .rcc/qmlcache/LumenForge_resources/qml/LayerTransformOverlay_qml.cpp, .rcc/qmlcache/LumenForge_resources/qml/LayerTransformOverlay_qml.cpp.aotstats</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E make_directory D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_resources/qml
+if %errorlevel% neq 0 goto :cmEnd
+call ..\.qt\bin\qt_setup_tool_path.bat D:/Code/QT/6.11.1/msvc2022_64/bin/qmlcachegen.exe --bare --resource-path /qt/qml/LumenForge/resources/qml/LayerTransformOverlay.qml -I D:/Code/Photoshop/app -I D:/Code/QT/6.11.1/msvc2022_64/qml -i D:/Code/Photoshop/app/LumenForge/qmldir --resource D:/Code/Photoshop/app/.qt/rcc/qmake_LumenForge.qrc --resource D:/Code/Photoshop/app/.qt/rcc/LumenForge_raw_qml_0.qrc --dump-aot-stats --module-id=LumenForge(LumenForge) -o D:/Code/Photoshop/app/.rcc/qmlcache/LumenForge_resources/qml/LayerTransformOverlay_qml.cpp D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/app/resources/qml/LayerTransformOverlay.qml
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\Code\QT\6.11.1\msvc2022_64\bin\qmlcachegen.exe;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\LayerTransformOverlay.qml;D:\Code\Photoshop\app\.qt\rcc\qmake_LumenForge.qrc;D:\Code\Photoshop\app\.qt\rcc\LumenForge_raw_qml_0.qrc;D:\Code\Photoshop\app\LumenForge\LumenForge.qmltypes;D:\Code\Photoshop\app\LumenForge\qmldir;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\LayerTransformOverlay_qml.cpp;D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\LayerTransformOverlay_qml.cpp.aotstats</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\Code\Photoshop\CMakeFiles\36aa7d1f494b04305d6e2648c913f9d4\qrc_LumenForge_raw_qml_0.cpp.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Running rcc for resource LumenForge_raw_qml_0</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+D:\Code\QT\6.11.1\msvc2022_64\bin\rcc.exe --output D:/Code/Photoshop/app/.qt/rcc/qrc_LumenForge_raw_qml_0.cpp --name LumenForge_raw_qml_0 D:/Code/Photoshop/app/.qt/rcc/LumenForge_raw_qml_0.qrc --no-zstd
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\Main.qml;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\MaskCanvas.qml;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\Cropoverlay.qml;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\LayerTransformOverlay.qml;D:\Code\Photoshop\app\.qt\rcc\LumenForge_raw_qml_0.qrc;D:\Code\QT\6.11.1\msvc2022_64\bin\rcc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\Code\Photoshop\app\.qt\rcc\qrc_LumenForge_raw_qml_0.cpp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Running rcc for resource LumenForge_raw_qml_0</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+D:\Code\QT\6.11.1\msvc2022_64\bin\rcc.exe --output D:/Code/Photoshop/app/.qt/rcc/qrc_LumenForge_raw_qml_0.cpp --name LumenForge_raw_qml_0 D:/Code/Photoshop/app/.qt/rcc/LumenForge_raw_qml_0.qrc --no-zstd
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\Main.qml;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\MaskCanvas.qml;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\Cropoverlay.qml;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\LayerTransformOverlay.qml;D:\Code\Photoshop\app\.qt\rcc\LumenForge_raw_qml_0.qrc;D:\Code\QT\6.11.1\msvc2022_64\bin\rcc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\Code\Photoshop\app\.qt\rcc\qrc_LumenForge_raw_qml_0.cpp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Running rcc for resource LumenForge_raw_qml_0</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+D:\Code\QT\6.11.1\msvc2022_64\bin\rcc.exe --output D:/Code/Photoshop/app/.qt/rcc/qrc_LumenForge_raw_qml_0.cpp --name LumenForge_raw_qml_0 D:/Code/Photoshop/app/.qt/rcc/LumenForge_raw_qml_0.qrc --no-zstd
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\Main.qml;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\MaskCanvas.qml;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\Cropoverlay.qml;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\LayerTransformOverlay.qml;D:\Code\Photoshop\app\.qt\rcc\LumenForge_raw_qml_0.qrc;D:\Code\QT\6.11.1\msvc2022_64\bin\rcc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\Code\Photoshop\app\.qt\rcc\qrc_LumenForge_raw_qml_0.cpp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Running rcc for resource LumenForge_raw_qml_0</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+D:\Code\QT\6.11.1\msvc2022_64\bin\rcc.exe --output D:/Code/Photoshop/app/.qt/rcc/qrc_LumenForge_raw_qml_0.cpp --name LumenForge_raw_qml_0 D:/Code/Photoshop/app/.qt/rcc/LumenForge_raw_qml_0.qrc --no-zstd
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\Main.qml;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\MaskCanvas.qml;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\Cropoverlay.qml;D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\LayerTransformOverlay.qml;D:\Code\Photoshop\app\.qt\rcc\LumenForge_raw_qml_0.qrc;D:\Code\QT\6.11.1\msvc2022_64\bin\rcc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\Code\Photoshop\app\.qt\rcc\qrc_LumenForge_raw_qml_0.cpp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\CMakeLists.txt">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/app/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SD:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas -BD:/Code/Photoshop --check-stamp-file D:/Code/Photoshop/app/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\Code\Photoshop\app\.qt\qml_imports\LumenForge_conf.cmake;D:\Code\QT\6.11.1\msvc2022_64\lib\cmake\Qt6\windows\app.exe.manifest.in;D:\Code\QT\6.11.1\msvc2022_64\lib\cmake\Qt6Core\Qt6CoreConfigureFileTemplate.in;D:\Code\QT\6.11.1\msvc2022_64\lib\cmake\Qt6Qml\Qt6QmlModuleDirMappingTemplate.qrc.in;D:\Code\QT\6.11.1\msvc2022_64\lib\cmake\Qt6Qml\Qt6qmldirTemplate.cmake.in;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\Code\Photoshop\app\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/app/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SD:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas -BD:/Code/Photoshop --check-stamp-file D:/Code/Photoshop/app/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\Code\Photoshop\app\.qt\qml_imports\LumenForge_conf.cmake;D:\Code\QT\6.11.1\msvc2022_64\lib\cmake\Qt6\windows\app.exe.manifest.in;D:\Code\QT\6.11.1\msvc2022_64\lib\cmake\Qt6Core\Qt6CoreConfigureFileTemplate.in;D:\Code\QT\6.11.1\msvc2022_64\lib\cmake\Qt6Qml\Qt6QmlModuleDirMappingTemplate.qrc.in;D:\Code\QT\6.11.1\msvc2022_64\lib\cmake\Qt6Qml\Qt6qmldirTemplate.cmake.in;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\Code\Photoshop\app\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/app/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SD:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas -BD:/Code/Photoshop --check-stamp-file D:/Code/Photoshop/app/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\Code\Photoshop\app\.qt\qml_imports\LumenForge_conf.cmake;D:\Code\QT\6.11.1\msvc2022_64\lib\cmake\Qt6\windows\app.exe.manifest.in;D:\Code\QT\6.11.1\msvc2022_64\lib\cmake\Qt6Core\Qt6CoreConfigureFileTemplate.in;D:\Code\QT\6.11.1\msvc2022_64\lib\cmake\Qt6Qml\Qt6QmlModuleDirMappingTemplate.qrc.in;D:\Code\QT\6.11.1\msvc2022_64\lib\cmake\Qt6Qml\Qt6qmldirTemplate.cmake.in;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\Code\Photoshop\app\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule D:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas/app/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SD:/Code/Photoshop.worktrees/implement-commit-1-overlay-canvas -BD:/Code/Photoshop --check-stamp-file D:/Code/Photoshop/app/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\Code\Photoshop\app\.qt\qml_imports\LumenForge_conf.cmake;D:\Code\QT\6.11.1\msvc2022_64\lib\cmake\Qt6\windows\app.exe.manifest.in;D:\Code\QT\6.11.1\msvc2022_64\lib\cmake\Qt6Core\Qt6CoreConfigureFileTemplate.in;D:\Code\QT\6.11.1\msvc2022_64\lib\cmake\Qt6Qml\Qt6QmlModuleDirMappingTemplate.qrc.in;D:\Code\QT\6.11.1\msvc2022_64\lib\cmake\Qt6Qml\Qt6qmldirTemplate.cmake.in;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\Code\Photoshop\app\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="D:\Code\Photoshop\app\LumenForge_autogen\mocs_compilation_Debug.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\src\main\main.cpp" />
+    <ClCompile Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\src\editor\DocumentController.cpp" />
+    <ClInclude Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\src\editor\DocumentController.hpp" />
+    <ClInclude Include="D:\Code\Photoshop\app\ddf_LumenForge.h" />
+    <None Include="D:\Code\Photoshop\app\meta_types\qt6lumenforge_metatypes.json.gen">
+    </None>
+    <ClCompile Include="D:\Code\Photoshop\app\lumenforge_qmltyperegistrations.cpp">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalOptions) /bigobj</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalOptions) /bigobj</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">%(AdditionalOptions) /bigobj</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">%(AdditionalOptions) /bigobj</AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="D:\Code\Photoshop\app\.qt\rcc\qrc_qmake_LumenForge.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <None Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\Main.qml">
+    </None>
+    <ClCompile Include="D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_qmlcache_loader.cpp" />
+    <ClCompile Include="D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\Main_qml.cpp" />
+    <None Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\MaskCanvas.qml">
+    </None>
+    <ClCompile Include="D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\MaskCanvas_qml.cpp" />
+    <None Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\Cropoverlay.qml">
+    </None>
+    <ClCompile Include="D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\Cropoverlay_qml.cpp" />
+    <None Include="D:\Code\Photoshop.worktrees\implement-commit-1-overlay-canvas\app\resources\qml\LayerTransformOverlay.qml">
+    </None>
+    <ClCompile Include="D:\Code\Photoshop\app\.rcc\qmlcache\LumenForge_resources\qml\LayerTransformOverlay_qml.cpp" />
+    <ClCompile Include="D:\Code\Photoshop\app\.qt\rcc\qrc_LumenForge_raw_qml_0.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClInclude Include="D:\Code\Photoshop\app\.qt\rcc\qmake_LumenForge.qrc" />
+    <ClInclude Include="D:\Code\Photoshop\app\LumenForge\qmldir" />
+    <ClInclude Include="D:\Code\Photoshop\app\.qt\rcc\LumenForge_raw_qml_0.qrc" />
+    <None Include="D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6core_metatypes.json">
+    </None>
+    <None Include="D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6qml_metatypes.json">
+    </None>
+    <None Include="D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6network_metatypes.json">
+    </None>
+    <None Include="D:\Code\Photoshop\core\meta_types\qt6lumen_core_metatypes.json">
+    </None>
+    <None Include="D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6gui_metatypes.json">
+    </None>
+    <None Include="D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6sql_metatypes.json">
+    </None>
+    <None Include="D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6concurrent_metatypes.json">
+    </None>
+    <None Include="D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6quick_metatypes.json">
+    </None>
+    <None Include="D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6opengl_metatypes.json">
+    </None>
+    <None Include="D:\Code\QT\6.11.1\msvc2022_64\metatypes\qt6quickcontrols2_metatypes.json">
+    </None>
+    <ClCompile Include="D:\Code\Photoshop\app\LumenForge_autogen\mocs_compilation_Release.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="D:\Code\Photoshop\app\LumenForge_autogen\mocs_compilation_MinSizeRel.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="D:\Code\Photoshop\app\LumenForge_autogen\mocs_compilation_RelWithDebInfo.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="D:\Code\Photoshop\ZERO_CHECK.vcxproj">
+      <Project>{3E65A0CD-15F6-3B17-BA9A-37E33E5FF60D}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="D:\Code\Photoshop\app\LumenForge_autogen.vcxproj">
+      <Project>{7F3919A9-0814-308D-BBEC-E3F86F589456}</Project>
+      <Name>LumenForge_autogen</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="D:\Code\Photoshop\app\LumenForge_automoc_json_extraction.vcxproj">
+      <Project>{E7F3F46F-C78C-3AA1-8C1F-5634A17DDA69}</Project>
+      <Name>LumenForge_automoc_json_extraction</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="D:\Code\Photoshop\app\LumenForge_copy_qml.vcxproj">
+      <Project>{9035CFBF-0DFF-3DC2-AC99-ACD9E51020FB}</Project>
+      <Name>LumenForge_copy_qml</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="D:\Code\Photoshop\app\LumenForge_copy_res.vcxproj">
+      <Project>{A39FCF27-538F-39EE-BEC1-D346F968E67B}</Project>
+      <Name>LumenForge_copy_res</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="D:\Code\Photoshop\app\LumenForge_qmlimportscan.vcxproj">
+      <Project>{F1DACCAF-4EF8-36A3-9FBF-3D1120A9AE07}</Project>
+      <Name>LumenForge_qmlimportscan</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="D:\Code\Photoshop\generate_qmlls_build_ini_file.vcxproj">
+      <Project>{9E41A32B-B458-31FB-A2D9-560C3F52050E}</Project>
+      <Name>generate_qmlls_build_ini_file</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="D:\Code\Photoshop\core\lumen_core.vcxproj">
+      <Project>{8FB83003-62C0-3FE4-8A87-1F725EF05EF6}</Project>
+      <Name>lumen_core</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
